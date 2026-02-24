@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Giriş</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260224-11" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="hero slim">
+        <p class="kicker">Fal Platformu</p>
+        <h1>Admin Giriş</h1>
+      </header>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <section class="alerts">
+        {% for category, message in messages %}
+        <div class="alert {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </section>
+      {% endif %}
+      {% endwith %}
+
+      <section class="card">
+        <form action="/admin/login" method="post" class="form-grid" style="max-width:420px;">
+          <label class="full">
+            Kullanıcı Adı
+            <input type="text" name="username" required />
+          </label>
+          <label class="full">
+            Şifre
+            <input type="password" name="password" required />
+          </label>
+          <button type="submit">Panele Gir</button>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>

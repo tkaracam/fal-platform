@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fal Platformu Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260224-11" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="hero slim">
+        <p class="kicker">Admin Panel</p>
+        <h1>Gelen Talepler</h1>
+        <form action="/admin/logout" method="post">
+          <button type="submit">Çıkış</button>
+        </form>
+      </header>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <section class="alerts">
+        {% for category, message in messages %}
+        <div class="alert {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </section>
+      {% endif %}
+      {% endwith %}
+
+      <section class="card">
+        <h2>Kahve Falı Talepleri</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Ad</th>
+                <th>Telefon</th>
+                <th>Falcı</th>
+                <th>Soru</th>
+                <th>AI Yorum</th>
+                <th>Tarih</th>
+                <th>Görsel</th>
+                <th>WhatsApp</th>
+                <th>Ödeme</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in coffee_rows %}
+              <tr>
+                <td>{{ row['id'] }}</td>
+                <td>{{ row['full_name'] }}</td>
+                <td>{{ row['phone'] }}</td>
+                <td>{{ row['reader_name'] }}</td>
+                <td>{{ row['question'] }}</td>
+                <td>{% if row['ai_status'] == 'ready' %}{{ row['ai_reading'] }}{% else %}{{ row['ai_status'] }}{% endif %}</td>
+                <td>{{ row['created_at'] }}</td>
+                <td>
+                  {% if row['image_paths'] %}
+                    {% for path in row['image_paths'] %}
+                      <a href="{{ url_for('static', filename=path) }}" target="_blank">Aç {{ loop.index }}</a>{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                  {% else %}
+                    <a href="{{ url_for('static', filename=row['image_path']) }}" target="_blank">Aç</a>
+                  {% endif %}
+                </td>
+                <td>{% if row['wa_link'] %}<a href="{{ row['wa_link'] }}" target="_blank">Mesaj</a>{% endif %}</td>
+                <td>
+                  {% if row['paid'] %}
+                    Ödendi
+                  {% else %}
+                    <form action="/admin/mark-paid/coffee/{{ row['id'] }}" method="post">
+                      <button type="submit">Ödendi İşaretle</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Kart Fal Talepleri</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Tür</th>
+                <th>Ad</th>
+                <th>Telefon</th>
+                <th>Falcı</th>
+                <th>Soru</th>
+                <th>Kartlar (Sistem)</th>
+                <th>AI Yorum</th>
+                <th>Tarih</th>
+                <th>WhatsApp</th>
+                <th>Ödeme</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in card_rows %}
+              <tr>
+                <td>{{ row['id'] }}</td>
+                <td>{{ row['reading_type'] }}</td>
+                <td>{{ row['full_name'] }}</td>
+                <td>{{ row['phone'] }}</td>
+                <td>{{ row['reader_name'] }}</td>
+                <td>{{ row['question'] }}</td>
+                <td>{{ row['selected_cards'] }}</td>
+                <td>{% if row['ai_status'] == 'ready' %}{{ row['ai_reading'] }}{% else %}{{ row['ai_status'] }}{% endif %}</td>
+                <td>{{ row['created_at'] }}</td>
+                <td>{% if row['wa_link'] %}<a href="{{ row['wa_link'] }}" target="_blank">Mesaj</a>{% endif %}</td>
+                <td>
+                  {% if row['paid'] %}
+                    Ödendi
+                  {% else %}
+                    <form action="/admin/mark-paid/card/{{ row['id'] }}" method="post">
+                      <button type="submit">Ödendi İşaretle</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Ödeme Kayıtları</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Talep</th>
+                <th>Kişi</th>
+                <th>Telefon</th>
+                <th>Tutar</th>
+                <th>Durum</th>
+                <th>Tarih</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in payment_rows %}
+              <tr>
+                <td>{{ row['id'] }}</td>
+                <td>{{ row['request_kind'] }}-{{ row['request_id'] }}</td>
+                <td>{{ row['full_name'] }}</td>
+                <td>{{ row['phone'] }}</td>
+                <td>{{ row['amount'] }} {{ row['currency'] }}</td>
+                <td>{{ row['status'] }}</td>
+                <td>{{ row['created_at'] }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

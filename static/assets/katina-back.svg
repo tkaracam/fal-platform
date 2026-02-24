@@ -1,0 +1,21 @@
+<svg width="360" height="560" viewBox="0 0 360 560" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5b0d17"/>
+      <stop offset="50%" stop-color="#7c1320"/>
+      <stop offset="100%" stop-color="#450a12"/>
+    </linearGradient>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M0 10h20M10 0v20" stroke="#f8d4b2" stroke-opacity="0.12" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect x="4" y="4" width="352" height="552" rx="18" fill="#f6dfcb"/>
+  <rect x="18" y="18" width="324" height="524" rx="14" fill="url(#bg)"/>
+  <rect x="18" y="18" width="324" height="524" rx="14" fill="url(#grid)"/>
+  <rect x="38" y="38" width="284" height="484" rx="12" fill="none" stroke="#ffd8ba" stroke-opacity="0.55" stroke-width="2"/>
+  <circle cx="180" cy="280" r="90" fill="none" stroke="#ffd8ba" stroke-opacity="0.8" stroke-width="4"/>
+  <circle cx="180" cy="280" r="58" fill="none" stroke="#ffd8ba" stroke-opacity="0.8" stroke-width="3"/>
+  <path d="M180 190l28 44h-56z" fill="#ffd8ba" fill-opacity="0.9"/>
+  <path d="M180 370l28-44h-56z" fill="#ffd8ba" fill-opacity="0.9"/>
+  <path d="M90 280h180M180 190v180" stroke="#ffd8ba" stroke-opacity="0.45" stroke-width="2"/>
+</svg>

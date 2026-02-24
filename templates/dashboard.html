@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="{{ lang }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ t('panel_title') }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260224-11" />
+  </head>
+  <body data-ui-lang="{{ lang }}">
+    <div class="scene-glow"></div>
+    <main class="container">
+      <header class="navbar">
+        <a class="brand" href="{{ url_for('home', lang=lang) }}">{{ t('brand') }}</a>
+        <button class="nav-toggle" type="button" aria-label="Menu" data-nav-toggle>Menu</button>
+        <nav class="nav-links" data-nav-links>
+          <a href="{{ url_for('coffee_page', lang=lang) }}">{{ t('nav_coffee') }}</a>
+          <a href="{{ url_for('katina_page', lang=lang) }}">{{ t('nav_katina') }}</a>
+          <a href="{{ url_for('tarot_page', lang=lang) }}">{{ t('nav_tarot') }}</a>
+          <a href="{{ url_for('dashboard_page', lang=lang) }}" data-panel-link>{{ t('nav_panel') }}</a>
+          <form method="post" action="{{ url_for('logout_submit', lang=lang) }}" class="nav-logout-form">
+            <button type="submit" class="menu-cta nav-logout">{{ t('logout_submit') }}</button>
+          </form>
+          <div class="lang-switch">
+            <a href="{{ lang_url('tr') }}">{{ t('lang_tr') }}</a>
+            <a href="{{ lang_url('en') }}">{{ t('lang_en') }}</a>
+            <a href="{{ lang_url('de') }}">{{ t('lang_de') }}</a>
+          </div>
+        </nav>
+      </header>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <section class="alerts">
+        {% for category, message in messages %}
+        <div class="alert {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </section>
+      {% endif %}
+      {% endwith %}
+
+      <section class="hero">
+        <p class="kicker">{{ t('nav_panel') }}</p>
+        <h1>{{ t('panel_title') }}</h1>
+        <p>{{ t('panel_desc') }}</p>
+      </section>
+
+      <section class="card">
+        <h2>{{ t('profile_title') }}</h2>
+        <p>{{ t('profile_desc') }}</p>
+        <form class="form-grid" method="post" action="{{ url_for('account_update', lang=lang) }}">
+          <label>{{ t('full_name') }}<input name="full_name" type="text" value="{{ user.full_name }}" required /></label>
+          <label>{{ t('username') }}<input type="text" value="{{ user.username }}" readonly /></label>
+          <label class="full">{{ t('email') }}<input name="email" type="email" value="{{ user.email }}" required /></label>
+          <label class="full">{{ t('phone') }}<input name="phone" type="text" value="{{ user.phone }}" required /></label>
+          <label>{{ t('profile_new_password') }}<input name="new_password" type="password" minlength="4" /></label>
+          <label>{{ t('profile_new_password_confirm') }}<input name="new_password_confirm" type="password" minlength="4" /></label>
+          <button type="submit">{{ t('profile_save') }}</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <form class="form-grid compact" method="get" action="{{ url_for('dashboard_page') }}">
+          <input type="hidden" name="lang" value="{{ lang }}" />
+          <label>
+            {{ t('panel_filter_label') }}
+            <select name="type" onchange="this.form.submit()">
+              <option value="all" {% if selected_type == 'all' %}selected{% endif %}>{{ t('panel_filter_all') }}</option>
+              <option value="coffee" {% if selected_type == 'coffee' %}selected{% endif %}>{{ t('nav_coffee') }}</option>
+              <option value="katina" {% if selected_type == 'katina' %}selected{% endif %}>{{ t('nav_katina') }}</option>
+              <option value="tarot" {% if selected_type == 'tarot' %}selected{% endif %}>{{ t('nav_tarot') }}</option>
+            </select>
+          </label>
+        </form>
+
+        {% if rows %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ t('panel_date') }}</th>
+                <th>{{ t('panel_type') }}</th>
+                <th>{{ t('panel_reader') }}</th>
+                <th>{{ t('panel_detail_toggle') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+              <tr>
+                <td>{{ row.created_at[:16].replace('T', ' ') }}</td>
+                <td>
+                  {% if row.type == 'coffee' %}
+                    {{ t('nav_coffee') }}
+                  {% elif row.type == 'katina' %}
+                    {{ t('nav_katina') }}
+                  {% elif row.type == 'tarot' %}
+                    {{ t('nav_tarot') }}
+                  {% else %}
+                    {{ row.type }}
+                  {% endif %}
+                </td>
+                <td>{{ row.reader_name }}</td>
+                <td>
+                  <details class="panel-detail">
+                    <summary>{{ t('panel_detail_toggle') }}</summary>
+                    <p><strong>{{ t('panel_detail_question') }}:</strong> {{ row.question }}</p>
+                    <p class="ai-reading"><strong>{{ t('panel_detail_result') }}:</strong> {{ row.result }}</p>
+                  </details>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p>{{ t('panel_no_data') }}</p>
+        {% endif %}
+      </section>
+
+      <footer class="site-footer">
+        <div class="footer-grid">
+          <div>
+            <p class="footer-brand">{{ t('brand') }}</p>
+            <p class="footer-copy">© 2026 • {{ t('brand') }}</p>
+          </div>
+          <div class="footer-links">
+            <a href="{{ url_for('coffee_page', lang=lang) }}">{{ t('nav_coffee') }}</a>
+            <a href="{{ url_for('katina_page', lang=lang) }}">{{ t('nav_katina') }}</a>
+            <a href="{{ url_for('tarot_page', lang=lang) }}">{{ t('nav_tarot') }}</a>
+            <a href="{{ url_for('agb_page', lang=lang) }}">{{ t('nav_agb') }}</a>
+          </div>
+          <div class="footer-social">
+            <a href="{{ instagram_url }}" target="_blank" rel="noopener" class="social-link"><span>Instagram</span></a>
+            <a href="{{ x_url }}" target="_blank" rel="noopener" class="social-link"><span>X</span></a>
+            <a href="{{ telegram_url }}" target="_blank" rel="noopener" class="social-link"><span>Telegram</span></a>
+            <a class="live-support social-link" href="{{ live_support_url }}" target="_blank" rel="noopener"><span>Canlı Destek</span></a>
+          </div>
+        </div>
+      </footer>
+    </main>
+    <script src="{{ url_for('static', filename='script.js') }}?v=20260224-10"></script>
+  </body>
+</html>

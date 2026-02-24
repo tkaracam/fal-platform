@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ödeme</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260224-11" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="hero slim">
+        <p class="kicker">Ödeme Adımı</p>
+        <h1>Talep Kaydınız Hazır</h1>
+        <p>Talep no: {{ row['request_kind'] }}-{{ row['request_id'] }}</p>
+      </header>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <section class="alerts">
+        {% for category, message in messages %}
+        <div class="alert {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </section>
+      {% endif %}
+      {% endwith %}
+
+      <section class="card">
+        <h2>Ödeme Bilgisi</h2>
+        <p>Ad Soyad: {{ row['full_name'] }}</p>
+        <p>Telefon: {{ row['phone'] }}</p>
+        <p>Tutar: {{ row['amount'] }} {{ row['currency'] }}</p>
+        <p>Falcı: {{ reader_name }}</p>
+        {% if payment_link %}
+        <a class="payment-link" href="{{ payment_link }}" target="_blank" rel="noopener">Ödeme Yap</a>
+        <p class="selection">Ödeme tamamlanınca admin panelinden durum güncellenir.</p>
+        {% else %}
+        <p class="alert error">`PAYMENT_LINK` tanımlanmamış. Yönetici ödeme linki eklemeli.</p>
+        {% endif %}
+      </section>
+
+      <section class="card">
+        <h2>{{ t('ai_result_title') }}</h2>
+        {% if ai_status == 'ready' and ai_reading %}
+        <p class="ai-reading">{{ ai_reading }}</p>
+        {% else %}
+        <p class="selection">{{ t('ai_result_pending') }}</p>
+        {% endif %}
+      </section>
+
+      {% if ai_status == 'ready' and ai_reading %}
+      <section class="card">
+        <h2>{{ t('rate_title') }}</h2>
+        <p>{{ t('rate_desc') }}</p>
+        <form action="{{ url_for('rate_reader', lang=lang) }}" method="post" class="form-grid compact">
+          <input type="hidden" name="request_kind" value="{{ row['request_kind'] }}" />
+          <input type="hidden" name="request_id" value="{{ row['request_id'] }}" />
+          <label>
+            {{ t('rate_score') }}
+            <select name="rating" required>
+              <option value="4.5" {% if feedback_row and feedback_row['rating'] == 4.5 %}selected{% endif %}>4.5</option>
+              <option value="4.0" {% if feedback_row and feedback_row['rating'] == 4.0 %}selected{% endif %}>4.0</option>
+              <option value="3.5" {% if feedback_row and feedback_row['rating'] == 3.5 %}selected{% endif %}>3.5</option>
+              <option value="3.0" {% if feedback_row and feedback_row['rating'] == 3.0 %}selected{% endif %}>3.0</option>
+            </select>
+          </label>
+          <label class="full">
+            {{ t('rate_comment') }}
+            <textarea name="comment" rows="3" placeholder="Kısa yorum">{{ feedback_row['comment'] if feedback_row else '' }}</textarea>
+          </label>
+          <button type="submit">{{ t('rate_submit') }}</button>
+        </form>
+      </section>
+      {% else %}
+      <section class="card">
+        <h2>{{ t('rate_title') }}</h2>
+        <p class="selection">Değerlendirme, fal yorumu hazır olduktan sonra açılır.</p>
+      </section>
+      {% endif %}
+
+      <section class="card">
+        <a href="/" class="payment-link secondary">Ana Sayfaya Dön</a>
+      </section>
+    </main>
+  </body>
+</html>

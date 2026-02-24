@@ -1,0 +1,33 @@
+<svg width="1200" height="700" viewBox="0 0 1200 700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a111a"/>
+      <stop offset="55%" stop-color="#162433"/>
+      <stop offset="100%" stop-color="#1f3348"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="28%" cy="15%" r="45%">
+      <stop offset="0%" stop-color="#ff6a45" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ff6a45" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="83%" cy="86%" r="45%">
+      <stop offset="0%" stop-color="#36d5ff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#36d5ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="700" fill="url(#bg)"/>
+  <rect width="1200" height="700" fill="url(#glowA)"/>
+  <rect width="1200" height="700" fill="url(#glowB)"/>
+
+  <ellipse cx="610" cy="625" rx="340" ry="46" fill="#05090f" opacity="0.55"/>
+  <path d="M360 438h460c25 0 46 21 46 46v64H314v-64c0-25 21-46 46-46z" fill="#1f3044"/>
+  <path d="M858 486h78c35 0 64 29 64 64s-29 64-64 64h-79" fill="none" stroke="#2a3f58" stroke-width="24" stroke-linecap="round"/>
+  <path d="M480 308c0-72 55-129 123-129s123 57 123 129" fill="none" stroke="#3a597c" stroke-width="15"/>
+  <circle cx="603" cy="348" r="160" fill="#112033"/>
+  <circle cx="603" cy="348" r="147" fill="#16283d"/>
+  <path d="M518 340c29-30 80-38 126-8 42 27 78 12 98-4" fill="none" stroke="#ff7d51" stroke-width="8" stroke-linecap="round"/>
+  <path d="M514 386c36 24 78 31 132 10 43-17 80-10 105 4" fill="none" stroke="#36d5ff" stroke-width="8" stroke-linecap="round"/>
+
+  <path d="M520 126c-22-35-17-78 10-112" fill="none" stroke="#ff7d51" stroke-opacity="0.75" stroke-width="8" stroke-linecap="round"/>
+  <path d="M606 126c-15-33-9-76 15-110" fill="none" stroke="#36d5ff" stroke-opacity="0.78" stroke-width="8" stroke-linecap="round"/>
+  <path d="M690 126c-12-34-4-77 23-111" fill="none" stroke="#ff7d51" stroke-opacity="0.75" stroke-width="8" stroke-linecap="round"/>
+</svg>

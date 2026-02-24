@@ -33,3 +33,4 @@ python3 app.py
 - Admin: `http://127.0.0.1:5000/admin`
 
 Not: `PAYMENT_LINK` bos birakilirsa odeme sayfasinda uyari gorunur.
+deploy test Di. 24 Feb. 2026 21:56:08 CET

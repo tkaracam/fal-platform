@@ -41,6 +41,9 @@ ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Admin@2026")
 WHATSAPP_NUMBER = os.getenv("WHATSAPP_NUMBER", "")
 PAYMENT_LINK = os.getenv("PAYMENT_LINK", "")
+PAYMENT_PROVIDER = os.getenv("PAYMENT_PROVIDER", "manual").strip().lower()
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 INSTAGRAM_URL = os.getenv("INSTAGRAM_URL", "https://instagram.com")
 X_URL = os.getenv("X_URL", "https://x.com")
 TELEGRAM_URL = os.getenv("TELEGRAM_URL", "https://t.me")
@@ -144,6 +147,7 @@ TRANSLATIONS = {
         "msg_profile_bad_phone": "Telefon alanı zorunludur.",
         "msg_profile_bad_password": "Şifre en az 4 karakter olmalı ve tekrar alanı ile aynı olmalı.",
         "msg_csrf_invalid": "Güvenlik doğrulaması başarısız. Lütfen sayfayı yenileyip tekrar deneyin.",
+        "msg_too_many_attempts": "Çok fazla hatalı deneme yapıldı. Lütfen {minutes} dakika sonra tekrar deneyin.",
         "agb_title": "AGB ve Yasal Bilgilendirme",
         "agb_desc": "Bu sayfa kullanım koşulları ve görsel lisans bilgilerini içerir.",
         "agb_photo_license": "Falcı fotoğrafları Pexels ücretsiz lisansı ile kullanılmaktadır.",
@@ -263,6 +267,7 @@ TRANSLATIONS = {
         "msg_profile_bad_phone": "Phone field is required.",
         "msg_profile_bad_password": "Password must be at least 4 characters and match the repeat field.",
         "msg_csrf_invalid": "Security verification failed. Please refresh the page and try again.",
+        "msg_too_many_attempts": "Too many failed attempts. Please try again in {minutes} minutes.",
         "agb_title": "AGB and Legal Information",
         "agb_desc": "This page contains terms of use and image license information.",
         "agb_photo_license": "Reader photos are used under the free Pexels license.",
@@ -382,6 +387,7 @@ TRANSLATIONS = {
         "msg_profile_bad_phone": "Telefonfeld ist erforderlich.",
         "msg_profile_bad_password": "Passwort muss mindestens 4 Zeichen haben und mit der Wiederholung übereinstimmen.",
         "msg_csrf_invalid": "Sicherheitsprüfung fehlgeschlagen. Bitte Seite neu laden und erneut versuchen.",
+        "msg_too_many_attempts": "Zu viele fehlgeschlagene Versuche. Bitte in {minutes} Minuten erneut versuchen.",
         "agb_title": "AGB und Rechtliche Hinweise",
         "agb_desc": "Diese Seite enthält Nutzungsbedingungen und Bildlizenz-Informationen.",
         "agb_photo_license": "Die Fotos werden unter der kostenlosen Pexels-Lizenz genutzt.",
@@ -559,6 +565,22 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS auth_attempts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                scope TEXT NOT NULL,
+                ip TEXT NOT NULL,
+                attempted_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_auth_attempts_scope_ip_time
+            ON auth_attempts(scope, ip, attempted_at)
+            """
+        )
         try:
             conn.execute("ALTER TABLE coffee_requests ADD COLUMN paid INTEGER NOT NULL DEFAULT 0")
         except sqlite3.OperationalError:
@@ -651,6 +673,51 @@ def get_current_user_id() -> int:
 
 def user_logged_in() -> bool:
     return get_current_user_id() > 0
+
+
+def get_client_ip() -> str:
+    forwarded_for = request.headers.get("X-Forwarded-For", "").strip()
+    if forwarded_for:
+        first_ip = forwarded_for.split(",")[0].strip()
+        if first_ip:
+            return first_ip
+    return request.remote_addr or "unknown"
+
+
+def record_auth_failure(scope: str, ip: str) -> None:
+    now_iso = datetime.utcnow().isoformat()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "INSERT INTO auth_attempts (scope, ip, attempted_at) VALUES (?, ?, ?)",
+            (scope, ip, now_iso),
+        )
+
+
+def clear_auth_failures(scope: str, ip: str) -> None:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "DELETE FROM auth_attempts WHERE scope = ? AND ip = ?",
+            (scope, ip),
+        )
+
+
+def is_auth_rate_limited(scope: str, ip: str, max_attempts: int, window_seconds: int) -> bool:
+    cutoff_iso = (datetime.utcnow() - timedelta(seconds=window_seconds)).isoformat()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "DELETE FROM auth_attempts WHERE attempted_at < ?",
+            (cutoff_iso,),
+        )
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS cnt
+            FROM auth_attempts
+            WHERE scope = ? AND ip = ? AND attempted_at >= ?
+            """,
+            (scope, ip, cutoff_iso),
+        ).fetchone()
+    count = int(row[0]) if row else 0
+    return count >= max_attempts
 
 
 def clean_phone(phone: str) -> str:
@@ -753,6 +820,75 @@ def openai_http_text(url: str, timeout: int = 45) -> str:
     )
     with urlopen(req, timeout=timeout) as resp:
         return resp.read().decode("utf-8")
+
+
+def stripe_currency_code(currency: str) -> str:
+    normalized = currency.strip().lower()
+    if normalized in {"tl", "try"}:
+        return "try"
+    if normalized in {"eur", "usd"}:
+        return normalized
+    return "eur"
+
+
+def stripe_create_checkout_session(
+    amount: int,
+    currency: str,
+    request_kind: str,
+    request_id: int,
+    success_url: str,
+    cancel_url: str,
+) -> str:
+    if not STRIPE_SECRET_KEY:
+        return ""
+
+    stripe_currency = stripe_currency_code(currency)
+    product_name = f"Fal Ödemesi ({request_kind}-{request_id})"
+    payload = (
+        f"mode=payment"
+        f"&success_url={quote(success_url, safe=':/?=&')}"
+        f"&cancel_url={quote(cancel_url, safe=':/?=&')}"
+        f"&line_items[0][quantity]=1"
+        f"&line_items[0][price_data][currency]={quote(stripe_currency)}"
+        f"&line_items[0][price_data][unit_amount]={int(amount) * 100}"
+        f"&line_items[0][price_data][product_data][name]={quote(product_name)}"
+        f"&metadata[request_kind]={quote(request_kind)}"
+        f"&metadata[request_id]={int(request_id)}"
+    ).encode("utf-8")
+
+    req = Request(
+        "https://api.stripe.com/v1/checkout/sessions",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {STRIPE_SECRET_KEY}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        method="POST",
+    )
+    with urlopen(req, timeout=30) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+    return str(data.get("url", ""))
+
+
+def verify_stripe_signature(raw_body: bytes, signature_header: str) -> bool:
+    if not STRIPE_WEBHOOK_SECRET:
+        return False
+    parts = [p.strip() for p in signature_header.split(",") if p.strip()]
+    timestamp = ""
+    signatures: list[str] = []
+    for part in parts:
+        if "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+        if key == "t":
+            timestamp = value
+        elif key == "v1":
+            signatures.append(value)
+    if not timestamp or not signatures:
+        return False
+    signed_payload = f"{timestamp}.{raw_body.decode('utf-8')}".encode("utf-8")
+    expected = hmac.new(STRIPE_WEBHOOK_SECRET.encode("utf-8"), signed_payload, hashlib.sha256).hexdigest()
+    return any(hmac.compare_digest(expected, sig) for sig in signatures)
 
 
 def queue_openai_batch(input_items: list[dict[str, str]]) -> tuple[str, str, str]:
@@ -1086,6 +1222,8 @@ def csrf_token() -> str:
 def enforce_csrf_on_post():
     if request.method != "POST":
         return None
+    if request.endpoint in {"stripe_webhook"}:
+        return None
     token_form = request.form.get("_csrf_token", "")
     token_session = str(session.get("_csrf_token", ""))
     if token_form and token_session and hmac.compare_digest(token_form, token_session):
@@ -1209,6 +1347,11 @@ def login_page():
 
 @app.post("/login")
 def login_submit():
+    ip = get_client_ip()
+    if is_auth_rate_limited("user_login", ip, max_attempts=8, window_seconds=15 * 60):
+        flash(t("msg_too_many_attempts", minutes=15), "error")
+        return redirect(url_for("login_page", lang=get_lang()))
+
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
     with sqlite3.connect(DB_PATH) as conn:
@@ -1218,8 +1361,10 @@ def login_submit():
             (username,),
         ).fetchone()
     if row is None or not check_password_hash(str(row["password_hash"]), password):
+        record_auth_failure("user_login", ip)
         flash(t("msg_login_bad"), "error")
         return redirect(url_for("login_page", lang=get_lang()))
+    clear_auth_failures("user_login", ip)
     session["user_id"] = int(row["id"])
     session["username"] = username
     flash(t("msg_login_ok"), "ok")
@@ -1614,10 +1759,13 @@ def payment_page(request_kind: str, request_id: int):
 
     reader_name = str(req["reader_name"])
     reader_id = get_reader_id_by_name(reading_type, reader_name)
+    stripe_enabled = PAYMENT_PROVIDER == "stripe" and bool(STRIPE_SECRET_KEY)
     return render_template(
         "payment.html",
         row=row,
         payment_link=PAYMENT_LINK,
+        payment_provider=PAYMENT_PROVIDER,
+        stripe_enabled=stripe_enabled,
         reading_type=reading_type,
         reader_name=reader_name,
         reader_id=reader_id,
@@ -1625,6 +1773,100 @@ def payment_page(request_kind: str, request_id: int):
         ai_status=ai_status,
         ai_reading=ai_reading,
     )
+
+
+@app.post("/payment/checkout/<request_kind>/<int:request_id>")
+def start_checkout(request_kind: str, request_id: int):
+    if request_kind not in {"coffee", "card"}:
+        flash(t("msg_bad_payment"), "error")
+        return redirect(url_for("home", lang=get_lang()))
+    if PAYMENT_PROVIDER != "stripe" or not STRIPE_SECRET_KEY:
+        flash("Ödeme sağlayıcısı yapılandırılmamış.", "error")
+        return redirect(url_for("payment_page", request_kind=request_kind, request_id=request_id, lang=get_lang()))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            """
+            SELECT id, amount, currency, status
+            FROM payment_requests
+            WHERE request_kind = ? AND request_id = ?
+            ORDER BY id DESC LIMIT 1
+            """,
+            (request_kind, request_id),
+        ).fetchone()
+    if row is None:
+        flash(t("msg_no_payment"), "error")
+        return redirect(url_for("home", lang=get_lang()))
+    if str(row["status"]) == "paid":
+        flash("Bu ödeme zaten tamamlandı.", "ok")
+        return redirect(url_for("payment_page", request_kind=request_kind, request_id=request_id, lang=get_lang()))
+
+    base_url = request.url_root.rstrip("/")
+    payment_url = url_for("payment_page", request_kind=request_kind, request_id=request_id, lang=get_lang(), _external=False)
+    success_url = f"{base_url}{payment_url}?payment=success"
+    cancel_url = f"{base_url}{payment_url}?payment=cancel"
+    try:
+        checkout_url = stripe_create_checkout_session(
+            amount=int(row["amount"]),
+            currency=str(row["currency"]),
+            request_kind=request_kind,
+            request_id=request_id,
+            success_url=success_url,
+            cancel_url=cancel_url,
+        )
+    except Exception:
+        checkout_url = ""
+    if not checkout_url:
+        flash("Ödeme oturumu başlatılamadı. Lütfen daha sonra tekrar deneyin.", "error")
+        return redirect(url_for("payment_page", request_kind=request_kind, request_id=request_id, lang=get_lang()))
+    return redirect(checkout_url)
+
+
+@app.post("/webhook/stripe")
+def stripe_webhook():
+    if not STRIPE_WEBHOOK_SECRET:
+        return {"ok": False}, 400
+    raw_body = request.get_data(cache=False, as_text=False)
+    signature = request.headers.get("Stripe-Signature", "")
+    if not verify_stripe_signature(raw_body, signature):
+        return {"ok": False}, 400
+
+    try:
+        event = json.loads(raw_body.decode("utf-8"))
+    except ValueError:
+        return {"ok": False}, 400
+
+    event_type = str(event.get("type", ""))
+    data_obj = event.get("data", {}).get("object", {})
+    if not isinstance(data_obj, dict):
+        return {"ok": True}
+
+    if event_type == "checkout.session.completed":
+        metadata = data_obj.get("metadata", {})
+        if isinstance(metadata, dict):
+            request_kind = str(metadata.get("request_kind", ""))
+            request_id_raw = str(metadata.get("request_id", "0"))
+            try:
+                request_id = int(request_id_raw)
+            except ValueError:
+                request_id = 0
+            if request_kind in {"coffee", "card"} and request_id > 0:
+                table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"
+                with sqlite3.connect(DB_PATH) as conn:
+                    conn.execute(
+                        """
+                        UPDATE payment_requests
+                        SET status = 'paid'
+                        WHERE request_kind = ? AND request_id = ?
+                        """,
+                        (request_kind, request_id),
+                    )
+                    conn.execute(
+                        f"UPDATE {table_name} SET paid = 1 WHERE id = ?",
+                        (request_id,),
+                    )
+    return {"ok": True}
 
 
 @app.post("/rate-reader")
@@ -1708,11 +1950,18 @@ def rate_reader():
 
 @app.post("/admin/login")
 def admin_login():
+    ip = get_client_ip()
+    if is_auth_rate_limited("admin_login", ip, max_attempts=5, window_seconds=30 * 60):
+        flash(t("msg_too_many_attempts", minutes=30), "error")
+        return redirect(url_for("admin"))
+
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
     if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+        clear_auth_failures("admin_login", ip)
         session["is_admin"] = True
         return redirect(url_for("admin"))
+    record_auth_failure("admin_login", ip)
     flash("Admin kullanıcı adı veya şifresi hatalı.", "error")
     return redirect(url_for("admin"))
 

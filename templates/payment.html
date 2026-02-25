@@ -30,11 +30,17 @@
         <p>Telefon: {{ row['phone'] }}</p>
         <p>Tutar: {{ row['amount'] }} {{ row['currency'] }}</p>
         <p>Falcı: {{ reader_name }}</p>
-        {% if payment_link %}
+        {% if stripe_enabled %}
+        <form action="{{ url_for('start_checkout', request_kind=row['request_kind'], request_id=row['request_id'], lang=lang) }}" method="post">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+          <button type="submit" class="payment-link">Ödeme Yap</button>
+        </form>
+        <p class="selection">Ödeme tamamlandığında durum otomatik güncellenir.</p>
+        {% elif payment_link %}
         <a class="payment-link" href="{{ payment_link }}" target="_blank" rel="noopener">Ödeme Yap</a>
         <p class="selection">Ödeme tamamlanınca admin panelinden durum güncellenir.</p>
         {% else %}
-        <p class="alert error">`PAYMENT_LINK` tanımlanmamış. Yönetici ödeme linki eklemeli.</p>
+        <p class="alert error">Ödeme ayarı eksik. Yönetici panelden sağlayıcı yapılandırmalı.</p>
         {% endif %}
       </section>
 

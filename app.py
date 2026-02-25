@@ -8,12 +8,13 @@ import base64
 import mimetypes
 import io
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
 try:
     from PIL import Image
@@ -29,6 +30,11 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "fal-platform-secret")
 app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.getenv("SESSION_COOKIE_SECURE", "1").strip() == "1"
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(seconds=int(os.getenv("SESSION_TTL_SECONDS", "86400")))
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Admin@2026")
 WHATSAPP_NUMBER = os.getenv("WHATSAPP_NUMBER", "")
@@ -407,6 +413,33 @@ TRANSLATIONS = {
 }
 
 PEXELS_LICENSE_URL = "https://www.pexels.com/license/"
+
+
+@app.after_request
+def apply_security_headers(response):
+    # Core hardening headers for browser-side attack surface reduction.
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+
+    csp = (
+        "default-src 'self'; "
+        "base-uri 'self'; frame-ancestors 'none'; form-action 'self'; "
+        "script-src 'self'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com data:; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self' https://api.openai.com; "
+        "object-src 'none'; upgrade-insecure-requests"
+    )
+    response.headers["Content-Security-Policy"] = csp
+
+    if request.is_secure:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
 READER_IMAGE_IDS = {
     "coffee": [7179798, 10675984, 10149102, 6014323, 6944681, 8391599, 8770834, 8770819, 8243891, 8243899],
     "katina": [7221692, 15302311, 27498144, 27498188, 19256898, 20769916, 7267117, 8262603, 7658227, 29095570],

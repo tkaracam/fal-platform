@@ -1749,6 +1749,9 @@ def payment_page(request_kind: str, request_id: int):
     ai_reading = str(req["ai_reading"])
     ai_batch_id = str(req["ai_batch_id"])
     ai_custom_id = str(req["ai_custom_id"])
+    payment_state = request.args.get("payment", "").strip().lower()
+    if payment_state not in {"success", "cancel"}:
+        payment_state = ""
 
     if ai_status == "batched" and ai_batch_id and ai_custom_id:
         new_status, new_reading = resolve_openai_batch_result(ai_batch_id, ai_custom_id)
@@ -1771,6 +1774,7 @@ def payment_page(request_kind: str, request_id: int):
         payment_link=PAYMENT_LINK,
         payment_provider=PAYMENT_PROVIDER,
         stripe_enabled=stripe_enabled,
+        payment_state=payment_state,
         reading_type=reading_type,
         reader_name=reader_name,
         reader_id=reader_id,

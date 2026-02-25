@@ -70,3 +70,26 @@ Bu dokuman canli sistemde acil durumlarda hizli hareket etmek icin hazirlandi.
 3. Deploy bittikten sonra test:
    - Odeme sayfasinda `Odeme Yap` butonu gorunmeli.
    - Test odeme sonrasi admin panelde kayit `paid` olmali.
+
+## 9) Test ve Live Anahtar Ayrimi
+
+1. Test ortami:
+   - `STRIPE_SECRET_KEY=sk_test_...`
+   - `STRIPE_WEBHOOK_SECRET=whsec_...` (test endpoint secret)
+2. Canli ortami:
+   - `STRIPE_SECRET_KEY=sk_live_...`
+   - `STRIPE_WEBHOOK_SECRET=whsec_...` (live endpoint secret)
+3. Hata onleme:
+   - `SECRET_KEY` ile `STRIPE_SECRET_KEY` karistirilmamalidir.
+   - `pk_...` veya `rk_...` degeri `STRIPE_SECRET_KEY` alanina yazilmaz.
+
+## 10) Go-Live Kontrol Listesi
+
+1. Stripe hesabi live activation tamamlandi mi?
+2. Render env'de `sk_live` ve live `whsec` girildi mi?
+3. Stripe live webhook endpoint'i `https://orakelia.com/webhook/stripe` mi?
+4. Event `checkout.session.completed` secili mi?
+5. Webhook teslimatinda HTTP 200 aliniyor mu?
+6. Canli kartla dusuk tutarli 1 test odeme yapildi mi?
+7. Admin panelde odeme kaydi `paid` oldu mu?
+8. Basarisiz odeme denemesinde sistem guvenli sekilde geri donuyor mu?

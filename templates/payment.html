@@ -23,6 +23,15 @@
       </section>
       {% endif %}
       {% endwith %}
+      {% if payment_state == 'success' %}
+      <section class="alerts">
+        <div class="alert ok">Ödeme adımı tamamlandı. Onay kontrolü yapılıyor.</div>
+      </section>
+      {% elif payment_state == 'cancel' %}
+      <section class="alerts">
+        <div class="alert error">Ödeme işlemi iptal edildi veya yarım kaldı.</div>
+      </section>
+      {% endif %}
 
       <section class="card">
         <h2>Ödeme Bilgisi</h2>
@@ -30,7 +39,9 @@
         <p>Telefon: {{ row['phone'] }}</p>
         <p>Tutar: {{ row['amount'] }} {{ row['currency'] }}</p>
         <p>Falcı: {{ reader_name }}</p>
-        {% if stripe_enabled %}
+        {% if row['status'] == 'paid' %}
+        <p class="selection"><strong>Ödeme Durumu:</strong> Ödendi</p>
+        {% elif stripe_enabled %}
         <form action="{{ url_for('start_checkout', request_kind=row['request_kind'], request_id=row['request_id'], lang=lang) }}" method="post">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
           <button type="submit" class="payment-link">Ödeme Yap</button>
@@ -88,5 +99,12 @@
         <a href="/" class="payment-link secondary">Ana Sayfaya Dön</a>
       </section>
     </main>
+    {% if payment_state == 'success' and row['status'] != 'paid' %}
+    <script>
+      window.setTimeout(function () {
+        window.location.reload();
+      }, 5000);
+    </script>
+    {% endif %}
   </body>
 </html>

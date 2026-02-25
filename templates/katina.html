@@ -23,6 +23,7 @@
           {% if is_logged_in %}
           <a href="{{ url_for('dashboard_page', lang=lang) }}" data-panel-link>{{ t('nav_panel') }}</a>
           <form method="post" action="{{ url_for('logout_submit', lang=lang) }}" class="nav-logout-form">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
             <button type="submit" class="menu-cta nav-logout">{{ t('logout_submit') }}</button>
           </form>
           {% else %}

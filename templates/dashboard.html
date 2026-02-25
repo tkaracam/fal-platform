@@ -21,6 +21,7 @@
           <a href="{{ url_for('tarot_page', lang=lang) }}">{{ t('nav_tarot') }}</a>
           <a href="{{ url_for('dashboard_page', lang=lang) }}" data-panel-link>{{ t('nav_panel') }}</a>
           <form method="post" action="{{ url_for('logout_submit', lang=lang) }}" class="nav-logout-form">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
             <button type="submit" class="menu-cta nav-logout">{{ t('logout_submit') }}</button>
           </form>
           <div class="lang-switch">
@@ -51,6 +52,7 @@
         <h2>{{ t('profile_title') }}</h2>
         <p>{{ t('profile_desc') }}</p>
         <form class="form-grid" method="post" action="{{ url_for('account_update', lang=lang) }}">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
           <label>{{ t('full_name') }}<input name="full_name" type="text" value="{{ user.full_name }}" required /></label>
           <label>{{ t('username') }}<input type="text" value="{{ user.username }}" readonly /></label>
           <label class="full">{{ t('email') }}<input name="email" type="email" value="{{ user.email }}" required /></label>

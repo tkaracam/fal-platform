@@ -23,6 +23,7 @@
           {% if is_logged_in %}
           <a href="{{ url_for('dashboard_page', lang=lang) }}" data-panel-link>{{ t('nav_panel') }}</a>
           <form method="post" action="{{ url_for('logout_submit', lang=lang) }}" class="nav-logout-form">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
             <button type="submit" class="menu-cta nav-logout">{{ t('logout_submit') }}</button>
           </form>
           {% else %}
@@ -54,6 +55,7 @@
         <div class="deck" data-reading="tarot"></div>
         <p class="selection" data-selection="tarot"></p>
         <form action="{{ url_for('submit_cards', lang=lang) }}" method="post" class="form-grid compact" data-form="tarot">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
           <input type="hidden" name="reading_type" value="tarot" />
           <input type="hidden" name="reader_id" value="{{ selected_reader['id'] }}" />
           <input type="hidden" name="selected_cards" required />

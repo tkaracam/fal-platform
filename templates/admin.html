@@ -12,6 +12,7 @@
         <p class="kicker">Admin Panel</p>
         <h1>Gelen Talepler</h1>
         <form action="/admin/logout" method="post">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
           <button type="submit">Çıkış</button>
         </form>
       </header>
@@ -69,6 +70,7 @@
                     Ödendi
                   {% else %}
                     <form action="/admin/mark-paid/coffee/{{ row['id'] }}" method="post">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
                       <button type="submit">Ödendi İşaretle</button>
                     </form>
                   {% endif %}
@@ -117,6 +119,7 @@
                     Ödendi
                   {% else %}
                     <form action="/admin/mark-paid/card/{{ row['id'] }}" method="post">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
                       <button type="submit">Ödendi İşaretle</button>
                     </form>
                   {% endif %}

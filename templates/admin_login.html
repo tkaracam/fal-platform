@@ -25,6 +25,7 @@
 
       <section class="card">
         <form action="/admin/login" method="post" class="form-grid" style="max-width:420px;">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
           <label class="full">
             Kullanıcı Adı
             <input type="text" name="username" required />

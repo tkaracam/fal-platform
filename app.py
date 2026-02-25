@@ -4,10 +4,12 @@ import json
 import os
 import sqlite3
 import hashlib
+import hmac
 import base64
 import mimetypes
 import io
 import uuid
+import secrets
 from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
@@ -141,6 +143,7 @@ TRANSLATIONS = {
         "msg_profile_bad_email": "Geçerli bir e-posta giriniz.",
         "msg_profile_bad_phone": "Telefon alanı zorunludur.",
         "msg_profile_bad_password": "Şifre en az 4 karakter olmalı ve tekrar alanı ile aynı olmalı.",
+        "msg_csrf_invalid": "Güvenlik doğrulaması başarısız. Lütfen sayfayı yenileyip tekrar deneyin.",
         "agb_title": "AGB ve Yasal Bilgilendirme",
         "agb_desc": "Bu sayfa kullanım koşulları ve görsel lisans bilgilerini içerir.",
         "agb_photo_license": "Falcı fotoğrafları Pexels ücretsiz lisansı ile kullanılmaktadır.",
@@ -259,6 +262,7 @@ TRANSLATIONS = {
         "msg_profile_bad_email": "Please enter a valid email.",
         "msg_profile_bad_phone": "Phone field is required.",
         "msg_profile_bad_password": "Password must be at least 4 characters and match the repeat field.",
+        "msg_csrf_invalid": "Security verification failed. Please refresh the page and try again.",
         "agb_title": "AGB and Legal Information",
         "agb_desc": "This page contains terms of use and image license information.",
         "agb_photo_license": "Reader photos are used under the free Pexels license.",
@@ -377,6 +381,7 @@ TRANSLATIONS = {
         "msg_profile_bad_email": "Bitte eine gültige E-Mail eingeben.",
         "msg_profile_bad_phone": "Telefonfeld ist erforderlich.",
         "msg_profile_bad_password": "Passwort muss mindestens 4 Zeichen haben und mit der Wiederholung übereinstimmen.",
+        "msg_csrf_invalid": "Sicherheitsprüfung fehlgeschlagen. Bitte Seite neu laden und erneut versuchen.",
         "agb_title": "AGB und Rechtliche Hinweise",
         "agb_desc": "Diese Seite enthält Nutzungsbedingungen und Bildlizenz-Informationen.",
         "agb_photo_license": "Die Fotos werden unter der kostenlosen Pexels-Lizenz genutzt.",
@@ -1069,12 +1074,37 @@ def resolve_image_path(image_path: str) -> str:
     return url_for("static", filename=image_path)
 
 
+def csrf_token() -> str:
+    token = session.get("_csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["_csrf_token"] = token
+    return str(token)
+
+
+@app.before_request
+def enforce_csrf_on_post():
+    if request.method != "POST":
+        return None
+    token_form = request.form.get("_csrf_token", "")
+    token_session = str(session.get("_csrf_token", ""))
+    if token_form and token_session and hmac.compare_digest(token_form, token_session):
+        return None
+
+    flash(t("msg_csrf_invalid"), "error")
+    fallback = request.referrer or url_for("home", lang=get_lang())
+    if request.endpoint in {"admin_login", "admin_logout", "mark_paid"}:
+        fallback = url_for("admin")
+    return redirect(fallback)
+
+
 @app.context_processor
 def inject_i18n():
     return {
         "t": t,
         "lang": get_lang(),
         "lang_url": lang_url,
+        "csrf_token": csrf_token,
         "is_logged_in": user_logged_in(),
         "current_username": session.get("username", ""),
         "reader_image_url": resolve_image_path,

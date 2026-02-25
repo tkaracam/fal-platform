@@ -52,6 +52,7 @@
         <h2>{{ t('rate_title') }}</h2>
         <p>{{ t('rate_desc') }}</p>
         <form action="{{ url_for('rate_reader', lang=lang) }}" method="post" class="form-grid compact">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
           <input type="hidden" name="request_kind" value="{{ row['request_kind'] }}" />
           <input type="hidden" name="request_id" value="{{ row['request_id'] }}" />
           <label>

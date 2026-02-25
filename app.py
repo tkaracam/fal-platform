@@ -12,6 +12,7 @@ import uuid
 import secrets
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
@@ -865,8 +866,12 @@ def stripe_create_checkout_session(
         },
         method="POST",
     )
-    with urlopen(req, timeout=30) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
+    try:
+        with urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="ignore")
+        raise RuntimeError(f"Stripe HTTP {exc.code}: {error_body}") from exc
     return str(data.get("url", ""))
 
 
@@ -1783,6 +1788,9 @@ def start_checkout(request_kind: str, request_id: int):
     if PAYMENT_PROVIDER != "stripe" or not STRIPE_SECRET_KEY:
         flash("Ödeme sağlayıcısı yapılandırılmamış.", "error")
         return redirect(url_for("payment_page", request_kind=request_kind, request_id=request_id, lang=get_lang()))
+    if not STRIPE_SECRET_KEY.startswith("sk_"):
+        flash("Stripe gizli anahtarı hatalı. Yönetici ayarları kontrol etmeli.", "error")
+        return redirect(url_for("payment_page", request_kind=request_kind, request_id=request_id, lang=get_lang()))
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
@@ -1816,6 +1824,13 @@ def start_checkout(request_kind: str, request_id: int):
             cancel_url=cancel_url,
         )
     except Exception:
+        app.logger.exception(
+            "Stripe checkout session failed: kind=%s request_id=%s amount=%s currency=%s",
+            request_kind,
+            request_id,
+            int(row["amount"]),
+            str(row["currency"]),
+        )
         checkout_url = ""
     if not checkout_url:
         flash("Ödeme oturumu başlatılamadı. Lütfen daha sonra tekrar deneyin.", "error")

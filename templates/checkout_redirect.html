@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stripe Yönlendirme</title>
+    <meta http-equiv="refresh" content="1;url={{ checkout_url }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260224-11" />
+  </head>
+  <body>
+    <main class="container">
+      <section class="card">
+        <h2>Ödeme Sayfasına Yönlendiriliyorsunuz</h2>
+        <p>Stripe ödeme ekranı açılmazsa aşağıdaki butona tıklayın.</p>
+        <a class="payment-link" href="{{ checkout_url }}" rel="noopener">Stripe'a Devam Et</a>
+      </section>
+    </main>
+    <script>
+      window.setTimeout(function () {
+        window.location.href = "{{ checkout_url }}";
+      }, 400);
+    </script>
+  </body>
+</html>

@@ -1841,7 +1841,10 @@ def start_checkout(request_kind: str, request_id: int):
             flash("Stripe yanıtı geçersiz (checkout URL alınamadı).", "error")
         flash("Ödeme oturumu başlatılamadı. Lütfen daha sonra tekrar deneyin.", "error")
         return redirect(url_for("payment_page", request_kind=request_kind, request_id=request_id, lang=get_lang()))
-    return redirect(checkout_url)
+    return render_template(
+        "checkout_redirect.html",
+        checkout_url=checkout_url,
+    )
 
 
 @app.post("/webhook/stripe")

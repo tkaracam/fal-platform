@@ -1814,6 +1814,7 @@ def start_checkout(request_kind: str, request_id: int):
     payment_url = url_for("payment_page", request_kind=request_kind, request_id=request_id, lang=get_lang(), _external=False)
     success_url = f"{base_url}{payment_url}?payment=success"
     cancel_url = f"{base_url}{payment_url}?payment=cancel"
+    stripe_error_message = ""
     try:
         checkout_url = stripe_create_checkout_session(
             amount=int(row["amount"]),
@@ -1823,7 +1824,7 @@ def start_checkout(request_kind: str, request_id: int):
             success_url=success_url,
             cancel_url=cancel_url,
         )
-    except Exception:
+    except Exception as exc:
         app.logger.exception(
             "Stripe checkout session failed: kind=%s request_id=%s amount=%s currency=%s",
             request_kind,
@@ -1831,8 +1832,13 @@ def start_checkout(request_kind: str, request_id: int):
             int(row["amount"]),
             str(row["currency"]),
         )
+        stripe_error_message = str(exc)[:220]
         checkout_url = ""
     if not checkout_url:
+        if stripe_error_message:
+            flash(f"Stripe hata: {stripe_error_message}", "error")
+        else:
+            flash("Stripe yanıtı geçersiz (checkout URL alınamadı).", "error")
         flash("Ödeme oturumu başlatılamadı. Lütfen daha sonra tekrar deneyin.", "error")
         return redirect(url_for("payment_page", request_kind=request_kind, request_id=request_id, lang=get_lang()))
     return redirect(checkout_url)

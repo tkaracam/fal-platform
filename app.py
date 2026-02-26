@@ -27,7 +27,8 @@ except Exception:
 from werkzeug.utils import secure_filename
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "data.db"
+DEFAULT_DB_PATH = Path("/var/data/data.db") if Path("/var/data").exists() else (BASE_DIR / "data.db")
+DB_PATH = Path(os.getenv("DATABASE_PATH", str(DEFAULT_DB_PATH))).expanduser()
 UPLOAD_DIR = BASE_DIR / "static" / "uploads"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
@@ -746,6 +747,41 @@ def create_payment_record(
         )
 
 
+ALLOWED_ORDER_STATUSES = {"pending", "paid", "in_progress", "completed"}
+ORDER_STATUS_NEXT = {
+    "pending": "paid",
+    "paid": "in_progress",
+    "in_progress": "completed",
+    "completed": "completed",
+}
+
+
+def normalize_order_status(raw: str) -> str:
+    status = raw.strip().lower()
+    if status in ALLOWED_ORDER_STATUSES:
+        return status
+    return "pending"
+
+
+def set_order_status(request_kind: str, request_id: int, new_status: str) -> None:
+    normalized = normalize_order_status(new_status)
+    table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"
+    paid_flag = 1 if normalized in {"paid", "in_progress", "completed"} else 0
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            """
+            UPDATE payment_requests
+            SET status = ?
+            WHERE request_kind = ? AND request_id = ?
+            """,
+            (normalized, request_kind, request_id),
+        )
+        conn.execute(
+            f"UPDATE {table_name} SET paid = ? WHERE id = ?",
+            (paid_flag, request_id),
+        )
+
+
 def parse_json_list(raw: str) -> list[str]:
     try:
         parsed = json.loads(raw or "[]")
@@ -1438,7 +1474,13 @@ def dashboard_page():
             return redirect(url_for("login_page", lang=get_lang()))
         coffee_rows = conn.execute(
             """
-            SELECT id, 'coffee' AS reading_type, reader_name, question, ai_status, ai_reading, created_at
+            SELECT id, 'coffee' AS reading_type, reader_name, question, ai_status, ai_reading, created_at,
+                   COALESCE(
+                     (SELECT status FROM payment_requests p
+                      WHERE p.request_kind = 'coffee' AND p.request_id = coffee_requests.id
+                      ORDER BY p.id DESC LIMIT 1),
+                     'pending'
+                   ) AS order_status
             FROM coffee_requests
             WHERE user_id = ?
             ORDER BY id DESC
@@ -1448,7 +1490,13 @@ def dashboard_page():
         ).fetchall()
         card_rows = conn.execute(
             """
-            SELECT id, reading_type, reader_name, question, ai_status, ai_reading, created_at
+            SELECT id, reading_type, reader_name, question, ai_status, ai_reading, created_at,
+                   COALESCE(
+                     (SELECT status FROM payment_requests p
+                      WHERE p.request_kind = 'card' AND p.request_id = card_requests.id
+                      ORDER BY p.id DESC LIMIT 1),
+                     'pending'
+                   ) AS order_status
             FROM card_requests
             WHERE user_id = ?
             ORDER BY id DESC
@@ -1467,6 +1515,7 @@ def dashboard_page():
                 "question": str(row["question"]),
                 "result": str(row["ai_reading"] or (t("ai_result_pending") if row["ai_status"] != "ready" else "")),
                 "created_at": str(row["created_at"]),
+                "order_status": normalize_order_status(str(row["order_status"])),
             }
         )
     for row in card_rows:
@@ -1478,6 +1527,7 @@ def dashboard_page():
                 "question": str(row["question"]),
                 "result": str(row["ai_reading"] or (t("ai_result_pending") if row["ai_status"] != "ready" else "")),
                 "created_at": str(row["created_at"]),
+                "order_status": normalize_order_status(str(row["order_status"])),
             }
         )
 
@@ -2010,18 +2060,22 @@ def mark_paid(request_kind: str, request_id: int):
         flash("Geçersiz işlem.", "error")
         return redirect(url_for("admin"))
 
-    table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(f"UPDATE {table_name} SET paid = 1 WHERE id = ?", (request_id,))
-        conn.execute(
-            """
-            UPDATE payment_requests
-            SET status = 'paid'
-            WHERE request_kind = ? AND request_id = ?
-            """,
-            (request_kind, request_id),
-        )
+    set_order_status(request_kind, request_id, "paid")
     flash("Ödeme durumu güncellendi.", "ok")
+    return redirect(url_for("admin"))
+
+
+@app.post("/admin/set-status/<request_kind>/<int:request_id>/<new_status>")
+def admin_set_status(request_kind: str, request_id: int, new_status: str):
+    if not admin_required():
+        flash("Bu alan için admin girişi gerekli.", "error")
+        return redirect(url_for("admin"))
+    if request_kind not in {"coffee", "card"}:
+        flash("Geçersiz işlem.", "error")
+        return redirect(url_for("admin"))
+    target_status = normalize_order_status(new_status)
+    set_order_status(request_kind, request_id, target_status)
+    flash(f"Durum güncellendi: {target_status}", "ok")
     return redirect(url_for("admin"))
 
 
@@ -2033,7 +2087,7 @@ def parse_admin_filters() -> dict[str, str]:
     q = request.args.get("q", "").strip()
     return {
         "type": raw_type if raw_type in {"all", "coffee", "katina", "tarot"} else "all",
-        "status": raw_status if raw_status in {"all", "paid", "pending"} else "all",
+        "status": raw_status if raw_status in {"all", "pending", "paid", "in_progress", "completed"} else "all",
         "date_from": date_from,
         "date_to": date_to,
         "q": q,
@@ -2064,10 +2118,12 @@ def fetch_filtered_admin_data(filters: dict[str, str]) -> tuple[list[sqlite3.Row
     coffee_params: list[object] = []
     if type_filter in {"katina", "tarot"}:
         coffee_sql += " AND 0"
-    if status_filter == "paid":
-        coffee_sql += " AND paid = 1"
-    elif status_filter == "pending":
-        coffee_sql += " AND paid = 0"
+    if status_filter != "all":
+        coffee_sql += (
+            " AND EXISTS (SELECT 1 FROM payment_requests p "
+            "WHERE p.request_kind = 'coffee' AND p.request_id = coffee_requests.id AND p.status = ?)"
+        )
+        coffee_params.append(status_filter)
     if date_start:
         coffee_sql += " AND created_at >= ?"
         coffee_params.append(date_start)
@@ -2087,10 +2143,12 @@ def fetch_filtered_admin_data(filters: dict[str, str]) -> tuple[list[sqlite3.Row
         card_params.append(type_filter)
     elif type_filter == "coffee":
         card_sql += " AND 0"
-    if status_filter == "paid":
-        card_sql += " AND paid = 1"
-    elif status_filter == "pending":
-        card_sql += " AND paid = 0"
+    if status_filter != "all":
+        card_sql += (
+            " AND EXISTS (SELECT 1 FROM payment_requests p "
+            "WHERE p.request_kind = 'card' AND p.request_id = card_requests.id AND p.status = ?)"
+        )
+        card_params.append(status_filter)
     if date_start:
         card_sql += " AND created_at >= ?"
         card_params.append(date_start)
@@ -2110,7 +2168,7 @@ def fetch_filtered_admin_data(filters: dict[str, str]) -> tuple[list[sqlite3.Row
     elif type_filter in {"katina", "tarot"}:
         payment_sql += " AND request_kind = 'card' AND request_id IN (SELECT id FROM card_requests WHERE reading_type = ?)"
         payment_params.append(type_filter)
-    if status_filter in {"paid", "pending"}:
+    if status_filter in {"pending", "paid", "in_progress", "completed"}:
         payment_sql += " AND status = ?"
         payment_params.append(status_filter)
     if date_start:
@@ -2131,6 +2189,48 @@ def fetch_filtered_admin_data(filters: dict[str, str]) -> tuple[list[sqlite3.Row
         card_rows = conn.execute(card_sql, tuple(card_params)).fetchall()
         payment_rows = conn.execute(payment_sql, tuple(payment_params)).fetchall()
     return coffee_rows, card_rows, payment_rows
+
+
+def fetch_admin_summary() -> dict[str, int]:
+    today_start = datetime.utcnow().strftime("%Y-%m-%dT00:00:00")
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        users_total = int(conn.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"])
+        users_today = int(
+            conn.execute("SELECT COUNT(*) AS c FROM users WHERE created_at >= ?", (today_start,)).fetchone()["c"]
+        )
+        coffee_total = int(conn.execute("SELECT COUNT(*) AS c FROM coffee_requests").fetchone()["c"])
+        card_total = int(conn.execute("SELECT COUNT(*) AS c FROM card_requests").fetchone()["c"])
+        requests_today = int(
+            conn.execute(
+                """
+                SELECT
+                  (SELECT COUNT(*) FROM coffee_requests WHERE created_at >= ?) +
+                  (SELECT COUNT(*) FROM card_requests WHERE created_at >= ?) AS c
+                """,
+                (today_start, today_start),
+            ).fetchone()["c"]
+        )
+        payment_status_rows = conn.execute(
+            """
+            SELECT status, COUNT(*) AS c
+            FROM payment_requests
+            GROUP BY status
+            """
+        ).fetchall()
+    status_counts = {str(row["status"]): int(row["c"]) for row in payment_status_rows}
+    return {
+        "users_total": users_total,
+        "users_today": users_today,
+        "requests_total": coffee_total + card_total,
+        "requests_today": requests_today,
+        "coffee_total": coffee_total,
+        "card_total": card_total,
+        "pending_count": status_counts.get("pending", 0),
+        "paid_count": status_counts.get("paid", 0),
+        "in_progress_count": status_counts.get("in_progress", 0),
+        "completed_count": status_counts.get("completed", 0),
+    }
 
 
 @app.get("/admin/export.csv")
@@ -2171,6 +2271,7 @@ def admin():
 
     filters = parse_admin_filters()
     coffee_rows, card_rows, payment_rows = fetch_filtered_admin_data(filters)
+    summary = fetch_admin_summary()
 
     coffee_was = [
         {
@@ -2218,10 +2319,12 @@ def admin():
         card_rows=card_was,
         payment_rows=payment_rows,
         filters=filters,
+        summary=summary,
     )
 
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 init_db()
 
 

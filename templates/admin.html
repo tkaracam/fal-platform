@@ -28,6 +28,46 @@
       {% endwith %}
 
       <section class="card">
+        <h2>Hızlı Özet</h2>
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              <tr>
+                <td><strong>Toplam Üye</strong></td>
+                <td>{{ summary.users_total }}</td>
+                <td><strong>Bugün Yeni Üye</strong></td>
+                <td>{{ summary.users_today }}</td>
+              </tr>
+              <tr>
+                <td><strong>Toplam Fal Talebi</strong></td>
+                <td>{{ summary.requests_total }}</td>
+                <td><strong>Bugün Gelen Talep</strong></td>
+                <td>{{ summary.requests_today }}</td>
+              </tr>
+              <tr>
+                <td><strong>Kahve Talebi</strong></td>
+                <td>{{ summary.coffee_total }}</td>
+                <td><strong>Kart Talebi</strong></td>
+                <td>{{ summary.card_total }}</td>
+              </tr>
+              <tr>
+                <td><strong>Bekliyor</strong></td>
+                <td>{{ summary.pending_count }}</td>
+                <td><strong>Ödendi</strong></td>
+                <td>{{ summary.paid_count }}</td>
+              </tr>
+              <tr>
+                <td><strong>Yorumlanıyor</strong></td>
+                <td>{{ summary.in_progress_count }}</td>
+                <td><strong>Tamamlandı</strong></td>
+                <td>{{ summary.completed_count }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
         <h2>Filtreler</h2>
         <form action="/admin" method="get" class="form-grid compact">
           <label>
@@ -43,6 +83,8 @@
             Ödeme
             <select name="status">
               <option value="all" {% if filters.status == 'all' %}selected{% endif %}>Tümü</option>
+              <option value="in_progress" {% if filters.status == 'in_progress' %}selected{% endif %}>Yorumlanıyor</option>
+              <option value="completed" {% if filters.status == 'completed' %}selected{% endif %}>Tamamlandı</option>
               <option value="paid" {% if filters.status == 'paid' %}selected{% endif %}>Ödendi</option>
               <option value="pending" {% if filters.status == 'pending' %}selected{% endif %}>Bekliyor</option>
             </select>

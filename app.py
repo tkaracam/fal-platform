@@ -11,7 +11,9 @@ import mimetypes
 import io
 import uuid
 import secrets
+import smtplib
 from datetime import datetime, timedelta
+from email.message import EmailMessage
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.parse import quote
@@ -47,6 +49,12 @@ PAYMENT_LINK = os.getenv("PAYMENT_LINK", "")
 PAYMENT_PROVIDER = os.getenv("PAYMENT_PROVIDER", "manual").strip().lower()
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+SMTP_HOST = os.getenv("SMTP_HOST", "").strip()
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "").strip()
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+SMTP_FROM = os.getenv("SMTP_FROM", "").strip()
+SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "1").strip() == "1"
 INSTAGRAM_URL = os.getenv("INSTAGRAM_URL", "https://instagram.com")
 X_URL = os.getenv("X_URL", "https://x.com")
 TELEGRAM_URL = os.getenv("TELEGRAM_URL", "https://t.me")
@@ -693,6 +701,25 @@ def user_logged_in() -> bool:
     return get_current_user_id() > 0
 
 
+def get_current_user_profile() -> dict[str, str]:
+    user_id = get_current_user_id()
+    if user_id <= 0:
+        return {"full_name": "", "phone": "", "email": ""}
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT full_name, phone, email FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+    if row is None:
+        return {"full_name": "", "phone": "", "email": ""}
+    return {
+        "full_name": str(row["full_name"] or ""),
+        "phone": str(row["phone"] or ""),
+        "email": str(row["email"] or ""),
+    }
+
+
 def get_client_ip() -> str:
     forwarded_for = request.headers.get("X-Forwarded-For", "").strip()
     if forwarded_for:
@@ -795,6 +822,90 @@ def set_order_status(request_kind: str, request_id: int, new_status: str) -> Non
             f"UPDATE {table_name} SET paid = ? WHERE id = ?",
             (paid_flag, request_id),
         )
+
+
+def get_current_order_status(request_kind: str, request_id: int) -> str:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            """
+            SELECT status
+            FROM payment_requests
+            WHERE request_kind = ? AND request_id = ?
+            ORDER BY id DESC LIMIT 1
+            """,
+            (request_kind, request_id),
+        ).fetchone()
+    if row is None:
+        return "pending"
+    return normalize_order_status(str(row["status"]))
+
+
+def send_email_message(to_email: str, subject: str, body: str) -> bool:
+    if not SMTP_HOST or not SMTP_FROM:
+        return False
+    try:
+        message = EmailMessage()
+        message["From"] = SMTP_FROM
+        message["To"] = to_email
+        message["Subject"] = subject
+        message.set_content(body)
+
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as server:
+            if SMTP_USE_TLS:
+                server.starttls()
+            if SMTP_USERNAME:
+                server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(message)
+        return True
+    except Exception:
+        app.logger.exception("Email delivery failed")
+        return False
+
+
+def notify_reading_completed(request_kind: str, request_id: int) -> bool:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        if request_kind == "coffee":
+            row = conn.execute(
+                """
+                SELECT c.full_name, c.reader_name, u.email
+                FROM coffee_requests c
+                LEFT JOIN users u ON u.id = c.user_id
+                WHERE c.id = ?
+                """,
+                (request_id,),
+            ).fetchone()
+            reading_label = "Kahve Falı"
+        else:
+            row = conn.execute(
+                """
+                SELECT c.full_name, c.reader_name, u.email
+                FROM card_requests c
+                LEFT JOIN users u ON u.id = c.user_id
+                WHERE c.id = ?
+                """,
+                (request_id,),
+            ).fetchone()
+            reading_label = "Kart Falı"
+    if row is None:
+        return False
+    email = str(row["email"] or "").strip()
+    if not email or "@" not in email:
+        return False
+    full_name = str(row["full_name"] or "Müşteri")
+    reader_name = str(row["reader_name"] or "Falcı")
+    subject = "Fal Yorumunuz Hazır"
+    body = (
+        f"Merhaba {full_name},\n\n"
+        f"{reading_label} yorumunuz hazırlandı.\n"
+        f"Falcınız: {reader_name}\n\n"
+        f"Panelinize giriş yaparak yorumunuzu görebilirsiniz:\n"
+        f"https://orakelia.com/dashboard?lang=tr\n\n"
+        "Sevgiler,\n"
+        "Ateş Fal Evi"
+    )
+    return send_email_message(email, subject, body)
 
 
 def parse_json_list(raw: str) -> list[str]:
@@ -1337,11 +1448,15 @@ def coffee_reader_page(reader_id: str):
     if selected_reader is None:
         flash(t("msg_choose_reader"), "error")
         return redirect(url_for("coffee_page", lang=get_lang()))
+    profile = get_current_user_profile()
     return render_template(
         "coffee_reader.html",
         reading_price=amount,
         currency=currency,
         selected_reader=selected_reader,
+        prefill_full_name=profile["full_name"],
+        prefill_phone=profile["phone"],
+        prefill_email=profile["email"],
     )
 
 
@@ -1363,11 +1478,15 @@ def katina_reader_page(reader_id: str):
     if selected_reader is None:
         flash(t("msg_choose_reader"), "error")
         return redirect(url_for("katina_page", lang=get_lang()))
+    profile = get_current_user_profile()
     return render_template(
         "katina_reader.html",
         reading_price=amount,
         currency=currency,
         selected_reader=selected_reader,
+        prefill_full_name=profile["full_name"],
+        prefill_phone=profile["phone"],
+        prefill_email=profile["email"],
     )
 
 
@@ -1389,11 +1508,15 @@ def tarot_reader_page(reader_id: str):
     if selected_reader is None:
         flash(t("msg_choose_reader"), "error")
         return redirect(url_for("tarot_page", lang=get_lang()))
+    profile = get_current_user_profile()
     return render_template(
         "tarot_reader.html",
         reading_price=amount,
         currency=currency,
         selected_reader=selected_reader,
+        prefill_full_name=profile["full_name"],
+        prefill_phone=profile["phone"],
+        prefill_email=profile["email"],
     )
 
 
@@ -1620,6 +1743,11 @@ def submit_coffee():
     photos = [p for p in request.files.getlist("coffee_photos") if p and p.filename.strip()]
     lang = get_lang()
     user_id = get_current_user_id()
+    profile = get_current_user_profile()
+    if profile["full_name"]:
+        full_name = profile["full_name"]
+    if profile["phone"]:
+        phone = profile["phone"]
     amount, currency = get_pricing()
     selected_reader = get_reader_by_id("coffee", reader_id)
 
@@ -1704,6 +1832,11 @@ def submit_cards():
     reader_id = request.form.get("reader_id", "").strip()
     lang = get_lang()
     user_id = get_current_user_id()
+    profile = get_current_user_profile()
+    if profile["full_name"]:
+        full_name = profile["full_name"]
+    if profile["phone"]:
+        phone = profile["phone"]
     amount, currency = get_pricing()
 
     if reading_type not in {"katina", "tarot"}:
@@ -2089,8 +2222,16 @@ def admin_set_status(request_kind: str, request_id: int, new_status: str):
         flash("Geçersiz işlem.", "error")
         return redirect(url_for("admin"))
     target_status = normalize_order_status(new_status)
+    current_status = get_current_order_status(request_kind, request_id)
     set_order_status(request_kind, request_id, target_status)
-    flash(f"Durum güncellendi: {target_status}", "ok")
+    if target_status == "completed" and current_status != "completed":
+        delivered = notify_reading_completed(request_kind, request_id)
+        if delivered:
+            flash("Durum tamamlandı ve müşteriye e-posta bildirimi gönderildi.", "ok")
+        else:
+            flash("Durum tamamlandı. E-posta bildirimi gönderilemedi (SMTP ayarı eksik olabilir).", "error")
+    else:
+        flash(f"Durum güncellendi: {target_status}", "ok")
     return redirect(url_for("admin"))
 
 

@@ -121,7 +121,8 @@
                 <th>Tarih</th>
                 <th>Görsel</th>
                 <th>WhatsApp</th>
-                <th>Ödeme</th>
+                <th>Durum</th>
+                <th>İşlem</th>
               </tr>
             </thead>
             <tbody>
@@ -145,13 +146,30 @@
                 </td>
                 <td>{% if row['wa_link'] %}<a href="{{ row['wa_link'] }}" target="_blank">Mesaj</a>{% endif %}</td>
                 <td>
-                  {% if row['paid'] %}
+                  {% if row['order_status'] == 'pending' %}
+                    Bekliyor
+                  {% elif row['order_status'] == 'paid' %}
                     Ödendi
+                  {% elif row['order_status'] == 'in_progress' %}
+                    Yorumlanıyor
                   {% else %}
-                    <form action="/admin/mark-paid/coffee/{{ row['id'] }}" method="post">
-          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-                      <button type="submit">Ödendi İşaretle</button>
+                    Tamamlandı
+                  {% endif %}
+                </td>
+                <td>
+                  {% if row['next_status'] != row['order_status'] %}
+                    <form action="/admin/set-status/coffee/{{ row['id'] }}/{{ row['next_status'] }}" method="post">
+                      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+                      {% if row['next_status'] == 'paid' %}
+                      <button type="submit">Ödendi Yap</button>
+                      {% elif row['next_status'] == 'in_progress' %}
+                      <button type="submit">Yorumlanıyor Yap</button>
+                      {% elif row['next_status'] == 'completed' %}
+                      <button type="submit">Tamamlandı Yap</button>
+                      {% endif %}
                     </form>
+                  {% else %}
+                    -
                   {% endif %}
                 </td>
               </tr>
@@ -173,11 +191,11 @@
                 <th>Telefon</th>
                 <th>Falcı</th>
                 <th>Soru</th>
-                <th>Kartlar (Sistem)</th>
                 <th>AI Yorum</th>
                 <th>Tarih</th>
                 <th>WhatsApp</th>
-                <th>Ödeme</th>
+                <th>Durum</th>
+                <th>İşlem</th>
               </tr>
             </thead>
             <tbody>
@@ -189,18 +207,34 @@
                 <td>{{ row['phone'] }}</td>
                 <td>{{ row['reader_name'] }}</td>
                 <td>{{ row['question'] }}</td>
-                <td>{{ row['selected_cards'] }}</td>
                 <td>{% if row['ai_status'] == 'ready' %}{{ row['ai_reading'] }}{% else %}{{ row['ai_status'] }}{% endif %}</td>
                 <td>{{ row['created_at'] }}</td>
                 <td>{% if row['wa_link'] %}<a href="{{ row['wa_link'] }}" target="_blank">Mesaj</a>{% endif %}</td>
                 <td>
-                  {% if row['paid'] %}
+                  {% if row['order_status'] == 'pending' %}
+                    Bekliyor
+                  {% elif row['order_status'] == 'paid' %}
                     Ödendi
+                  {% elif row['order_status'] == 'in_progress' %}
+                    Yorumlanıyor
                   {% else %}
-                    <form action="/admin/mark-paid/card/{{ row['id'] }}" method="post">
-          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-                      <button type="submit">Ödendi İşaretle</button>
+                    Tamamlandı
+                  {% endif %}
+                </td>
+                <td>
+                  {% if row['next_status'] != row['order_status'] %}
+                    <form action="/admin/set-status/card/{{ row['id'] }}/{{ row['next_status'] }}" method="post">
+                      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+                      {% if row['next_status'] == 'paid' %}
+                      <button type="submit">Ödendi Yap</button>
+                      {% elif row['next_status'] == 'in_progress' %}
+                      <button type="submit">Yorumlanıyor Yap</button>
+                      {% elif row['next_status'] == 'completed' %}
+                      <button type="submit">Tamamlandı Yap</button>
+                      {% endif %}
                     </form>
+                  {% else %}
+                    -
                   {% endif %}
                 </td>
               </tr>

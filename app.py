@@ -124,6 +124,11 @@ TRANSLATIONS = {
         "panel_date": "Tarih",
         "panel_question": "Soru",
         "panel_result": "Yorum",
+        "panel_status": "Durum",
+        "status_pending": "Bekliyor",
+        "status_paid": "Ödendi",
+        "status_in_progress": "Yorumlanıyor",
+        "status_completed": "Tamamlandı",
         "panel_filter_label": "Tür Filtresi",
         "panel_filter_all": "Tümü",
         "panel_detail_toggle": "Detay",
@@ -244,6 +249,11 @@ TRANSLATIONS = {
         "panel_date": "Date",
         "panel_question": "Question",
         "panel_result": "Reading",
+        "panel_status": "Status",
+        "status_pending": "Pending",
+        "status_paid": "Paid",
+        "status_in_progress": "In Progress",
+        "status_completed": "Completed",
         "panel_filter_label": "Type Filter",
         "panel_filter_all": "All",
         "panel_detail_toggle": "Details",
@@ -364,6 +374,11 @@ TRANSLATIONS = {
         "panel_date": "Datum",
         "panel_question": "Frage",
         "panel_result": "Deutung",
+        "panel_status": "Status",
+        "status_pending": "Wartet",
+        "status_paid": "Bezahlt",
+        "status_in_progress": "In Bearbeitung",
+        "status_completed": "Abgeschlossen",
         "panel_filter_label": "Art-Filter",
         "panel_filter_all": "Alle",
         "panel_detail_toggle": "Details",
@@ -2114,7 +2129,13 @@ def fetch_filtered_admin_data(filters: dict[str, str]) -> tuple[list[sqlite3.Row
     type_filter = filters["type"]
     status_filter = filters["status"]
 
-    coffee_sql = "SELECT * FROM coffee_requests WHERE 1=1"
+    coffee_sql = (
+        "SELECT coffee_requests.*, "
+        "COALESCE((SELECT status FROM payment_requests p "
+        "WHERE p.request_kind = 'coffee' AND p.request_id = coffee_requests.id "
+        "ORDER BY p.id DESC LIMIT 1), 'pending') AS order_status "
+        "FROM coffee_requests WHERE 1=1"
+    )
     coffee_params: list[object] = []
     if type_filter in {"katina", "tarot"}:
         coffee_sql += " AND 0"
@@ -2136,7 +2157,13 @@ def fetch_filtered_admin_data(filters: dict[str, str]) -> tuple[list[sqlite3.Row
         coffee_params.extend([like, like, like, like])
     coffee_sql += " ORDER BY id DESC LIMIT 300"
 
-    card_sql = "SELECT * FROM card_requests WHERE 1=1"
+    card_sql = (
+        "SELECT card_requests.*, "
+        "COALESCE((SELECT status FROM payment_requests p "
+        "WHERE p.request_kind = 'card' AND p.request_id = card_requests.id "
+        "ORDER BY p.id DESC LIMIT 1), 'pending') AS order_status "
+        "FROM card_requests WHERE 1=1"
+    )
     card_params: list[object] = []
     if type_filter in {"katina", "tarot"}:
         card_sql += " AND reading_type = ?"
@@ -2286,6 +2313,8 @@ def admin():
             "ai_status": row["ai_status"],
             "ai_reading": row["ai_reading"],
             "paid": row["paid"],
+            "order_status": normalize_order_status(str(row["order_status"])),
+            "next_status": ORDER_STATUS_NEXT[normalize_order_status(str(row["order_status"]))],
             "wa_link": build_whatsapp_link(
                 row["phone"], f"Merhaba {row['full_name']}, kahve falı talebiniz hazırlanıyor."
             ),
@@ -2305,6 +2334,8 @@ def admin():
             "ai_reading": row["ai_reading"],
             "created_at": row["created_at"],
             "paid": row["paid"],
+            "order_status": normalize_order_status(str(row["order_status"])),
+            "next_status": ORDER_STATUS_NEXT[normalize_order_status(str(row["order_status"]))],
             "wa_link": build_whatsapp_link(
                 row["phone"],
                 f"Merhaba {row['full_name']}, {row['reading_type']} falı talebiniz alındı.",

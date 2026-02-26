@@ -85,6 +85,7 @@
                 <th>{{ t('panel_date') }}</th>
                 <th>{{ t('panel_type') }}</th>
                 <th>{{ t('panel_reader') }}</th>
+                <th>{{ t('panel_status') }}</th>
                 <th>{{ t('panel_detail_toggle') }}</th>
               </tr>
             </thead>
@@ -104,6 +105,17 @@
                   {% endif %}
                 </td>
                 <td>{{ row.reader_name }}</td>
+                <td>
+                  {% if row.order_status == 'pending' %}
+                    {{ t('status_pending') }}
+                  {% elif row.order_status == 'paid' %}
+                    {{ t('status_paid') }}
+                  {% elif row.order_status == 'in_progress' %}
+                    {{ t('status_in_progress') }}
+                  {% else %}
+                    {{ t('status_completed') }}
+                  {% endif %}
+                </td>
                 <td>
                   <details class="panel-detail">
                     <summary>{{ t('panel_detail_toggle') }}</summary>

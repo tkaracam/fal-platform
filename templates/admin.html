@@ -28,6 +28,43 @@
       {% endwith %}
 
       <section class="card">
+        <h2>Filtreler</h2>
+        <form action="/admin" method="get" class="form-grid compact">
+          <label>
+            Tür
+            <select name="type">
+              <option value="all" {% if filters.type == 'all' %}selected{% endif %}>Tümü</option>
+              <option value="coffee" {% if filters.type == 'coffee' %}selected{% endif %}>Kahve</option>
+              <option value="katina" {% if filters.type == 'katina' %}selected{% endif %}>Katina</option>
+              <option value="tarot" {% if filters.type == 'tarot' %}selected{% endif %}>Tarot</option>
+            </select>
+          </label>
+          <label>
+            Ödeme
+            <select name="status">
+              <option value="all" {% if filters.status == 'all' %}selected{% endif %}>Tümü</option>
+              <option value="paid" {% if filters.status == 'paid' %}selected{% endif %}>Ödendi</option>
+              <option value="pending" {% if filters.status == 'pending' %}selected{% endif %}>Bekliyor</option>
+            </select>
+          </label>
+          <label>
+            Başlangıç
+            <input type="date" name="date_from" value="{{ filters.date_from }}" />
+          </label>
+          <label>
+            Bitiş
+            <input type="date" name="date_to" value="{{ filters.date_to }}" />
+          </label>
+          <label class="full">
+            Arama
+            <input type="text" name="q" value="{{ filters.q }}" placeholder="Ad, telefon, soru, falcı" />
+          </label>
+          <button type="submit">Filtrele</button>
+          <a class="payment-link secondary" href="/admin/export.csv?type={{ filters.type }}&status={{ filters.status }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&q={{ filters.q|urlencode }}">CSV İndir</a>
+        </form>
+      </section>
+
+      <section class="card">
         <h2>Kahve Falı Talepleri</h2>
         <div class="table-wrap">
           <table>

@@ -5,6 +5,7 @@ import os
 import sqlite3
 import hashlib
 import hmac
+import csv
 import base64
 import mimetypes
 import io
@@ -16,7 +17,7 @@ from urllib.error import HTTPError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, Response, flash, redirect, render_template, request, session, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
 try:
@@ -2024,22 +2025,152 @@ def mark_paid(request_kind: str, request_id: int):
     return redirect(url_for("admin"))
 
 
+def parse_admin_filters() -> dict[str, str]:
+    raw_type = request.args.get("type", "all").strip().lower()
+    raw_status = request.args.get("status", "all").strip().lower()
+    date_from = request.args.get("date_from", "").strip()
+    date_to = request.args.get("date_to", "").strip()
+    q = request.args.get("q", "").strip()
+    return {
+        "type": raw_type if raw_type in {"all", "coffee", "katina", "tarot"} else "all",
+        "status": raw_status if raw_status in {"all", "paid", "pending"} else "all",
+        "date_from": date_from,
+        "date_to": date_to,
+        "q": q,
+    }
+
+
+def build_date_range(date_from: str, date_to: str) -> tuple[str, str]:
+    start = ""
+    end = ""
+    if date_from:
+        start = f"{date_from}T00:00:00"
+    if date_to:
+        try:
+            end_dt = datetime.strptime(date_to, "%Y-%m-%d") + timedelta(days=1)
+            end = end_dt.strftime("%Y-%m-%dT00:00:00")
+        except ValueError:
+            end = ""
+    return start, end
+
+
+def fetch_filtered_admin_data(filters: dict[str, str]) -> tuple[list[sqlite3.Row], list[sqlite3.Row], list[sqlite3.Row]]:
+    date_start, date_end = build_date_range(filters["date_from"], filters["date_to"])
+    query = filters["q"]
+    type_filter = filters["type"]
+    status_filter = filters["status"]
+
+    coffee_sql = "SELECT * FROM coffee_requests WHERE 1=1"
+    coffee_params: list[object] = []
+    if type_filter in {"katina", "tarot"}:
+        coffee_sql += " AND 0"
+    if status_filter == "paid":
+        coffee_sql += " AND paid = 1"
+    elif status_filter == "pending":
+        coffee_sql += " AND paid = 0"
+    if date_start:
+        coffee_sql += " AND created_at >= ?"
+        coffee_params.append(date_start)
+    if date_end:
+        coffee_sql += " AND created_at < ?"
+        coffee_params.append(date_end)
+    if query:
+        like = f"%{query}%"
+        coffee_sql += " AND (full_name LIKE ? OR phone LIKE ? OR question LIKE ? OR reader_name LIKE ?)"
+        coffee_params.extend([like, like, like, like])
+    coffee_sql += " ORDER BY id DESC LIMIT 300"
+
+    card_sql = "SELECT * FROM card_requests WHERE 1=1"
+    card_params: list[object] = []
+    if type_filter in {"katina", "tarot"}:
+        card_sql += " AND reading_type = ?"
+        card_params.append(type_filter)
+    elif type_filter == "coffee":
+        card_sql += " AND 0"
+    if status_filter == "paid":
+        card_sql += " AND paid = 1"
+    elif status_filter == "pending":
+        card_sql += " AND paid = 0"
+    if date_start:
+        card_sql += " AND created_at >= ?"
+        card_params.append(date_start)
+    if date_end:
+        card_sql += " AND created_at < ?"
+        card_params.append(date_end)
+    if query:
+        like = f"%{query}%"
+        card_sql += " AND (full_name LIKE ? OR phone LIKE ? OR question LIKE ? OR reader_name LIKE ?)"
+        card_params.extend([like, like, like, like])
+    card_sql += " ORDER BY id DESC LIMIT 300"
+
+    payment_sql = "SELECT * FROM payment_requests WHERE 1=1"
+    payment_params: list[object] = []
+    if type_filter == "coffee":
+        payment_sql += " AND request_kind = 'coffee'"
+    elif type_filter in {"katina", "tarot"}:
+        payment_sql += " AND request_kind = 'card' AND request_id IN (SELECT id FROM card_requests WHERE reading_type = ?)"
+        payment_params.append(type_filter)
+    if status_filter in {"paid", "pending"}:
+        payment_sql += " AND status = ?"
+        payment_params.append(status_filter)
+    if date_start:
+        payment_sql += " AND created_at >= ?"
+        payment_params.append(date_start)
+    if date_end:
+        payment_sql += " AND created_at < ?"
+        payment_params.append(date_end)
+    if query:
+        like = f"%{query}%"
+        payment_sql += " AND (full_name LIKE ? OR phone LIKE ? OR request_kind LIKE ?)"
+        payment_params.extend([like, like, like])
+    payment_sql += " ORDER BY id DESC LIMIT 500"
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        coffee_rows = conn.execute(coffee_sql, tuple(coffee_params)).fetchall()
+        card_rows = conn.execute(card_sql, tuple(card_params)).fetchall()
+        payment_rows = conn.execute(payment_sql, tuple(payment_params)).fetchall()
+    return coffee_rows, card_rows, payment_rows
+
+
+@app.get("/admin/export.csv")
+def admin_export_csv():
+    if not admin_required():
+        flash("Bu alan için admin girişi gerekli.", "error")
+        return redirect(url_for("admin"))
+    filters = parse_admin_filters()
+    _, _, payment_rows = fetch_filtered_admin_data(filters)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["payment_id", "request_kind", "request_id", "full_name", "phone", "amount", "currency", "status", "created_at"])
+    for row in payment_rows:
+        writer.writerow(
+            [
+                row["id"],
+                row["request_kind"],
+                row["request_id"],
+                row["full_name"],
+                row["phone"],
+                row["amount"],
+                row["currency"],
+                row["status"],
+                row["created_at"],
+            ]
+        )
+    csv_data = output.getvalue()
+    filename = f"admin-payments-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}.csv"
+    headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+    return Response(csv_data, mimetype="text/csv; charset=utf-8", headers=headers)
+
+
 @app.get("/admin")
 def admin():
     if not admin_required():
         return render_template("admin_login.html")
 
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.row_factory = sqlite3.Row
-        coffee_rows = conn.execute(
-            "SELECT * FROM coffee_requests ORDER BY id DESC LIMIT 100"
-        ).fetchall()
-        card_rows = conn.execute(
-            "SELECT * FROM card_requests ORDER BY id DESC LIMIT 100"
-        ).fetchall()
-        payment_rows = conn.execute(
-            "SELECT * FROM payment_requests ORDER BY id DESC LIMIT 200"
-        ).fetchall()
+    filters = parse_admin_filters()
+    coffee_rows, card_rows, payment_rows = fetch_filtered_admin_data(filters)
 
     coffee_was = [
         {
@@ -2086,6 +2217,7 @@ def admin():
         coffee_rows=coffee_was,
         card_rows=card_was,
         payment_rows=payment_rows,
+        filters=filters,
     )
 
 

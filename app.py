@@ -841,9 +841,11 @@ def get_current_order_status(request_kind: str, request_id: int) -> str:
     return normalize_order_status(str(row["status"]))
 
 
-def send_email_message(to_email: str, subject: str, body: str) -> bool:
-    if not SMTP_HOST or not SMTP_FROM:
-        return False
+def send_email_message(to_email: str, subject: str, body: str) -> tuple[bool, str]:
+    if not SMTP_HOST:
+        return False, "SMTP_HOST eksik"
+    if not SMTP_FROM:
+        return False, "SMTP_FROM eksik"
     try:
         message = EmailMessage()
         message["From"] = SMTP_FROM
@@ -857,13 +859,13 @@ def send_email_message(to_email: str, subject: str, body: str) -> bool:
             if SMTP_USERNAME:
                 server.login(SMTP_USERNAME, SMTP_PASSWORD)
             server.send_message(message)
-        return True
-    except Exception:
+        return True, "ok"
+    except Exception as exc:
         app.logger.exception("Email delivery failed")
-        return False
+        return False, str(exc)
 
 
-def notify_reading_completed(request_kind: str, request_id: int) -> bool:
+def notify_reading_completed(request_kind: str, request_id: int) -> tuple[bool, str]:
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         if request_kind == "coffee":
@@ -889,10 +891,10 @@ def notify_reading_completed(request_kind: str, request_id: int) -> bool:
             ).fetchone()
             reading_label = "Kart Falı"
     if row is None:
-        return False
+        return False, "Talep kaydı bulunamadı"
     email = str(row["email"] or "").strip()
     if not email or "@" not in email:
-        return False
+        return False, "Müşteri e-postası eksik veya geçersiz"
     full_name = str(row["full_name"] or "Müşteri")
     reader_name = str(row["reader_name"] or "Falcı")
     subject = "Fal Yorumunuz Hazır"
@@ -2225,11 +2227,11 @@ def admin_set_status(request_kind: str, request_id: int, new_status: str):
     current_status = get_current_order_status(request_kind, request_id)
     set_order_status(request_kind, request_id, target_status)
     if target_status == "completed" and current_status != "completed":
-        delivered = notify_reading_completed(request_kind, request_id)
+        delivered, reason = notify_reading_completed(request_kind, request_id)
         if delivered:
             flash("Durum tamamlandı ve müşteriye e-posta bildirimi gönderildi.", "ok")
         else:
-            flash("Durum tamamlandı. E-posta bildirimi gönderilemedi (SMTP ayarı eksik olabilir).", "error")
+            flash(f"Durum tamamlandı. E-posta bildirimi gönderilemedi: {reason}", "error")
     else:
         flash(f"Durum güncellendi: {target_status}", "ok")
     return redirect(url_for("admin"))

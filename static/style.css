@@ -494,12 +494,13 @@ body {
   border-radius: 18px;
   overflow: hidden;
   isolation: isolate;
-  background-size: cover;
+  background-size: 104%;
+  background-repeat: no-repeat;
   background-position: center center;
   border: 1px solid rgba(214, 231, 247, 0.9);
   text-decoration: none;
   box-shadow: 0 18px 34px rgba(26, 46, 68, 0.2);
-  transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+  transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease, background-size 0.36s ease;
 }
 
 .choice-card::after {
@@ -513,16 +514,7 @@ body {
 }
 
 .choice-card::before {
-  content: "";
-  position: absolute;
-  inset: -6%;
-  background: inherit;
-  background-size: cover;
-  background-position: center;
-  filter: saturate(1.05);
-  transform: scale(1.03);
-  transition: transform 0.4s ease;
-  z-index: 0;
+  content: none;
 }
 
 .choice-content {
@@ -547,10 +539,11 @@ body {
   transform: translateY(-7px);
   border-color: #b8d8ef;
   box-shadow: 0 24px 42px rgba(20, 38, 58, 0.26);
+  background-size: 108%;
 }
 
 .choice-card:hover::before {
-  transform: scale(1.08);
+  transform: none;
 }
 
 .choice-card.card-coffee {

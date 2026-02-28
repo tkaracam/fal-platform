@@ -2226,7 +2226,7 @@ def admin_set_status(request_kind: str, request_id: int, new_status: str):
     target_status = normalize_order_status(new_status)
     current_status = get_current_order_status(request_kind, request_id)
     set_order_status(request_kind, request_id, target_status)
-    if target_status == "completed" and current_status != "completed":
+    if target_status == "completed":
         delivered, reason = notify_reading_completed(request_kind, request_id)
         if delivered:
             flash("Durum tamamlandı ve müşteriye e-posta bildirimi gönderildi.", "ok")

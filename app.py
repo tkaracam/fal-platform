@@ -2670,7 +2670,22 @@ def admin_publish_reading(request_kind: str, request_id: int):
         ai_status="ready",
         ai_reading=reading_text,
     )
-    flash("Yorum müşteriye yayınlandı.", "ok")
+    mail_ok, mail_reason = notify_reading_completed(request_kind, request_id)
+    log_reading_event(
+        request_kind=request_kind,
+        request_id=request_id,
+        reading_type=("coffee" if request_kind == "coffee" else str(row["reading_type"] or "tarot")),
+        customer_name=str(row["full_name"] or ""),
+        reader_name=str(row["reader_name"] or ""),
+        actor=published_by,
+        action=("mail_sent" if mail_ok else "mail_failed"),
+        ai_status=("sent" if mail_ok else "failed"),
+        ai_reading=("Yayın sonrası bildirim e-postası gönderildi." if mail_ok else f"Mail gönderilemedi: {mail_reason}"),
+    )
+    if mail_ok:
+        flash("Yorum müşteriye yayınlandı ve bilgilendirme e-postası gönderildi.", "ok")
+    else:
+        flash(f"Yorum müşteriye yayınlandı. E-posta gönderilemedi: {mail_reason}", "error")
     return redirect(url_for("admin"))
 
 
@@ -2799,7 +2814,7 @@ def parse_admin_filters() -> dict[str, str]:
         "date_from": date_from,
         "date_to": date_to,
         "q": q,
-        "audit_action": audit_action if audit_action in {"all", "generated", "regenerated", "edited", "published"} else "all",
+        "audit_action": audit_action if audit_action in {"all", "generated", "regenerated", "edited", "published", "mail_sent", "mail_failed"} else "all",
         "audit_actor": audit_actor,
         "audit_request": audit_request,
     }
@@ -2926,7 +2941,7 @@ def fetch_reading_audit_rows(filters: dict[str, str]) -> list[sqlite3.Row]:
     if type_filter in {"coffee", "katina", "tarot"}:
         sql += " AND reading_type = ?"
         params.append(type_filter)
-    if audit_action in {"generated", "regenerated", "edited", "published"}:
+    if audit_action in {"generated", "regenerated", "edited", "published", "mail_sent", "mail_failed"}:
         sql += " AND action = ?"
         params.append(audit_action)
     if audit_actor:

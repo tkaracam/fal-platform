@@ -134,6 +134,8 @@
               <option value="regenerated" {% if filters.audit_action == 'regenerated' %}selected{% endif %}>regenerated</option>
               <option value="edited" {% if filters.audit_action == 'edited' %}selected{% endif %}>edited</option>
               <option value="published" {% if filters.audit_action == 'published' %}selected{% endif %}>published</option>
+              <option value="mail_sent" {% if filters.audit_action == 'mail_sent' %}selected{% endif %}>mail_sent</option>
+              <option value="mail_failed" {% if filters.audit_action == 'mail_failed' %}selected{% endif %}>mail_failed</option>
             </select>
           </label>
           <label>

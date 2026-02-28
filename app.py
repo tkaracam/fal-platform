@@ -2627,18 +2627,24 @@ def admin_publish_reading(request_kind: str, request_id: int):
     if request_kind not in {"coffee", "card"}:
         flash("Geçersiz işlem.", "error")
         return redirect(url_for("admin"))
+    if request.form.get("confirm_publish", "0").strip() != "1":
+        flash("Müşteriye gönderim için onay gerekli.", "error")
+        return redirect(url_for("admin_edit_reading", request_kind=request_kind, request_id=request_id))
 
     table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         select_type_sql = "'coffee' AS reading_type" if request_kind == "coffee" else "reading_type"
         row = conn.execute(
-            f"SELECT ai_status, ai_reading, full_name, reader_name, {select_type_sql} FROM {table_name} WHERE id = ?",
+            f"SELECT ai_status, ai_reading, ai_published, full_name, reader_name, {select_type_sql} FROM {table_name} WHERE id = ?",
             (request_id,),
         ).fetchone()
         if row is None:
             flash("Talep bulunamadı.", "error")
             return redirect(url_for("admin"))
+        if int(row["ai_published"] or 0) == 1:
+            flash("Bu yorum zaten müşteriye gönderilmiş.", "ok")
+            return redirect(url_for("admin_edit_reading", request_kind=request_kind, request_id=request_id))
         reading_text = str(row["ai_reading"] or "").strip()
         if str(row["ai_status"]) != "ready" or not reading_text:
             flash("Yorum hazır değil. Önce yorum üretilmeli.", "error")

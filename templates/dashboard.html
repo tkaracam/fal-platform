@@ -43,18 +43,22 @@
       </section>
 
       <section class="card">
-        <h2>{{ t('profile_title') }}</h2>
-        <p>{{ t('profile_desc') }}</p>
-        <form class="form-grid" method="post" action="{{ url_for('account_update', lang=lang) }}">
-          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-          <label>{{ t('full_name') }}<input name="full_name" type="text" value="{{ user.full_name }}" required /></label>
-          <label>{{ t('username') }}<input type="text" value="{{ user.username }}" readonly /></label>
-          <label class="full">{{ t('email') }}<input name="email" type="email" value="{{ user.email }}" required /></label>
-          <label class="full">{{ t('phone') }}<input name="phone" type="text" value="{{ user.phone }}" required /></label>
-          <label>{{ t('profile_new_password') }}<input name="new_password" type="password" minlength="4" /></label>
-          <label>{{ t('profile_new_password_confirm') }}<input name="new_password_confirm" type="password" minlength="4" /></label>
-          <button type="submit">{{ t('profile_save') }}</button>
-        </form>
+        <details class="profile-toggle">
+          <summary>{{ t('profile_title') }}</summary>
+          <div class="profile-toggle-content">
+            <p>{{ t('profile_desc') }}</p>
+            <form class="form-grid" method="post" action="{{ url_for('account_update', lang=lang) }}">
+              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+              <label>{{ t('full_name') }}<input name="full_name" type="text" value="{{ user.full_name }}" required /></label>
+              <label>{{ t('username') }}<input type="text" value="{{ user.username }}" readonly /></label>
+              <label class="full">{{ t('email') }}<input name="email" type="email" value="{{ user.email }}" required /></label>
+              <label class="full">{{ t('phone') }}<input name="phone" type="text" value="{{ user.phone }}" required /></label>
+              <label>{{ t('profile_new_password') }}<input name="new_password" type="password" minlength="4" /></label>
+              <label>{{ t('profile_new_password_confirm') }}<input name="new_password_confirm" type="password" minlength="4" /></label>
+              <button type="submit">{{ t('profile_save') }}</button>
+            </form>
+          </div>
+        </details>
       </section>
 
       <section class="card">

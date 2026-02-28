@@ -68,6 +68,23 @@ body {
   text-decoration: none;
   color: #1f3347;
   font-size: 1.08rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid #d7e8f6;
+  padding: 3px;
+}
+
+.brand-text {
+  display: inline-block;
 }
 
 .menu,
@@ -537,15 +554,15 @@ body {
 }
 
 .choice-card.card-coffee {
-  background-image: url("https://images.pexels.com/photos/5946971/pexels-photo-5946971.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=900&w=1200");
+  background-image: url("/static/assets/home-coffee.svg");
 }
 
 .choice-card.card-katina {
-  background-image: url("https://images.pexels.com/photos/7179816/pexels-photo-7179816.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=900&w=1200");
+  background-image: url("/static/assets/home-katina.svg");
 }
 
 .choice-card.card-tarot {
-  background-image: url("https://images.pexels.com/photos/6801648/pexels-photo-6801648.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=900&w=1200");
+  background-image: url("/static/assets/home-tarot.svg");
 }
 
 .card {

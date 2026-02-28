@@ -220,34 +220,6 @@ body {
   pointer-events: auto;
 }
 
-.lang-switch {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.lang-switch a {
-  text-align: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  border: 1px solid #d5e6f6;
-  border-radius: 10px;
-  padding: 8px;
-}
-
-.lang-switch a[href*="lang=tr"]::before,
-.lang-switch a[href*="lang=en"]::before,
-.lang-switch a[href*="lang=de"]::before,
-.lang-switch a[href*="lang=fr"]::before {
-  margin-right: 5px;
-}
-
-.lang-switch a[href*="lang=tr"]::before { content: "🇹🇷"; }
-.lang-switch a[href*="lang=en"]::before { content: "🇬🇧"; }
-.lang-switch a[href*="lang=de"]::before { content: "🇩🇪"; }
-.lang-switch a[href*="lang=fr"]::before { content: "🇫🇷"; }
-
 .hero {
   border: 1px solid var(--stroke);
   border-radius: 24px;

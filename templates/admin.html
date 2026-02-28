@@ -180,7 +180,9 @@
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
                     <button type="submit">Mail Tekrar Gönder</button>
                   </form>
-                  <a href="/admin/edit-reading/coffee/{{ row['id'] }}" style="display:inline-block;margin-top:6px;">Yorumu Aç</a>
+                  <form action="/admin/edit-reading/coffee/{{ row['id'] }}" method="get" style="margin-top:6px;">
+                    <button type="submit">Yorumu Aç</button>
+                  </form>
                 </td>
               </tr>
               {% endfor %}
@@ -255,7 +257,9 @@
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
                     <button type="submit">Mail Tekrar Gönder</button>
                   </form>
-                  <a href="/admin/edit-reading/card/{{ row['id'] }}" style="display:inline-block;margin-top:6px;">Yorumu Aç</a>
+                  <form action="/admin/edit-reading/card/{{ row['id'] }}" method="get" style="margin-top:6px;">
+                    <button type="submit">Yorumu Aç</button>
+                  </form>
                 </td>
               </tr>
               {% endfor %}

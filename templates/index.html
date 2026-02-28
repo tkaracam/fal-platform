@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260228-logo3" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260228-lang1" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -15,8 +15,14 @@
       <header class="navbar">
         <a class="brand" href="{{ url_for('home', lang=lang) }}">
           <img class="brand-mark" src="{{ url_for('static', filename='assets/home-logo.svg') }}" alt="{{ t('brand') }}" />
-          <span class="brand-text">{{ t('brand') }}</span>
+          <span class="brand-text">Orakelia</span>
         </a>
+        <div class="nav-quick-lang">
+          <a href="{{ lang_url('tr') }}">{{ t('lang_tr') }}</a>
+          <a href="{{ lang_url('en') }}">{{ t('lang_en') }}</a>
+          <a href="{{ lang_url('de') }}">{{ t('lang_de') }}</a>
+          <a href="{{ lang_url('fr') }}">{{ t('lang_fr') }}</a>
+        </div>
         <button class="nav-toggle" type="button" aria-label="Menu" data-nav-toggle>Menu</button>
         <nav class="nav-links" data-nav-links>
           <a href="{{ url_for('coffee_page', lang=lang) }}">{{ t('nav_coffee') }}</a>
@@ -37,19 +43,10 @@
             <a href="{{ lang_url('tr') }}">{{ t('lang_tr') }}</a>
             <a href="{{ lang_url('en') }}">{{ t('lang_en') }}</a>
             <a href="{{ lang_url('de') }}">{{ t('lang_de') }}</a>
+            <a href="{{ lang_url('fr') }}">{{ t('lang_fr') }}</a>
           </div>
         </nav>
       </header>
-
-      <section class="hero executive-hero">
-        <div class="executive-main">
-          <h1>{{ t('home_welcome_title') }}</h1>
-          <p>{{ t('home_welcome_desc') }}</p>
-        </div>
-        <div class="executive-action">
-          <a class="welcome-cta" href="#secimler">{{ t('home_welcome_cta') }}</a>
-        </div>
-      </section>
 
       <section class="choice-grid" id="secimler">
         <a class="choice-card card-coffee" href="{{ url_for('coffee_page', lang=lang) }}">

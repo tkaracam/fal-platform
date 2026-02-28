@@ -66,7 +66,7 @@ OPENAI_USE_BATCH = os.getenv("OPENAI_USE_BATCH", "0").strip() == "1"
 AI_INPUT_COST_PER_1M = float(os.getenv("AI_INPUT_COST_PER_1M", "0"))
 AI_OUTPUT_COST_PER_1M = float(os.getenv("AI_OUTPUT_COST_PER_1M", "0"))
 EXPECTED_CARD_COUNT = {"katina": 7, "tarot": 3}
-LANGUAGES = {"tr", "en", "de"}
+LANGUAGES = {"tr", "en", "de", "fr"}
 DEFAULT_LANG = "tr"
 EUROPE_COUNTRIES = {
     "AL", "AD", "AM", "AT", "AZ", "BA", "BE", "BG", "BY", "CH", "CY", "CZ", "DE", "DK",
@@ -86,6 +86,7 @@ TRANSLATIONS = {
         "lang_tr": "Türkçe",
         "lang_en": "English",
         "lang_de": "Deutsch",
+        "lang_fr": "Français",
         "home_kicker": "Modern Online Fal Deneyimi",
         "home_title": "Fal Türünü Seç ve İlgili Sekmeye Geç",
         "home_desc": "Aşağıdaki türlerden birini seçerek ilgili sayfaya geçebilirsin.",
@@ -216,6 +217,7 @@ TRANSLATIONS = {
         "lang_tr": "Türkçe",
         "lang_en": "English",
         "lang_de": "Deutsch",
+        "lang_fr": "Français",
         "home_kicker": "Modern Online Reading Experience",
         "home_title": "Choose a Reading Type and Continue",
         "home_desc": "Select one of the reading types below to open its page.",
@@ -346,6 +348,7 @@ TRANSLATIONS = {
         "lang_tr": "Türkisch",
         "lang_en": "Englisch",
         "lang_de": "Deutsch",
+        "lang_fr": "Französisch",
         "home_kicker": "Modernes Online-Orakel",
         "home_title": "Wähle eine Art und wechsle zur Seite",
         "home_desc": "Wähle unten eine Kategorie, um zur passenden Seite zu gehen.",
@@ -1735,20 +1738,40 @@ def get_pricing() -> tuple[int, str]:
     return 20, "EUR"
 
 
+def detect_lang_by_country() -> str:
+    country = get_country_code()
+    if country == "TR":
+        return "tr"
+    if country not in EUROPE_COUNTRIES:
+        return "en"
+    if country in {"DE", "AT", "LI"}:
+        return "de"
+    if country in {"FR", "BE", "LU", "MC"}:
+        return "fr"
+    return "en"
+
+
 def get_lang() -> str:
-    requested = request.args.get("lang")
+    requested = request.args.get("lang", "").strip().lower()
     if requested in LANGUAGES:
         session["lang"] = requested
         return requested
     saved = session.get("lang")
     if saved in LANGUAGES:
         return saved
-    return DEFAULT_LANG
+    detected = detect_lang_by_country()
+    session["lang"] = detected
+    return detected
 
 
 def t(key: str, **kwargs: object) -> str:
     lang = get_lang()
-    raw = TRANSLATIONS.get(lang, TRANSLATIONS[DEFAULT_LANG]).get(key, key)
+    raw = (
+        TRANSLATIONS.get(lang, {}).get(key)
+        or TRANSLATIONS.get("en", {}).get(key)
+        or TRANSLATIONS.get(DEFAULT_LANG, {}).get(key)
+        or key
+    )
     if kwargs:
         return raw.format(**kwargs)
     return raw

@@ -171,6 +171,24 @@ body {
   background: linear-gradient(90deg, var(--accent-a), var(--accent-c));
 }
 
+.nav-quick-lang {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-quick-lang a {
+  text-decoration: none;
+  color: var(--menu-text);
+  border: 1px solid #d7e8f6;
+  background: #f8fcff;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .menu-overlay {
   position: fixed;
   inset: 0;
@@ -213,7 +231,7 @@ body {
 
 .lang-switch {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-top: 12px;
 }
@@ -229,13 +247,15 @@ body {
 
 .lang-switch a[href*="lang=tr"]::before,
 .lang-switch a[href*="lang=en"]::before,
-.lang-switch a[href*="lang=de"]::before {
+.lang-switch a[href*="lang=de"]::before,
+.lang-switch a[href*="lang=fr"]::before {
   margin-right: 5px;
 }
 
 .lang-switch a[href*="lang=tr"]::before { content: "🇹🇷"; }
 .lang-switch a[href*="lang=en"]::before { content: "🇬🇧"; }
 .lang-switch a[href*="lang=de"]::before { content: "🇩🇪"; }
+.lang-switch a[href*="lang=fr"]::before { content: "🇫🇷"; }
 
 .hero {
   border: 1px solid var(--stroke);
@@ -913,6 +933,11 @@ a { color: #e6655e; }
 @media (max-width: 720px) {
   .form-grid { grid-template-columns: 1fr; }
   .photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nav-quick-lang { gap: 4px; }
+  .nav-quick-lang a {
+    padding: 6px 7px;
+    font-size: 0.72rem;
+  }
 }
 
 .site-footer {

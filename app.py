@@ -2784,12 +2784,18 @@ def parse_admin_filters() -> dict[str, str]:
     date_from = request.args.get("date_from", "").strip()
     date_to = request.args.get("date_to", "").strip()
     q = request.args.get("q", "").strip()
+    audit_action = request.args.get("audit_action", "all").strip().lower()
+    audit_actor = request.args.get("audit_actor", "").strip()
+    audit_request = request.args.get("audit_request", "").strip().lower()
     return {
         "type": raw_type if raw_type in {"all", "coffee", "katina", "tarot"} else "all",
         "status": raw_status if raw_status in {"all", "pending", "paid", "in_progress", "completed"} else "all",
         "date_from": date_from,
         "date_to": date_to,
         "q": q,
+        "audit_action": audit_action if audit_action in {"all", "generated", "regenerated", "edited", "published"} else "all",
+        "audit_actor": audit_actor,
+        "audit_request": audit_request,
     }
 
 
@@ -2906,11 +2912,42 @@ def fetch_reading_audit_rows(filters: dict[str, str]) -> list[sqlite3.Row]:
     date_start, date_end = build_date_range(filters["date_from"], filters["date_to"])
     query = filters["q"]
     type_filter = filters["type"]
+    audit_action = filters.get("audit_action", "all")
+    audit_actor = filters.get("audit_actor", "").strip()
+    audit_request = filters.get("audit_request", "").strip().lower()
     sql = "SELECT * FROM reading_audit WHERE 1=1"
     params: list[object] = []
     if type_filter in {"coffee", "katina", "tarot"}:
         sql += " AND reading_type = ?"
         params.append(type_filter)
+    if audit_action in {"generated", "regenerated", "edited", "published"}:
+        sql += " AND action = ?"
+        params.append(audit_action)
+    if audit_actor:
+        sql += " AND actor LIKE ?"
+        params.append(f"%{audit_actor}%")
+    if audit_request:
+        request_id = None
+        request_kind = None
+        if "-" in audit_request:
+            head, tail = audit_request.split("-", 1)
+            if head in {"coffee", "card"}:
+                request_kind = head
+                try:
+                    request_id = int(tail)
+                except ValueError:
+                    request_id = None
+        else:
+            try:
+                request_id = int(audit_request)
+            except ValueError:
+                request_id = None
+        if request_id is not None:
+            sql += " AND request_id = ?"
+            params.append(request_id)
+            if request_kind:
+                sql += " AND request_kind = ?"
+                params.append(request_kind)
     if date_start:
         sql += " AND created_at >= ?"
         params.append(date_start)
@@ -2996,6 +3033,53 @@ def admin_export_csv():
         )
     csv_data = output.getvalue()
     filename = f"admin-payments-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}.csv"
+    headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+    return Response(csv_data, mimetype="text/csv; charset=utf-8", headers=headers)
+
+
+@app.get("/admin/audit-export.csv")
+def admin_audit_export_csv():
+    if not admin_required():
+        flash("Bu alan için admin girişi gerekli.", "error")
+        return redirect(url_for("admin"))
+    filters = parse_admin_filters()
+    audit_rows = fetch_reading_audit_rows(filters)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(
+        [
+            "audit_id",
+            "request_kind",
+            "request_id",
+            "reading_type",
+            "customer_name",
+            "reader_name",
+            "actor",
+            "action",
+            "ai_status",
+            "created_at",
+            "ai_reading",
+        ]
+    )
+    for row in audit_rows:
+        writer.writerow(
+            [
+                row["id"],
+                row["request_kind"],
+                row["request_id"],
+                row["reading_type"],
+                row["customer_name"],
+                row["reader_name"],
+                row["actor"],
+                row["action"],
+                row["ai_status"],
+                row["created_at"],
+                row["ai_reading"],
+            ]
+        )
+    csv_data = output.getvalue()
+    filename = f"admin-reading-audit-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}.csv"
     headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
     return Response(csv_data, mimetype="text/csv; charset=utf-8", headers=headers)
 

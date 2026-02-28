@@ -126,12 +126,31 @@
             Bitiş
             <input type="date" name="date_to" value="{{ filters.date_to }}" />
           </label>
+          <label>
+            Log İşlem
+            <select name="audit_action">
+              <option value="all" {% if filters.audit_action == 'all' %}selected{% endif %}>Tümü</option>
+              <option value="generated" {% if filters.audit_action == 'generated' %}selected{% endif %}>generated</option>
+              <option value="regenerated" {% if filters.audit_action == 'regenerated' %}selected{% endif %}>regenerated</option>
+              <option value="edited" {% if filters.audit_action == 'edited' %}selected{% endif %}>edited</option>
+              <option value="published" {% if filters.audit_action == 'published' %}selected{% endif %}>published</option>
+            </select>
+          </label>
+          <label>
+            Log Yapan
+            <input type="text" name="audit_actor" value="{{ filters.audit_actor }}" placeholder="admin / system-ai" />
+          </label>
+          <label>
+            Log Talep
+            <input type="text" name="audit_request" value="{{ filters.audit_request }}" placeholder="card-12 veya 12" />
+          </label>
           <label class="full">
             Arama
             <input type="text" name="q" value="{{ filters.q }}" placeholder="Ad, telefon, soru, falcı" />
           </label>
           <button type="submit">Filtrele</button>
-          <a class="payment-link secondary" href="/admin/export.csv?type={{ filters.type }}&status={{ filters.status }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&q={{ filters.q|urlencode }}">CSV İndir</a>
+          <a class="payment-link secondary" href="/admin/export.csv?type={{ filters.type }}&status={{ filters.status }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&q={{ filters.q|urlencode }}&audit_action={{ filters.audit_action }}&audit_actor={{ filters.audit_actor|urlencode }}&audit_request={{ filters.audit_request|urlencode }}">Ödeme CSV</a>
+          <a class="payment-link secondary" href="/admin/audit-export.csv?type={{ filters.type }}&status={{ filters.status }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&q={{ filters.q|urlencode }}&audit_action={{ filters.audit_action }}&audit_actor={{ filters.audit_actor|urlencode }}&audit_request={{ filters.audit_request|urlencode }}">Yorum Log CSV</a>
         </form>
       </section>
 

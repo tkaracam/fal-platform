@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yorum Düzenleme</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260224-11" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="hero slim">
+        <p class="kicker">Admin</p>
+        <h1>Yorum Düzenleme</h1>
+        <p>Talep: {{ request_kind }}-{{ row['id'] }}</p>
+      </header>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <section class="alerts">
+        {% for category, message in messages %}
+        <div class="alert {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </section>
+      {% endif %}
+      {% endwith %}
+
+      <section class="card">
+        <h2>Talep Bilgisi</h2>
+        <p><strong>Ad:</strong> {{ row['full_name'] }}</p>
+        <p><strong>Telefon:</strong> {{ row['phone'] }}</p>
+        <p><strong>Falcı:</strong> {{ row['reader_name'] }}</p>
+        {% if request_kind == 'card' %}
+        <p><strong>Tür:</strong> {{ row['reading_type'] }}</p>
+        {% endif %}
+        <p><strong>Soru:</strong> {{ row['question'] }}</p>
+        <p><strong>AI Durumu:</strong> {{ row['ai_status'] }}</p>
+        <p><strong>Yayın:</strong> {% if row['ai_published'] == 1 %}Müşteriye Gönderildi{% else %}Admin Onayı Bekliyor{% endif %}</p>
+      </section>
+
+      <section class="card">
+        <h2>Yorum Metni</h2>
+        <form action="/admin/save-reading/{{ request_kind }}/{{ row['id'] }}" method="post">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+          <input type="hidden" name="next" value="edit" />
+          <textarea name="ai_reading" rows="20" style="width:100%; min-height: 460px;">{{ row['ai_reading'] }}</textarea>
+          <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="submit">Yorumu Kaydet</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>İşlemler</h2>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <form action="/admin/regenerate-reading/{{ request_kind }}/{{ row['id'] }}" method="post">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit">Yorumu Yeniden Üret</button>
+          </form>
+          <form action="/admin/publish-reading/{{ request_kind }}/{{ row['id'] }}" method="post">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit">Müşteriye Gönder</button>
+          </form>
+          <form action="/admin/resend-completed-email/{{ request_kind }}/{{ row['id'] }}" method="post">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit">Mail Tekrar Gönder</button>
+          </form>
+          <a class="payment-link secondary" href="/admin">Admin Listeye Dön</a>
+        </div>
+      </section>
+    </main>
+  </body>
+  </html>

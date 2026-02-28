@@ -2522,7 +2522,47 @@ def admin_save_reading(request_kind: str, request_id: int):
             (edited, request_id),
         )
     flash("Yorum kaydedildi. Müşteriye göndermek için 'Müşteriye Gönder' butonunu kullan.", "ok")
+    if request.form.get("next", "").strip() == "edit":
+        return redirect(url_for("admin_edit_reading", request_kind=request_kind, request_id=request_id))
     return redirect(url_for("admin"))
+
+
+@app.get("/admin/edit-reading/<request_kind>/<int:request_id>")
+def admin_edit_reading(request_kind: str, request_id: int):
+    if not admin_required():
+        flash("Bu alan için admin girişi gerekli.", "error")
+        return redirect(url_for("admin"))
+    if request_kind not in {"coffee", "card"}:
+        flash("Geçersiz işlem.", "error")
+        return redirect(url_for("admin"))
+
+    table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        if request_kind == "coffee":
+            row = conn.execute(
+                f"""
+                SELECT id, full_name, phone, question, reader_name, ai_status, ai_reading, ai_published, created_at
+                FROM {table_name}
+                WHERE id = ?
+                """,
+                (request_id,),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                f"""
+                SELECT id, full_name, phone, question, reader_name, reading_type, ai_status, ai_reading, ai_published, created_at
+                FROM {table_name}
+                WHERE id = ?
+                """,
+                (request_id,),
+            ).fetchone()
+
+    if row is None:
+        flash("Talep bulunamadı.", "error")
+        return redirect(url_for("admin"))
+
+    return render_template("admin_edit_reading.html", request_kind=request_kind, row=row)
 
 
 def parse_admin_filters() -> dict[str, str]:

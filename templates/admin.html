@@ -33,6 +33,17 @@
         white-space: normal;
         line-height: 1.3;
       }
+      .score-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .score-badge.excellent { background: #dcfce7; color: #166534; }
+      .score-badge.good { background: #dbeafe; color: #1d4ed8; }
+      .score-badge.fair { background: #fef3c7; color: #92400e; }
+      .score-badge.weak { background: #fee2e2; color: #991b1b; }
     </style>
   </head>
   <body>
@@ -102,6 +113,34 @@
                 <td>${{ '%.6f'|format(summary.ai_cost_today) }}</td>
                 <td><strong>Fal Başı Ortalama</strong></td>
                 <td>${{ '%.6f'|format(summary.ai_cost_avg) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Operasyon Paneli</h2>
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              <tr>
+                <td><strong>Şu an Bekleyen</strong></td>
+                <td>{{ summary.ops_pending_total }}</td>
+                <td><strong>Şu an Yorumlanan</strong></td>
+                <td>{{ summary.ops_in_progress_total }}</td>
+              </tr>
+              <tr>
+                <td><strong>30 Dk Üzeri Bekleme</strong></td>
+                <td>{{ summary.ops_overdue_30_total }}</td>
+                <td><strong>Bugün Tamamlanan</strong></td>
+                <td>{{ summary.ops_completed_today_total }}</td>
+              </tr>
+              <tr>
+                <td><strong>En Eski Açık Talep</strong></td>
+                <td>{{ summary.ops_oldest_wait_minutes }} dk</td>
+                <td><strong>Hedef SLA</strong></td>
+                <td>30 dk</td>
               </tr>
             </tbody>
           </table>
@@ -183,6 +222,7 @@
                 <th>Tarih</th>
                 <th>Sayaç</th>
                 <th>Uyarı</th>
+                <th>Skor</th>
                 <th>Görsel</th>
                 <th>WhatsApp</th>
                 <th>Durum</th>
@@ -210,6 +250,11 @@
                 <td>
                   {% if 'quality_risk' in row['quality_flags'] %}<span class="admin-timer">Kalite Riski</span>{% endif %}
                   {% if 'long' in row['quality_flags'] %}<span class="admin-timer">Uzun</span>{% endif %}
+                </td>
+                <td>
+                  {% if row['quality_score'] > 0 %}
+                  <span class="score-badge {{ row['quality_label'] }}">{{ row['quality_score'] }}</span>
+                  {% endif %}
                 </td>
                 <td>
                   {% if row['image_paths'] %}
@@ -276,6 +321,7 @@
                 <th>Tarih</th>
                 <th>Sayaç</th>
                 <th>Uyarı</th>
+                <th>Skor</th>
                 <th>WhatsApp</th>
                 <th>Durum</th>
                 <th>İşlem</th>
@@ -303,6 +349,11 @@
                 <td>
                   {% if 'quality_risk' in row['quality_flags'] %}<span class="admin-timer">Kalite Riski</span>{% endif %}
                   {% if 'long' in row['quality_flags'] %}<span class="admin-timer">Uzun</span>{% endif %}
+                </td>
+                <td>
+                  {% if row['quality_score'] > 0 %}
+                  <span class="score-badge {{ row['quality_label'] }}">{{ row['quality_score'] }}</span>
+                  {% endif %}
                 </td>
                 <td>{% if row['wa_link'] %}<a href="{{ row['wa_link'] }}" target="_blank">Mesaj</a>{% endif %}</td>
                 <td>
@@ -363,6 +414,7 @@
                 <th>Token</th>
                 <th>Maliyet</th>
                 <th>Uyarı</th>
+                <th>Skor</th>
                 <th>Özet</th>
               </tr>
             </thead>
@@ -382,6 +434,11 @@
                 <td>{{ row['token_total'] }}</td>
                 <td>${{ '%.6f'|format(row['cost_estimate']) }}</td>
                 <td>{{ row['quality_flags'] }}</td>
+                <td>
+                  {% if row['quality_score'] > 0 %}
+                  <span class="score-badge {{ row['quality_label'] }}">{{ row['quality_score'] }}</span>
+                  {% endif %}
+                </td>
                 <td class="audit-excerpt">{{ row['ai_excerpt'] }}</td>
               </tr>
               {% endfor %}

@@ -5,6 +5,7 @@ import os
 import sqlite3
 import hashlib
 import hmac
+import time
 import re
 import csv
 import base64
@@ -65,6 +66,7 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 OPENAI_USE_BATCH = os.getenv("OPENAI_USE_BATCH", "0").strip() == "1"
 AI_INPUT_COST_PER_1M = float(os.getenv("AI_INPUT_COST_PER_1M", "0"))
 AI_OUTPUT_COST_PER_1M = float(os.getenv("AI_OUTPUT_COST_PER_1M", "0"))
+ADMIN_TOTP_SECRET = os.getenv("ADMIN_TOTP_SECRET", "").strip()
 EXPECTED_CARD_COUNT = {"katina": 7, "tarot": 3}
 LANGUAGES = {"tr", "en", "de"}
 DEFAULT_LANG = "tr"
@@ -844,6 +846,39 @@ def admin_required() -> bool:
 def get_admin_actor() -> str:
     actor = str(session.get("admin_username", "")).strip()
     return actor or "admin"
+
+
+def admin_totp_enabled() -> bool:
+    return bool(ADMIN_TOTP_SECRET)
+
+
+def _normalize_b32_secret(raw: str) -> str:
+    secret = "".join(ch for ch in (raw or "").upper() if ch.isalnum())
+    missing = len(secret) % 8
+    if missing:
+        secret += "=" * (8 - missing)
+    return secret
+
+
+def verify_totp_code(secret: str, code: str, window_steps: int = 1) -> bool:
+    clean_code = "".join(ch for ch in (code or "") if ch.isdigit())
+    if len(clean_code) != 6:
+        return False
+    try:
+        key = base64.b32decode(_normalize_b32_secret(secret), casefold=True)
+    except Exception:
+        return False
+    counter_now = int(time.time() // 30)
+    for offset in range(-window_steps, window_steps + 1):
+        counter = counter_now + offset
+        msg = counter.to_bytes(8, "big")
+        digest = hmac.new(key, msg, hashlib.sha1).digest()
+        pos = digest[-1] & 0x0F
+        val = ((digest[pos] & 0x7F) << 24) | ((digest[pos + 1] & 0xFF) << 16) | ((digest[pos + 2] & 0xFF) << 8) | (digest[pos + 3] & 0xFF)
+        otp = f"{val % 1_000_000:06d}"
+        if hmac.compare_digest(otp, clean_code):
+            return True
+    return False
 
 
 def estimate_tokens_from_text(text: str) -> int:
@@ -2629,12 +2664,32 @@ def admin_login():
 
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
-    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+    otp_code = request.form.get("otp_code", "").strip()
+    if is_auth_rate_limited("admin_login_user", username or "-", max_attempts=8, window_seconds=30 * 60):
+        flash("Bu admin hesabı için çok fazla deneme var. 30 dakika sonra tekrar deneyin.", "error")
+        return redirect(url_for("admin"))
+    if is_auth_rate_limited("admin_login_combo", f"{ip}|{username}", max_attempts=6, window_seconds=30 * 60):
+        flash("Bu kullanıcı/IP kombinasyonu geçici olarak kilitlendi. 30 dakika sonra tekrar deneyin.", "error")
+        return redirect(url_for("admin"))
+
+    credentials_ok = username == ADMIN_USERNAME and password == ADMIN_PASSWORD
+    otp_ok = True
+    if credentials_ok and admin_totp_enabled():
+        otp_ok = verify_totp_code(ADMIN_TOTP_SECRET, otp_code, window_steps=1)
+
+    if credentials_ok and otp_ok:
         clear_auth_failures("admin_login", ip)
+        clear_auth_failures("admin_login_user", username or "-")
+        clear_auth_failures("admin_login_combo", f"{ip}|{username}")
         session["is_admin"] = True
         session["admin_username"] = username
         return redirect(url_for("admin"))
     record_auth_failure("admin_login", ip)
+    record_auth_failure("admin_login_user", username or "-")
+    record_auth_failure("admin_login_combo", f"{ip}|{username}")
+    if credentials_ok and not otp_ok:
+        flash("2FA kodu hatalı veya süresi dolmuş.", "error")
+        return redirect(url_for("admin"))
     flash("Admin kullanıcı adı veya şifresi hatalı.", "error")
     return redirect(url_for("admin"))
 
@@ -2830,6 +2885,36 @@ def validate_reading_quality(text: str) -> list[str]:
         issues.append("Yorum sonunda falcı imzası eksik.")
 
     return issues
+
+
+def compute_quality_score(text: str) -> tuple[int, str]:
+    body = (text or "").strip()
+    if not body:
+        return 0, "weak"
+    score = 70
+    length = len(body)
+    if length < 450:
+        score -= 15
+    elif length > 2600:
+        score -= 10
+    else:
+        score += 8
+    paragraphs = [p for p in re.split(r"\n\s*\n", body) if p.strip()]
+    if len(paragraphs) >= 4:
+        score += 6
+    recommendation_hits = len(re.findall(r"\b(öneri|tavsiye|adım|suggestion|recommendation|empfehlung)\b", body.lower()))
+    if recommendation_hits >= 2:
+        score += 6
+    issues = validate_reading_quality(body)
+    score -= min(30, len(issues) * 12)
+    score = max(0, min(100, score))
+    if score >= 85:
+        return score, "excellent"
+    if score >= 70:
+        return score, "good"
+    if score >= 55:
+        return score, "fair"
+    return score, "weak"
 
 
 @app.post("/admin/publish-reading/<request_kind>/<int:request_id>")
@@ -3225,6 +3310,7 @@ def fetch_reading_audit_rows(filters: dict[str, str]) -> list[sqlite3.Row]:
 
 def fetch_admin_summary() -> dict[str, int]:
     today_start = datetime.utcnow().strftime("%Y-%m-%dT00:00:00")
+    cutoff_30m = (datetime.utcnow() - timedelta(minutes=30)).isoformat()
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         users_total = int(conn.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"])
@@ -3250,6 +3336,26 @@ def fetch_admin_summary() -> dict[str, int]:
             GROUP BY status
             """
         ).fetchall()
+        ops_row = conn.execute(
+            """
+            SELECT
+              COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0) AS pending_total,
+              COALESCE(SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END), 0) AS in_progress_total,
+              COALESCE(SUM(CASE WHEN status = 'in_progress' AND created_at <= ? THEN 1 ELSE 0 END), 0) AS overdue_30_total,
+              COALESCE(SUM(CASE WHEN status = 'completed' AND created_at >= ? THEN 1 ELSE 0 END), 0) AS completed_today_total
+            FROM payment_requests
+            """,
+            (cutoff_30m, today_start),
+        ).fetchone()
+        oldest_wait_row = conn.execute(
+            """
+            SELECT created_at
+            FROM payment_requests
+            WHERE status IN ('pending', 'in_progress')
+            ORDER BY created_at ASC
+            LIMIT 1
+            """
+        ).fetchone()
         ai_row = conn.execute(
             """
             SELECT
@@ -3266,6 +3372,13 @@ def fetch_admin_summary() -> dict[str, int]:
     ai_count = int(ai_row["c"] or 0)
     ai_cost = float(ai_row["cost_sum"] or 0.0)
     ai_tokens = int(ai_row["token_sum"] or 0)
+    oldest_wait_minutes = 0
+    if oldest_wait_row and oldest_wait_row["created_at"]:
+        try:
+            oldest_dt = datetime.fromisoformat(str(oldest_wait_row["created_at"]))
+            oldest_wait_minutes = max(0, int((datetime.utcnow() - oldest_dt).total_seconds() // 60))
+        except ValueError:
+            oldest_wait_minutes = 0
     return {
         "users_total": users_total,
         "users_today": users_today,
@@ -3281,6 +3394,11 @@ def fetch_admin_summary() -> dict[str, int]:
         "ai_tokens_today": ai_tokens,
         "ai_cost_today": ai_cost,
         "ai_cost_avg": (ai_cost / ai_count) if ai_count else 0.0,
+        "ops_pending_total": int(ops_row["pending_total"] or 0),
+        "ops_in_progress_total": int(ops_row["in_progress_total"] or 0),
+        "ops_overdue_30_total": int(ops_row["overdue_30_total"] or 0),
+        "ops_completed_today_total": int(ops_row["completed_today_total"] or 0),
+        "ops_oldest_wait_minutes": oldest_wait_minutes,
     }
 
 
@@ -3377,7 +3495,7 @@ def admin_audit_export_csv():
 @app.get("/admin")
 def admin():
     if not admin_required():
-        return render_template("admin_login.html")
+        return render_template("admin_login.html", totp_enabled=admin_totp_enabled())
 
     filters = parse_admin_filters()
     coffee_rows, card_rows, payment_rows = fetch_filtered_admin_data(filters)
@@ -3402,6 +3520,8 @@ def admin():
                  (",quality_risk" if validate_reading_quality(str(row["ai_reading"] or "").strip()) else ""))
                 .strip(",")
             ) if str(row["ai_status"]) == "ready" else "",
+            "quality_score": compute_quality_score(str(row["ai_reading"] or "").strip())[0] if str(row["ai_status"]) == "ready" else 0,
+            "quality_label": compute_quality_score(str(row["ai_reading"] or "").strip())[1] if str(row["ai_status"]) == "ready" else "",
             "paid": row["paid"],
             "order_status": normalize_order_status(str(row["order_status"])),
             "next_status": ORDER_STATUS_NEXT[normalize_order_status(str(row["order_status"]))],
@@ -3428,6 +3548,8 @@ def admin():
                  (",quality_risk" if validate_reading_quality(str(row["ai_reading"] or "").strip()) else ""))
                 .strip(",")
             ) if str(row["ai_status"]) == "ready" else "",
+            "quality_score": compute_quality_score(str(row["ai_reading"] or "").strip())[0] if str(row["ai_status"]) == "ready" else 0,
+            "quality_label": compute_quality_score(str(row["ai_reading"] or "").strip())[1] if str(row["ai_status"]) == "ready" else "",
             "created_at": row["created_at"],
             "paid": row["paid"],
             "order_status": normalize_order_status(str(row["order_status"])),
@@ -3455,6 +3577,8 @@ def admin():
             "token_total": int(row["token_total"] or 0),
             "cost_estimate": float(row["cost_estimate"] or 0.0),
             "quality_flags": row["quality_flags"],
+            "quality_score": compute_quality_score(str(row["ai_reading"] or "").strip())[0] if row["ai_reading"] else 0,
+            "quality_label": compute_quality_score(str(row["ai_reading"] or "").strip())[1] if row["ai_reading"] else "",
             "ai_excerpt": (str(row["ai_reading"] or "").strip()[:220] + ("..." if len(str(row["ai_reading"] or "").strip()) > 220 else "")),
         }
         for row in reading_audit_rows

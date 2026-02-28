@@ -508,6 +508,67 @@ READER_PROFILES = {
     "tarot": build_reader_profiles("tarot", ["Aria", "Selene", "Lina", "Melis", "Elif", "Luna", "Iris", "Elya", "Nova", "Yaren"]),
 }
 
+READER_STYLE_PROFILES = {
+    "Maya": {"tone": "soft and reassuring", "method": "symbol-first intuitive synthesis", "focus": "emotional balance"},
+    "Selin": {"tone": "direct and practical", "method": "pattern spotting and clear conclusions", "focus": "decision clarity"},
+    "Deniz": {"tone": "warm and poetic", "method": "narrative symbolism with gentle metaphors", "focus": "inner healing"},
+    "Efsun": {"tone": "mystical yet grounded", "method": "archetype and shadow reading", "focus": "deep transformation"},
+    "Lara": {"tone": "optimistic and motivating", "method": "future path framing", "focus": "confidence and action"},
+    "Aylin": {"tone": "calm and analytical", "method": "cause-effect interpretation", "focus": "stability"},
+    "Mina": {"tone": "romantic and delicate", "method": "relationship energy mapping", "focus": "love dynamics"},
+    "Asya": {"tone": "bold and straightforward", "method": "truth-first interpretation", "focus": "boundaries"},
+    "Yelda": {"tone": "maternal and protective", "method": "supportive guidance reading", "focus": "safety and trust"},
+    "Nehir": {"tone": "flowing and reflective", "method": "timeline-based interpretation", "focus": "long-term harmony"},
+    "Peri": {"tone": "charming and nuanced", "method": "heart-centered card synthesis", "focus": "romantic timing"},
+    "Naz": {"tone": "elegant and concise", "method": "signal filtering and key-point reading", "focus": "clear next step"},
+    "Sera": {"tone": "empathetic and intimate", "method": "feeling-layer analysis", "focus": "emotional truth"},
+    "Mira": {"tone": "visionary and bright", "method": "opportunity and turning-point scan", "focus": "new beginnings"},
+    "Rana": {"tone": "firm and realistic", "method": "risk-opportunity balance", "focus": "smart choices"},
+    "Dora": {"tone": "friendly and modern", "method": "plain-language translation of symbols", "focus": "everyday impact"},
+    "İnci": {"tone": "gentle and wise", "method": "slow-depth interpretation", "focus": "patience and maturity"},
+    "Nisan": {"tone": "fresh and energetic", "method": "momentum-based reading", "focus": "timely action"},
+    "Melda": {"tone": "structured and strategic", "method": "position-by-position logic", "focus": "planning"},
+    "Ekin": {"tone": "balanced and sincere", "method": "context-first interpretation", "focus": "relationship health"},
+    "Aria": {"tone": "confident and elegant", "method": "arc reading (past-present-future)", "focus": "life direction"},
+    "Selene": {"tone": "lunar and introspective", "method": "inner motive decoding", "focus": "self-awareness"},
+    "Lina": {"tone": "minimal and sharp", "method": "signal amplification", "focus": "what truly matters"},
+    "Melis": {"tone": "uplifting and clear", "method": "strength-based reading", "focus": "personal power"},
+    "Elif": {"tone": "grounded and trustworthy", "method": "reality-check interpretation", "focus": "stability in love"},
+    "Luna": {"tone": "dreamy but concrete", "method": "intuitive symbols to practical steps", "focus": "hope with realism"},
+    "Iris": {"tone": "curious and observant", "method": "detail clustering", "focus": "hidden signals"},
+    "Elya": {"tone": "compassionate and calm", "method": "healing-centered interpretation", "focus": "closure and relief"},
+    "Nova": {"tone": "modern and dynamic", "method": "breakthrough-oriented reading", "focus": "change readiness"},
+    "Yaren": {"tone": "honest and heartful", "method": "straight emotional reading", "focus": "authentic connection"},
+}
+
+
+def reader_style_prompt(reader_name: str, lang: str) -> str:
+    style = READER_STYLE_PROFILES.get(reader_name, {
+        "tone": "warm and natural",
+        "method": "balanced intuitive interpretation",
+        "focus": "clear guidance",
+    })
+    tone = style["tone"]
+    method = style["method"]
+    focus = style["focus"]
+    if lang == "en":
+        return (
+            f"Reader character profile ({reader_name}): "
+            f"Tone: {tone}. Method: {method}. Core focus: {focus}. "
+            "Keep this character consistent in wording, rhythm, and interpretation style."
+        )
+    if lang == "de":
+        return (
+            f"Charakterprofil der Kartenlegerin ({reader_name}): "
+            f"Ton: {tone}. Methode: {method}. Fokus: {focus}. "
+            "Halte diesen Stil in Wortwahl, Rhythmus und Deutungslogik konsequent ein."
+        )
+    return (
+        f"Falcı karakter profili ({reader_name}): "
+        f"Ton: {tone}. Yöntem: {method}. Ana odak: {focus}. "
+        "Bu karakteri kelime seçimi, anlatım ritmi ve yorumlama metodunda tutarlı biçimde koru."
+    )
+
 
 def init_db() -> None:
     with sqlite3.connect(DB_PATH) as conn:
@@ -1427,11 +1488,13 @@ def call_openai_reading(input_items: list[dict[str, str]]) -> tuple[str, str, st
 
 
 def build_coffee_prompt(question: str, full_name: str, reader_name: str, lang: str, image_count: int) -> str:
+    character = reader_style_prompt(reader_name, lang)
     if lang == "en":
         return (
             "You are an experienced Turkish coffee reading expert. "
             "Write in a warm, natural, human tone; avoid robotic language and avoid generic filler. "
             "Use ONLY the uploaded grounds photos and the user's question. Do not invent symbols that are not visible.\n"
+            f"{character}\n"
             "Language rule: Write the full response in English only.\n"
             "Style:\n"
             "- Start with one short overall-energy paragraph.\n"
@@ -1446,6 +1509,7 @@ def build_coffee_prompt(question: str, full_name: str, reader_name: str, lang: s
             "Du bist eine erfahrene Kaffeesatz-Orakelberaterin. "
             "Schreibe warm, natürlich und menschlich; nicht mechanisch. "
             "Nutze NUR die hochgeladenen Fotos und die Frage. Keine erfundenen Symbole.\n"
+            f"{character}\n"
             "Sprachregel: Schreibe die komplette Antwort nur auf Deutsch.\n"
             "Stil:\n"
             "- Starte mit einem kurzen Absatz zur Gesamtenergie.\n"
@@ -1459,6 +1523,7 @@ def build_coffee_prompt(question: str, full_name: str, reader_name: str, lang: s
         "Deneyimli bir kahve falı yorumcususun. "
         "Yorumu sıcak, doğal ve insan gibi yaz; mekanik ve şablon cümlelerden kaçın. "
         "Sadece yüklenen telve fotoğraflarını ve soruyu kullan. Fotoğrafta görünmeyen sembol uydurma.\n"
+        f"{character}\n"
         "Dil kuralı: Cevabın tamamını yalnızca Türkçe yaz.\n"
         "Yazım tarzı:\n"
         "- Kısa bir 'genel enerji' paragrafıyla başla.\n"
@@ -1491,10 +1556,12 @@ def format_cards_for_prompt(selected_cards: str) -> str:
 def build_card_prompt(reading_type: str, question: str, full_name: str, reader_name: str, selected_cards: str, lang: str) -> str:
     layout = "7 kart Katina aşk açılımı" if reading_type == "katina" else "3 kart Tarot açılımı"
     cards_detail = format_cards_for_prompt(selected_cards)
+    character = reader_style_prompt(reader_name, lang)
     if lang == "en":
         return (
             f"You are a professional {reading_type} reader. Interpret based on the selected spread and user question.\n"
             f"Spread: {layout}\nClient: {full_name}\nQuestion: {question}\nSelected cards/positions:\n{cards_detail}\n"
+            f"{character}\n"
             "Important: card values above are internal technical IDs. Never print these IDs in the final text.\n"
             "Language rule: Write the full response in English only.\n"
             "Write naturally and warmly, not mechanically. Avoid generic template wording.\n"
@@ -1509,6 +1576,7 @@ def build_card_prompt(reading_type: str, question: str, full_name: str, reader_n
         return (
             f"Du bist eine professionelle {reading_type}-Legung Assistenz. Deute basierend auf den gezogenen Karten und der Frage.\n"
             f"Legung: {layout}\nKundin: {full_name}\nFrage: {question}\nGezogene Karten/Positionen:\n{cards_detail}\n"
+            f"{character}\n"
             "Wichtig: Die Kartenwerte oben sind interne technische IDs. Diese IDs dürfen im finalen Text nicht erscheinen.\n"
             "Sprachregel: Schreibe die komplette Antwort nur auf Deutsch.\n"
             "Schreibe natürlich, warm und nicht mechanisch.\n"
@@ -1522,6 +1590,7 @@ def build_card_prompt(reading_type: str, question: str, full_name: str, reader_n
     return (
         f"Profesyonel bir {reading_type} fal yorumcususun. Seçilen açılım ve soru üzerinden yorum üret.\n"
         f"Açılım: {layout}\nMüşteri: {full_name}\nSoru: {question}\nSeçilen kart/pozisyonlar:\n{cards_detail}\n"
+        f"{character}\n"
         "Önemli: Yukarıdaki kart değerleri sistem içi teknik ID'dir. Nihai yorum metninde bu ID'leri asla yazma.\n"
         "Dil kuralı: Cevabın tamamını yalnızca Türkçe yaz.\n"
         "Dil sıcak, doğal ve insan gibi olsun; mekanik şablon cümlelerden kaçın.\n"

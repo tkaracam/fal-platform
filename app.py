@@ -2881,8 +2881,9 @@ def admin_publish_reading(request_kind: str, request_id: int):
     if request_kind not in {"coffee", "card"}:
         flash("Geçersiz işlem.", "error")
         return redirect(url_for("admin"))
-    if request.form.get("confirm_publish", "0").strip() != "1":
-        flash("Müşteriye gönderim için onay gerekli.", "error")
+    confirm_publish = request.form.get("confirm_publish")
+    if confirm_publish is not None and str(confirm_publish).strip() != "1":
+        flash("Müşteriye gönderim iptal edildi.", "error")
         return redirect(url_for("admin_edit_reading", request_kind=request_kind, request_id=request_id))
 
     table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"

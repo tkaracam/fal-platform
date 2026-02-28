@@ -1258,7 +1258,7 @@ def build_coffee_prompt(question: str, full_name: str, reader_name: str, lang: s
             "- Then continue with flowing mini-sections (not rigid numbered lists).\n"
             "- Be clear, practical, and emotionally intelligent.\n"
             "- End with exactly 3 short actionable suggestions.\n"
-            f"Final line must be exactly: Reader: {reader_name}\n"
+            f"Final line must be exactly this name only: {reader_name}\n"
             f"Client: {full_name}\nQuestion: {question}\nPhoto count: {image_count}"
         )
     if lang == "de":
@@ -1272,7 +1272,7 @@ def build_coffee_prompt(question: str, full_name: str, reader_name: str, lang: s
             "- Danach klare, natürliche Abschnitte statt starrer Listen.\n"
             "- Konkrete, alltagsnahe Sprache.\n"
             "- Am Ende genau 3 kurze Empfehlungen.\n"
-            f"Letzte Zeile muss exakt sein: Kaffeesatzleserin: {reader_name}\n"
+            f"Letzte Zeile muss exakt nur dieser Name sein: {reader_name}\n"
             f"Kundin: {full_name}\nFrage: {question}\nAnzahl Fotos: {image_count}"
         )
     return (
@@ -1285,7 +1285,7 @@ def build_coffee_prompt(question: str, full_name: str, reader_name: str, lang: s
         "- Sonra akıcı ara başlıklarla devam et (katı numaralı liste olmasın).\n"
         "- Gerçekçi, net ve duygusal olarak dengeli bir dil kullan.\n"
         "- Sonda tam 3 kısa, uygulanabilir tavsiye ver.\n"
-        f"Son satır şu formatta olsun: Falcı: {reader_name}\n"
+        f"Son satır yalnızca şu isim olsun: {reader_name}\n"
         f"Müşteri: {full_name}\nSoru: {question}\nFotoğraf Sayısı: {image_count}"
     )
 
@@ -1323,7 +1323,7 @@ def build_card_prompt(reading_type: str, question: str, full_name: str, reader_n
             "- Position-based interpretation in human language\n"
             "- Risk/opportunity notes\n"
             "- Exactly 3 concise recommendations\n"
-            f"Final line must be exactly: Reader: {reader_name}"
+            f"Final line must be exactly this name only: {reader_name}"
         )
     if lang == "de":
         return (
@@ -1337,7 +1337,7 @@ def build_card_prompt(reading_type: str, question: str, full_name: str, reader_n
             "- Deutung nach Positionen in natürlicher Sprache\n"
             "- Risiko/Chance\n"
             "- Genau 3 klare Empfehlungen\n"
-            f"Letzte Zeile muss exakt sein: Kartenlegerin: {reader_name}"
+            f"Letzte Zeile muss exakt nur dieser Name sein: {reader_name}"
         )
     return (
         f"Profesyonel bir {reading_type} fal yorumcususun. Seçilen açılım ve soru üzerinden yorum üret.\n"
@@ -1350,7 +1350,7 @@ def build_card_prompt(reading_type: str, question: str, full_name: str, reader_n
         "- Pozisyonlara göre yorum (doğal cümlelerle)\n"
         "- Fırsat/risk notları\n"
         "- Tam 3 kısa ve uygulanabilir öneri\n"
-        f"Son satır şu formatta olsun: Falcı: {reader_name}"
+        f"Son satır yalnızca şu isim olsun: {reader_name}"
     )
 
 

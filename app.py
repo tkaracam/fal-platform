@@ -1245,17 +1245,19 @@ def call_openai_reading(input_items: list[dict[str, str]]) -> tuple[str, str, st
     return "ready", text, "", ""
 
 
-def build_coffee_prompt(question: str, full_name: str, lang: str, image_count: int) -> str:
+def build_coffee_prompt(question: str, full_name: str, reader_name: str, lang: str, image_count: int) -> str:
     if lang == "en":
         return (
             "You are an experienced Turkish coffee reading expert. "
             "Write in a warm, natural, human tone; avoid robotic language and avoid generic filler. "
             "Use ONLY the uploaded grounds photos and the user's question. Do not invent symbols that are not visible.\n"
+            "Language rule: Write the full response in English only.\n"
             "Style:\n"
             "- Start with one short overall-energy paragraph.\n"
             "- Then continue with flowing mini-sections (not rigid numbered lists).\n"
             "- Be clear, practical, and emotionally intelligent.\n"
             "- End with exactly 3 short actionable suggestions.\n"
+            f"Final line must be exactly: Reader: {reader_name}\n"
             f"Client: {full_name}\nQuestion: {question}\nPhoto count: {image_count}"
         )
     if lang == "de":
@@ -1263,22 +1265,26 @@ def build_coffee_prompt(question: str, full_name: str, lang: str, image_count: i
             "Du bist eine erfahrene Kaffeesatz-Orakelberaterin. "
             "Schreibe warm, natürlich und menschlich; nicht mechanisch. "
             "Nutze NUR die hochgeladenen Fotos und die Frage. Keine erfundenen Symbole.\n"
+            "Sprachregel: Schreibe die komplette Antwort nur auf Deutsch.\n"
             "Stil:\n"
             "- Starte mit einem kurzen Absatz zur Gesamtenergie.\n"
             "- Danach klare, natürliche Abschnitte statt starrer Listen.\n"
             "- Konkrete, alltagsnahe Sprache.\n"
             "- Am Ende genau 3 kurze Empfehlungen.\n"
+            f"Letzte Zeile muss exakt sein: Falcı: {reader_name}\n"
             f"Kundin: {full_name}\nFrage: {question}\nAnzahl Fotos: {image_count}"
         )
     return (
         "Deneyimli bir kahve falı yorumcususun. "
         "Yorumu sıcak, doğal ve insan gibi yaz; mekanik ve şablon cümlelerden kaçın. "
         "Sadece yüklenen telve fotoğraflarını ve soruyu kullan. Fotoğrafta görünmeyen sembol uydurma.\n"
+        "Dil kuralı: Cevabın tamamını yalnızca Türkçe yaz.\n"
         "Yazım tarzı:\n"
         "- Kısa bir 'genel enerji' paragrafıyla başla.\n"
         "- Sonra akıcı ara başlıklarla devam et (katı numaralı liste olmasın).\n"
         "- Gerçekçi, net ve duygusal olarak dengeli bir dil kullan.\n"
         "- Sonda tam 3 kısa, uygulanabilir tavsiye ver.\n"
+        f"Son satır şu formatta olsun: Falcı: {reader_name}\n"
         f"Müşteri: {full_name}\nSoru: {question}\nFotoğraf Sayısı: {image_count}"
     )
 
@@ -1301,7 +1307,7 @@ def format_cards_for_prompt(selected_cards: str) -> str:
     return "\n".join(lines) if lines else selected_cards
 
 
-def build_card_prompt(reading_type: str, question: str, full_name: str, selected_cards: str, lang: str) -> str:
+def build_card_prompt(reading_type: str, question: str, full_name: str, reader_name: str, selected_cards: str, lang: str) -> str:
     layout = "7 kart Katina aşk açılımı" if reading_type == "katina" else "3 kart Tarot açılımı"
     cards_detail = format_cards_for_prompt(selected_cards)
     if lang == "en":
@@ -1309,40 +1315,46 @@ def build_card_prompt(reading_type: str, question: str, full_name: str, selected
             f"You are a professional {reading_type} reader. Interpret based on the selected spread and user question.\n"
             f"Spread: {layout}\nClient: {full_name}\nQuestion: {question}\nSelected cards/positions:\n{cards_detail}\n"
             "Important: card values above are internal technical IDs. Never print these IDs in the final text.\n"
+            "Language rule: Write the full response in English only.\n"
             "Write naturally and warmly, not mechanically. Avoid generic template wording.\n"
             "Flow:\n"
             "- Short overall theme paragraph\n"
             "- Position-based interpretation in human language\n"
             "- Risk/opportunity notes\n"
-            "- Exactly 3 concise recommendations"
+            "- Exactly 3 concise recommendations\n"
+            f"Final line must be exactly: Reader: {reader_name}"
         )
     if lang == "de":
         return (
             f"Du bist eine professionelle {reading_type}-Legung Assistenz. Deute basierend auf den gezogenen Karten und der Frage.\n"
             f"Legung: {layout}\nKundin: {full_name}\nFrage: {question}\nGezogene Karten/Positionen:\n{cards_detail}\n"
             "Wichtig: Die Kartenwerte oben sind interne technische IDs. Diese IDs dürfen im finalen Text nicht erscheinen.\n"
+            "Sprachregel: Schreibe die komplette Antwort nur auf Deutsch.\n"
             "Schreibe natürlich, warm und nicht mechanisch.\n"
             "Struktur:\n"
             "- Kurzer Absatz zur Gesamtenergie\n"
             "- Deutung nach Positionen in natürlicher Sprache\n"
             "- Risiko/Chance\n"
-            "- Genau 3 klare Empfehlungen"
+            "- Genau 3 klare Empfehlungen\n"
+            f"Letzte Zeile muss exakt sein: Falcı: {reader_name}"
         )
     return (
         f"Profesyonel bir {reading_type} fal yorumcususun. Seçilen açılım ve soru üzerinden yorum üret.\n"
         f"Açılım: {layout}\nMüşteri: {full_name}\nSoru: {question}\nSeçilen kart/pozisyonlar:\n{cards_detail}\n"
         "Önemli: Yukarıdaki kart değerleri sistem içi teknik ID'dir. Nihai yorum metninde bu ID'leri asla yazma.\n"
+        "Dil kuralı: Cevabın tamamını yalnızca Türkçe yaz.\n"
         "Dil sıcak, doğal ve insan gibi olsun; mekanik şablon cümlelerden kaçın.\n"
         "Akış:\n"
         "- Kısa bir genel enerji paragrafı\n"
         "- Pozisyonlara göre yorum (doğal cümlelerle)\n"
         "- Fırsat/risk notları\n"
-        "- Tam 3 kısa ve uygulanabilir öneri"
+        "- Tam 3 kısa ve uygulanabilir öneri\n"
+        f"Son satır şu formatta olsun: Falcı: {reader_name}"
     )
 
 
-def generate_coffee_ai_reading(question: str, full_name: str, image_paths: list[str], lang: str) -> tuple[str, str, str, str]:
-    content: list[dict[str, str]] = [{"type": "input_text", "text": build_coffee_prompt(question, full_name, lang, len(image_paths))}]
+def generate_coffee_ai_reading(question: str, full_name: str, reader_name: str, image_paths: list[str], lang: str) -> tuple[str, str, str, str]:
+    content: list[dict[str, str]] = [{"type": "input_text", "text": build_coffee_prompt(question, full_name, reader_name, lang, len(image_paths))}]
     for rel in image_paths[:3]:
         abs_path = (BASE_DIR / "static" / rel).resolve()
         if abs_path.exists():
@@ -1350,8 +1362,8 @@ def generate_coffee_ai_reading(question: str, full_name: str, image_paths: list[
     return call_openai_reading(content)
 
 
-def generate_card_ai_reading(reading_type: str, question: str, full_name: str, selected_cards: str, lang: str) -> tuple[str, str, str, str]:
-    content = [{"type": "input_text", "text": build_card_prompt(reading_type, question, full_name, selected_cards, lang)}]
+def generate_card_ai_reading(reading_type: str, question: str, full_name: str, reader_name: str, selected_cards: str, lang: str) -> tuple[str, str, str, str]:
+    content = [{"type": "input_text", "text": build_card_prompt(reading_type, question, full_name, reader_name, selected_cards, lang)}]
     return call_openai_reading(content)
 
 
@@ -1922,7 +1934,13 @@ def submit_coffee():
         )
         request_id = cursor.lastrowid
 
-    ai_status, ai_reading, ai_batch_id, ai_custom_id = generate_coffee_ai_reading(question, full_name, saved_paths, lang)
+    ai_status, ai_reading, ai_batch_id, ai_custom_id = generate_coffee_ai_reading(
+        question,
+        full_name,
+        selected_reader["name"],
+        saved_paths,
+        lang,
+    )
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
             "UPDATE coffee_requests SET ai_status = ?, ai_reading = ?, ai_published = 0, ai_batch_id = ?, ai_custom_id = ? WHERE id = ?",
@@ -2006,7 +2024,14 @@ def submit_cards():
         )
         request_id = cursor.lastrowid
 
-    ai_status, ai_reading, ai_batch_id, ai_custom_id = generate_card_ai_reading(reading_type, question, full_name, selected_cards, lang)
+    ai_status, ai_reading, ai_batch_id, ai_custom_id = generate_card_ai_reading(
+        reading_type,
+        question,
+        full_name,
+        selected_reader["name"],
+        selected_cards,
+        lang,
+    )
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
             "UPDATE card_requests SET ai_status = ?, ai_reading = ?, ai_published = 0, ai_batch_id = ?, ai_custom_id = ? WHERE id = ?",
@@ -2379,7 +2404,7 @@ def regenerate_ai_for_request(request_kind: str, request_id: int, lang: str) -> 
         if request_kind == "coffee":
             row = conn.execute(
                 """
-                SELECT question, full_name, image_path, image_paths
+                SELECT question, full_name, reader_name, image_path, image_paths
                 FROM coffee_requests
                 WHERE id = ?
                 """,
@@ -2388,7 +2413,7 @@ def regenerate_ai_for_request(request_kind: str, request_id: int, lang: str) -> 
         else:
             row = conn.execute(
                 """
-                SELECT reading_type, question, full_name, selected_cards
+                SELECT reading_type, question, full_name, reader_name, selected_cards
                 FROM card_requests
                 WHERE id = ?
                 """,
@@ -2404,6 +2429,7 @@ def regenerate_ai_for_request(request_kind: str, request_id: int, lang: str) -> 
         ai_status, ai_reading, ai_batch_id, ai_custom_id = generate_coffee_ai_reading(
             str(row["question"] or ""),
             str(row["full_name"] or ""),
+            str(row["reader_name"] or "Falcı"),
             image_paths,
             lang,
         )
@@ -2421,6 +2447,7 @@ def regenerate_ai_for_request(request_kind: str, request_id: int, lang: str) -> 
             str(row["reading_type"] or "tarot"),
             str(row["question"] or ""),
             str(row["full_name"] or ""),
+            str(row["reader_name"] or "Falcı"),
             str(row["selected_cards"] or "[]"),
             lang,
         )

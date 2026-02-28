@@ -54,9 +54,9 @@
         <form action="{{ url_for('submit_coffee', lang=lang) }}" method="post" enctype="multipart/form-data" class="form-grid">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
           <input type="hidden" name="reader_id" value="{{ selected_reader['id'] }}" />
-          <label>{{ t('full_name') }}<input name="full_name" value="{{ prefill_full_name }}" readonly required /></label>
-          <label>{{ t('phone') }}<input name="phone" value="{{ prefill_phone }}" readonly required /></label>
-          <label>{{ t('email') }}<input name="email" value="{{ prefill_email }}" readonly /></label>
+          <label>{{ t('full_name') }}<input name="full_name" value="{{ prefill_full_name }}" {% if prefill_full_name %}readonly{% endif %} required /></label>
+          <label>{{ t('phone') }}<input name="phone" value="{{ prefill_phone }}" {% if prefill_phone %}readonly{% endif %} required /></label>
+          <label>{{ t('email') }}<input name="email" value="{{ prefill_email }}" {% if prefill_email %}readonly{% endif %} /></label>
           <label class="full">{{ t('question') }}<textarea name="question" rows="4" required></textarea></label>
           <div class="full">
             <p class="upload-title">{{ t('coffee_photo') }}</p>

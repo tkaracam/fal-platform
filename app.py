@@ -708,15 +708,66 @@ def get_current_user_profile() -> dict[str, str]:
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         row = conn.execute(
-            "SELECT full_name, phone, email FROM users WHERE id = ?",
+            "SELECT username, full_name, phone, email FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+        latest_payment = conn.execute(
+            """
+            SELECT full_name, phone
+            FROM payment_requests
+            WHERE user_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (user_id,),
+        ).fetchone()
+        latest_coffee = conn.execute(
+            """
+            SELECT full_name, phone
+            FROM coffee_requests
+            WHERE user_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (user_id,),
+        ).fetchone()
+        latest_card = conn.execute(
+            """
+            SELECT full_name, phone
+            FROM card_requests
+            WHERE user_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
             (user_id,),
         ).fetchone()
     if row is None:
         return {"full_name": "", "phone": "", "email": ""}
+    username = str(row["username"] or "").strip()
+    full_name = str(row["full_name"] or "").strip()
+    phone = str(row["phone"] or "").strip()
+    email = str(row["email"] or "").strip().lower()
+
+    if not full_name:
+        for source in (latest_payment, latest_coffee, latest_card):
+            if source and str(source["full_name"] or "").strip():
+                full_name = str(source["full_name"]).strip()
+                break
+    if not full_name and username:
+        full_name = username
+
+    if not phone:
+        for source in (latest_payment, latest_coffee, latest_card):
+            if source and str(source["phone"] or "").strip():
+                phone = str(source["phone"]).strip()
+                break
+    if not email and "@" in username:
+        email = username.lower()
+
     return {
-        "full_name": str(row["full_name"] or ""),
-        "phone": str(row["phone"] or ""),
-        "email": str(row["email"] or ""),
+        "full_name": full_name,
+        "phone": phone,
+        "email": email,
     }
 
 
@@ -1181,52 +1232,92 @@ def call_openai_reading(input_items: list[dict[str, str]]) -> tuple[str, str, st
     return "ready", text, "", ""
 
 
-def build_coffee_prompt(question: str, full_name: str, lang: str) -> str:
+def build_coffee_prompt(question: str, full_name: str, lang: str, image_count: int) -> str:
     if lang == "en":
         return (
-            "You are a professional coffee reading assistant. Use the uploaded coffee grounds photos and the user question. "
-            "Give a structured, practical reading with: overall energy, near-term clues, relationship/work/finance notes, and 3 clear suggestions. "
-            "Stay specific to visible patterns and the question. Keep tone warm but direct.\n"
-            f"Client: {full_name}\nQuestion: {question}"
+            "You are a professional Turkish coffee grounds reading assistant. "
+            "Use ONLY the uploaded grounds photos and the user question. Do not invent symbols that are not visible. "
+            "First list clear observations from each photo, then interpret.\n"
+            "Output sections:\n"
+            "1) Photo Observations (photo-by-photo)\n"
+            "2) Main Theme\n"
+            "3) Love / Work / Money\n"
+            "4) Timing Clues (near-term)\n"
+            "5) 3 Actionable Suggestions\n"
+            f"Client: {full_name}\nQuestion: {question}\nPhoto count: {image_count}"
         )
     if lang == "de":
         return (
-            "Du bist eine professionelle Kaffeesatz-Orakelassistenz. Nutze die hochgeladenen Fotos und die Frage der Person. "
-            "Gib eine strukturierte Deutung mit: Gesamtenergie, kurzfristige Hinweise, Beziehung/Beruf/Finanzen und 3 klaren Empfehlungen. "
-            "Bleibe konkret und direkt.\n"
-            f"Kundin: {full_name}\nFrage: {question}"
+            "Du bist eine professionelle Kaffeesatz-Orakelassistenz. "
+            "Nutze NUR die hochgeladenen Fotos und die Frage. Keine erfundenen Symbole. "
+            "Zuerst sichtbare Beobachtungen pro Foto, dann Deutung.\n"
+            "Ausgabe:\n"
+            "1) Beobachtungen je Foto\n"
+            "2) Hauptthema\n"
+            "3) Liebe / Beruf / Finanzen\n"
+            "4) Zeitnahe Hinweise\n"
+            "5) 3 konkrete Empfehlungen\n"
+            f"Kundin: {full_name}\nFrage: {question}\nAnzahl Fotos: {image_count}"
         )
     return (
-        "Profesyonel bir kahve falı yorumcususun. Yüklenen telve fotoğrafları ve kullanıcının sorusunu birlikte analiz et. "
-        "Yorumu şu başlıklarla üret: genel enerji, yakın dönem işaretleri, aşk/iş/para notları ve 3 net öneri. "
-        "Görülen sembollere ve soruya bağlı, net ve sıcak bir dil kullan.\n"
-        f"Müşteri: {full_name}\nSoru: {question}"
+        "Profesyonel bir kahve falı yorumcususun. "
+        "Sadece yüklenen telve fotoğraflarını ve soruyu kullan. Fotoğraflarda olmayan sembol uydurma. "
+        "Önce her foto için gördüğün işaretleri yaz, sonra yorumla.\n"
+        "Çıktı başlıkları:\n"
+        "1) Fotoğraf Bazlı Gözlemler\n"
+        "2) Ana Tema\n"
+        "3) Aşk / İş / Para\n"
+        "4) Yakın Dönem Zaman İşaretleri\n"
+        "5) 3 Net Öneri\n"
+        f"Müşteri: {full_name}\nSoru: {question}\nFotoğraf Sayısı: {image_count}"
     )
+
+
+def format_cards_for_prompt(selected_cards: str) -> str:
+    try:
+        parsed = json.loads(selected_cards or "[]")
+    except ValueError:
+        return selected_cards
+    if not isinstance(parsed, list):
+        return selected_cards
+    lines: list[str] = []
+    for idx, item in enumerate(parsed, start=1):
+        if isinstance(item, dict):
+            position = str(item.get("position", f"Pozisyon {idx}")).strip()
+            card = str(item.get("card", f"Kart {idx}")).strip()
+            lines.append(f"{idx}. {position}: {card}")
+        else:
+            lines.append(f"{idx}. {str(item)}")
+    return "\n".join(lines) if lines else selected_cards
 
 
 def build_card_prompt(reading_type: str, question: str, full_name: str, selected_cards: str, lang: str) -> str:
     layout = "7 kart Katina aşk açılımı" if reading_type == "katina" else "3 kart Tarot açılımı"
+    cards_detail = format_cards_for_prompt(selected_cards)
     if lang == "en":
         return (
             f"You are a professional {reading_type} reader. Interpret based on the selected spread and user question.\n"
-            f"Spread: {layout}\nClient: {full_name}\nQuestion: {question}\nSystem selected cards/positions: {selected_cards}\n"
-            "Provide: core theme, position-by-position interpretation, risk/opportunity notes, and 3 concise recommendations."
+            f"Spread: {layout}\nClient: {full_name}\nQuestion: {question}\nSelected cards/positions:\n{cards_detail}\n"
+            "Provide: core theme, position-by-position interpretation, risk/opportunity notes, and 3 concise recommendations. "
+            "Use the selected cards and positions directly."
         )
     if lang == "de":
         return (
             f"Du bist eine professionelle {reading_type}-Legung Assistenz. Deute basierend auf den gezogenen Karten und der Frage.\n"
-            f"Legung: {layout}\nKundin: {full_name}\nFrage: {question}\nSystemkarten/Positionen: {selected_cards}\n"
-            "Gib: Kernthema, positionsbasierte Deutung, Risiko/Chance und 3 klare Empfehlungen."
+            f"Legung: {layout}\nKundin: {full_name}\nFrage: {question}\nGezogene Karten/Positionen:\n{cards_detail}\n"
+            "Gib: Kernthema, positionsbasierte Deutung, Risiko/Chance und 3 klare Empfehlungen. "
+            "Beziehe dich direkt auf die gezogenen Positionen."
         )
     return (
         f"Profesyonel bir {reading_type} fal yorumcususun. Seçilen açılım ve soru üzerinden yorum üret.\n"
-        f"Açılım: {layout}\nMüşteri: {full_name}\nSoru: {question}\nSistem kart/pozisyonları: {selected_cards}\n"
-        "Çıktı: ana tema, pozisyon bazlı yorum, fırsat-risk notları ve 3 kısa öneri."
+        f"Açılım: {layout}\nMüşteri: {full_name}\nSoru: {question}\nSeçilen kart/pozisyonlar:\n{cards_detail}\n"
+        "Çıktı: ana tema, pozisyon bazlı yorum, fırsat-risk notları ve 3 kısa öneri. "
+        "Kartları ve pozisyonları doğrudan referans al."
     )
 
 
 def generate_coffee_ai_reading(question: str, full_name: str, image_paths: list[str], lang: str) -> tuple[str, str, str, str]:
-    content: list[dict[str, str]] = [{"type": "input_text", "text": build_coffee_prompt(question, full_name, lang)}]
+    content: list[dict[str, str]] = [{"type": "input_text", "text": build_coffee_prompt(question, full_name, lang, len(image_paths))}]
     for rel in image_paths[:3]:
         abs_path = (BASE_DIR / "static" / rel).resolve()
         if abs_path.exists():

@@ -76,7 +76,7 @@ EUROPE_COUNTRIES = {
 }
 TRANSLATIONS = {
     "tr": {
-        "brand": "Ateş Fal Evi",
+        "brand": "Orakelia",
         "nav_coffee": "Kahve",
         "nav_katina": "Katina",
         "nav_tarot": "Tarot",
@@ -87,12 +87,14 @@ TRANSLATIONS = {
         "lang_en": "English",
         "lang_de": "Deutsch",
         "lang_fr": "Français",
+        "language_field": "Dil",
         "home_kicker": "Modern Online Fal Deneyimi",
         "home_title": "Fal Türünü Seç ve İlgili Sekmeye Geç",
         "home_desc": "Aşağıdaki türlerden birini seçerek ilgili sayfaya geçebilirsin.",
         "home_cta_primary": "Hemen Başla",
         "home_cta_secondary": "Fal Türlerini Gör",
         "home_badge_1": "Canlı Destek",
+        "live_support": "Canlı Destek",
         "home_badge_2": "Güvenli Ödeme",
         "home_badge_3": "3 Dil Seçeneği",
         "home_welcome_title": "Profesyonel Online Fal Platformu",
@@ -207,7 +209,7 @@ TRANSLATIONS = {
         "ai_result_review": "Falınız yorumlanıyor (ortalama 20-30 dk).",
     },
     "en": {
-        "brand": "Fire Fortune House",
+        "brand": "Orakelia",
         "nav_coffee": "Coffee",
         "nav_katina": "Katina",
         "nav_tarot": "Tarot",
@@ -218,12 +220,14 @@ TRANSLATIONS = {
         "lang_en": "English",
         "lang_de": "Deutsch",
         "lang_fr": "Français",
+        "language_field": "Language",
         "home_kicker": "Modern Online Reading Experience",
         "home_title": "Choose a Reading Type and Continue",
         "home_desc": "Select one of the reading types below to open its page.",
         "home_cta_primary": "Start Now",
         "home_cta_secondary": "View Reading Types",
         "home_badge_1": "Live Support",
+        "live_support": "Live Support",
         "home_badge_2": "Secure Payment",
         "home_badge_3": "3 Languages",
         "home_welcome_title": "Professional Online Fortune Platform",
@@ -338,7 +342,7 @@ TRANSLATIONS = {
         "ai_result_review": "Your reading is being prepared (average 20-30 minutes).",
     },
     "de": {
-        "brand": "Feuer Orakelhaus",
+        "brand": "Orakelia",
         "nav_coffee": "Kaffee",
         "nav_katina": "Katina",
         "nav_tarot": "Tarot",
@@ -349,12 +353,14 @@ TRANSLATIONS = {
         "lang_en": "Englisch",
         "lang_de": "Deutsch",
         "lang_fr": "Französisch",
+        "language_field": "Sprache",
         "home_kicker": "Modernes Online-Orakel",
         "home_title": "Wähle eine Art und wechsle zur Seite",
         "home_desc": "Wähle unten eine Kategorie, um zur passenden Seite zu gehen.",
         "home_cta_primary": "Jetzt Starten",
         "home_cta_secondary": "Orakelarten Ansehen",
         "home_badge_1": "Live-Support",
+        "live_support": "Live-Chat",
         "home_badge_2": "Sichere Zahlung",
         "home_badge_3": "3 Sprachen",
         "home_welcome_title": "Professionelle Online-Orakelplattform",
@@ -1226,7 +1232,7 @@ def notify_reading_completed(request_kind: str, request_id: int) -> tuple[bool, 
         f"Panelinize giriş yaparak yorumunuzu görebilirsiniz:\n"
         f"https://orakelia.com/dashboard?lang=tr\n\n"
         "Sevgiler,\n"
-        "Ateş Fal Evi"
+        "Orakelia"
     )
     return send_email_message(email, subject, body)
 

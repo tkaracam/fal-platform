@@ -17,12 +17,6 @@
           <img class="brand-mark" src="{{ url_for('static', filename='assets/home-logo.svg') }}" alt="{{ t('brand') }}" />
           <span class="brand-text">Orakelia</span>
         </a>
-        <div class="nav-quick-lang">
-          <a href="{{ lang_url('tr') }}">{{ t('lang_tr') }}</a>
-          <a href="{{ lang_url('en') }}">{{ t('lang_en') }}</a>
-          <a href="{{ lang_url('de') }}">{{ t('lang_de') }}</a>
-          <a href="{{ lang_url('fr') }}">{{ t('lang_fr') }}</a>
-        </div>
         <button class="nav-toggle" type="button" aria-label="Menu" data-nav-toggle>Menu</button>
         <nav class="nav-links" data-nav-links>
           <a href="{{ url_for('coffee_page', lang=lang) }}">{{ t('nav_coffee') }}</a>
@@ -38,28 +32,39 @@
           {% else %}
           <a href="{{ url_for('login_page', lang=lang) }}">{{ t('nav_login') }}</a>
           <a class="menu-cta" href="{{ url_for('register_page', lang=lang) }}">{{ t('nav_register') }}</a>
-          {% endif %}
-          <div class="lang-switch">
-            <a href="{{ lang_url('tr') }}">{{ t('lang_tr') }}</a>
-            <a href="{{ lang_url('en') }}">{{ t('lang_en') }}</a>
-            <a href="{{ lang_url('de') }}">{{ t('lang_de') }}</a>
-            <a href="{{ lang_url('fr') }}">{{ t('lang_fr') }}</a>
-          </div>
-        </nav>
+          {% endif %}        </nav>
       </header>
 
       <section class="choice-grid" id="secimler">
         <a class="choice-card card-coffee" href="{{ url_for('coffee_page', lang=lang) }}">
+          <iframe
+            class="choice-anim"
+            src="{{ url_for('static', filename='assets/home-coffee-animated.html') }}"
+            title="Kahve Fali Animasyonu"
+            loading="lazy"
+          ></iframe>
           <span class="choice-content">
             <strong>{{ t('choice_coffee') }}</strong>
           </span>
         </a>
         <a class="choice-card card-katina" href="{{ url_for('katina_page', lang=lang) }}">
+          <iframe
+            class="choice-anim"
+            src="{{ url_for('static', filename='assets/home-katina-animated.html') }}"
+            title="Katina Fali Animasyonu"
+            loading="lazy"
+          ></iframe>
           <span class="choice-content">
             <strong>{{ t('choice_katina') }}</strong>
           </span>
         </a>
         <a class="choice-card card-tarot" href="{{ url_for('tarot_page', lang=lang) }}">
+          <iframe
+            class="choice-anim"
+            src="{{ url_for('static', filename='assets/home-tarot-animated.html') }}"
+            title="Tarot Fali Animasyonu"
+            loading="lazy"
+          ></iframe>
           <span class="choice-content">
             <strong>{{ t('choice_tarot') }}</strong>
           </span>
@@ -93,7 +98,7 @@
             </a>
             <a class="live-support social-link" href="{{ live_support_url }}" target="_blank" rel="noopener">
               <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4c-4.4 0-8 2.9-8 6.5 0 2.1 1.2 4 3.2 5.2V20l3.3-2.2c.5.1 1 .2 1.5.2 4.4 0 8-2.9 8-6.5S16.4 4 12 4zm-3 7.1a1.1 1.1 0 110-2.2 1.1 1.1 0 010 2.2zm3 0a1.1 1.1 0 110-2.2 1.1 1.1 0 010 2.2zm3 0a1.1 1.1 0 110-2.2 1.1 1.1 0 010 2.2z" fill="currentColor"/></svg>
-              <span>Canlı Destek</span>
+              <span>{{ t('live_support') }}</span>
             </a>
           </div>
         </div>

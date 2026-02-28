@@ -23,14 +23,7 @@
           <form method="post" action="{{ url_for('logout_submit', lang=lang) }}" class="nav-logout-form">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
             <button type="submit" class="menu-cta nav-logout">{{ t('logout_submit') }}</button>
-          </form>
-          <div class="lang-switch">
-            <a href="{{ lang_url('tr') }}">{{ t('lang_tr') }}</a>
-            <a href="{{ lang_url('en') }}">{{ t('lang_en') }}</a>
-            <a href="{{ lang_url('de') }}">{{ t('lang_de') }}</a>
-            <a href="{{ lang_url('fr') }}">{{ t('lang_fr') }}</a>
-          </div>
-        </nav>
+          </form>        </nav>
       </header>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -85,7 +78,7 @@
             <a href="{{ instagram_url }}" target="_blank" rel="noopener" class="social-link"><span>Instagram</span></a>
             <a href="{{ x_url }}" target="_blank" rel="noopener" class="social-link"><span>X</span></a>
             <a href="{{ telegram_url }}" target="_blank" rel="noopener" class="social-link"><span>Telegram</span></a>
-            <a class="live-support social-link" href="{{ live_support_url }}" target="_blank" rel="noopener"><span>Canlı Destek</span></a>
+            <a class="live-support social-link" href="{{ live_support_url }}" target="_blank" rel="noopener"><span>{{ t('live_support') }}</span></a>
           </div>
         </div>
       </footer>

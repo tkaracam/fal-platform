@@ -5,7 +5,6 @@ import os
 import sqlite3
 import hashlib
 import hmac
-import time
 import re
 import csv
 import base64
@@ -66,7 +65,6 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 OPENAI_USE_BATCH = os.getenv("OPENAI_USE_BATCH", "0").strip() == "1"
 AI_INPUT_COST_PER_1M = float(os.getenv("AI_INPUT_COST_PER_1M", "0"))
 AI_OUTPUT_COST_PER_1M = float(os.getenv("AI_OUTPUT_COST_PER_1M", "0"))
-ADMIN_TOTP_SECRET = os.getenv("ADMIN_TOTP_SECRET", "").strip()
 EXPECTED_CARD_COUNT = {"katina": 7, "tarot": 3}
 LANGUAGES = {"tr", "en", "de"}
 DEFAULT_LANG = "tr"
@@ -846,39 +844,6 @@ def admin_required() -> bool:
 def get_admin_actor() -> str:
     actor = str(session.get("admin_username", "")).strip()
     return actor or "admin"
-
-
-def admin_totp_enabled() -> bool:
-    return bool(ADMIN_TOTP_SECRET)
-
-
-def _normalize_b32_secret(raw: str) -> str:
-    secret = "".join(ch for ch in (raw or "").upper() if ch.isalnum())
-    missing = len(secret) % 8
-    if missing:
-        secret += "=" * (8 - missing)
-    return secret
-
-
-def verify_totp_code(secret: str, code: str, window_steps: int = 1) -> bool:
-    clean_code = "".join(ch for ch in (code or "") if ch.isdigit())
-    if len(clean_code) != 6:
-        return False
-    try:
-        key = base64.b32decode(_normalize_b32_secret(secret), casefold=True)
-    except Exception:
-        return False
-    counter_now = int(time.time() // 30)
-    for offset in range(-window_steps, window_steps + 1):
-        counter = counter_now + offset
-        msg = counter.to_bytes(8, "big")
-        digest = hmac.new(key, msg, hashlib.sha1).digest()
-        pos = digest[-1] & 0x0F
-        val = ((digest[pos] & 0x7F) << 24) | ((digest[pos + 1] & 0xFF) << 16) | ((digest[pos + 2] & 0xFF) << 8) | (digest[pos + 3] & 0xFF)
-        otp = f"{val % 1_000_000:06d}"
-        if hmac.compare_digest(otp, clean_code):
-            return True
-    return False
 
 
 def estimate_tokens_from_text(text: str) -> int:
@@ -2664,7 +2629,6 @@ def admin_login():
 
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
-    otp_code = request.form.get("otp_code", "").strip()
     if is_auth_rate_limited("admin_login_user", username or "-", max_attempts=8, window_seconds=30 * 60):
         flash("Bu admin hesabı için çok fazla deneme var. 30 dakika sonra tekrar deneyin.", "error")
         return redirect(url_for("admin"))
@@ -2672,12 +2636,7 @@ def admin_login():
         flash("Bu kullanıcı/IP kombinasyonu geçici olarak kilitlendi. 30 dakika sonra tekrar deneyin.", "error")
         return redirect(url_for("admin"))
 
-    credentials_ok = username == ADMIN_USERNAME and password == ADMIN_PASSWORD
-    otp_ok = True
-    if credentials_ok and admin_totp_enabled():
-        otp_ok = verify_totp_code(ADMIN_TOTP_SECRET, otp_code, window_steps=1)
-
-    if credentials_ok and otp_ok:
+    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
         clear_auth_failures("admin_login", ip)
         clear_auth_failures("admin_login_user", username or "-")
         clear_auth_failures("admin_login_combo", f"{ip}|{username}")
@@ -2687,9 +2646,6 @@ def admin_login():
     record_auth_failure("admin_login", ip)
     record_auth_failure("admin_login_user", username or "-")
     record_auth_failure("admin_login_combo", f"{ip}|{username}")
-    if credentials_ok and not otp_ok:
-        flash("2FA kodu hatalı veya süresi dolmuş.", "error")
-        return redirect(url_for("admin"))
     flash("Admin kullanıcı adı veya şifresi hatalı.", "error")
     return redirect(url_for("admin"))
 
@@ -3495,7 +3451,7 @@ def admin_audit_export_csv():
 @app.get("/admin")
 def admin():
     if not admin_required():
-        return render_template("admin_login.html", totp_enabled=admin_totp_enabled())
+        return render_template("admin_login.html")
 
     filters = parse_admin_filters()
     coffee_rows, card_rows, payment_rows = fetch_filtered_admin_data(filters)

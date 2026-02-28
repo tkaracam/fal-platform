@@ -508,12 +508,161 @@ body {
   z-index: 0;
 }
 
+.fortune-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.fortune-reader {
+  position: absolute;
+  width: 110px;
+  height: 150px;
+  left: 22px;
+  bottom: 30px;
+}
+
+.fortune-reader .reader-head {
+  position: absolute;
+  top: 0;
+  left: 24px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #ffe5d1, #d9a98f 82%);
+  box-shadow: 0 8px 14px rgba(0, 0, 0, 0.22);
+}
+
+.fortune-reader .reader-body {
+  position: absolute;
+  left: 8px;
+  top: 32px;
+  width: 86px;
+  height: 92px;
+  border-radius: 22px 22px 16px 16px;
+  background: linear-gradient(165deg, rgba(231, 240, 255, 0.55), rgba(139, 166, 194, 0.48));
+  border: 1px solid rgba(210, 225, 244, 0.4);
+}
+
+.fortune-reader .reader-arm {
+  position: absolute;
+  right: 0;
+  top: 62px;
+  width: 56px;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #e2b89e, #c98e73);
+  transform-origin: 8px 50%;
+}
+
+.coffee-scene .coffee-cup {
+  position: absolute;
+  width: 128px;
+  height: 88px;
+  right: 22px;
+  bottom: 34px;
+  border-radius: 0 0 34px 34px;
+  background: linear-gradient(170deg, rgba(235, 245, 255, 0.74), rgba(143, 171, 201, 0.62));
+  border: 1px solid rgba(217, 231, 247, 0.66);
+}
+
+.coffee-scene .coffee-lid {
+  position: absolute;
+  left: 8px;
+  top: -12px;
+  width: 112px;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f2f8ff, #9fb8d4);
+  transform-origin: 8px 50%;
+}
+
+.coffee-scene .coffee-telve {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 16px;
+  height: 26px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 46% 45%, #6d422c, #3a2318 72%);
+  opacity: 0.15;
+}
+
+.katina-scene .katina-cards {
+  position: absolute;
+  right: 18px;
+  bottom: 30px;
+  width: 140px;
+  height: 104px;
+}
+
+.katina-scene .k-card {
+  position: absolute;
+  width: 68px;
+  height: 96px;
+  border-radius: 10px;
+  border: 1px solid rgba(214, 230, 248, 0.76);
+  background: linear-gradient(160deg, rgba(31, 49, 73, 0.95), rgba(16, 31, 47, 0.95));
+  box-shadow: 0 9px 14px rgba(0, 0, 0, 0.24);
+  transform-origin: 50% 100%;
+}
+
+.katina-scene .k-card::before {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 22px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(94, 211, 255, 0.72);
+}
+
+.katina-scene .k1 { left: 0; transform: rotate(-16deg); }
+.katina-scene .k2 { left: 34px; transform: rotate(-2deg); z-index: 2; }
+.katina-scene .k3 { left: 66px; transform: rotate(12deg); }
+
+.tarot-scene .tarot-fan {
+  position: absolute;
+  right: 14px;
+  bottom: 24px;
+  width: 158px;
+  height: 120px;
+}
+
+.tarot-scene .t-card {
+  position: absolute;
+  width: 62px;
+  height: 92px;
+  border-radius: 10px;
+  border: 1px solid rgba(214, 230, 248, 0.75);
+  background: linear-gradient(160deg, rgba(20, 36, 55, 0.96), rgba(10, 20, 31, 0.96));
+  box-shadow: 0 10px 16px rgba(0, 0, 0, 0.24);
+}
+
+.tarot-scene .t-card::before {
+  content: "";
+  position: absolute;
+  left: 21px;
+  top: 15px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(92, 209, 255, 0.72);
+}
+
+.tarot-scene .t1 { left: 0; top: 20px; transform: rotate(-24deg); }
+.tarot-scene .t2 { left: 34px; top: 8px; transform: rotate(-8deg); }
+.tarot-scene .t3 { left: 68px; top: 8px; transform: rotate(8deg); }
+.tarot-scene .t4 { left: 96px; top: 20px; transform: rotate(24deg); }
+
 .choice-content {
   position: absolute;
   left: 16px;
   right: 16px;
   bottom: 16px;
-  z-index: 2;
+  z-index: 4;
 }
 
 .choice-content strong {
@@ -546,6 +695,136 @@ body {
 
 .choice-card.card-tarot {
   background-image: url("https://images.pexels.com/photos/6801648/pexels-photo-6801648.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=900&w=1200");
+}
+
+.choice-card.is-animating .coffee-scene .coffee-lid {
+  animation: cupOpen 0.85s ease forwards;
+}
+
+.choice-card.is-animating .coffee-scene .coffee-telve {
+  animation: telveReveal 0.85s ease forwards;
+}
+
+.choice-card.is-animating .coffee-scene .reader-head {
+  animation: headLean 0.85s ease forwards;
+}
+
+.choice-card.is-animating .coffee-scene .reader-arm {
+  animation: armLift 0.85s ease forwards;
+}
+
+.choice-card.is-animating .katina-scene .k1 {
+  animation: katinaFlipLeft 0.9s ease forwards;
+}
+
+.choice-card.is-animating .katina-scene .k2 {
+  animation: katinaFlipMid 0.9s ease forwards;
+}
+
+.choice-card.is-animating .katina-scene .k3 {
+  animation: katinaFlipRight 0.9s ease forwards;
+}
+
+.choice-card.is-animating .katina-scene .reader-arm {
+  animation: armSweep 0.9s ease forwards;
+}
+
+.choice-card.is-animating .tarot-scene .t1 {
+  animation: tarotSpreadLeft 0.92s ease forwards;
+}
+
+.choice-card.is-animating .tarot-scene .t2 {
+  animation: tarotSpreadMidLeft 0.92s ease forwards;
+}
+
+.choice-card.is-animating .tarot-scene .t3 {
+  animation: tarotSpreadMidRight 0.92s ease forwards;
+}
+
+.choice-card.is-animating .tarot-scene .t4 {
+  animation: tarotPickCard 0.92s ease forwards;
+}
+
+.choice-card.is-animating .tarot-scene .reader-arm {
+  animation: armPick 0.92s ease forwards;
+}
+
+@keyframes cupOpen {
+  0% { transform: rotate(0deg) translateX(0); }
+  45% { transform: rotate(-36deg) translate(-4px, -6px); }
+  100% { transform: rotate(-30deg) translate(-2px, -5px); }
+}
+
+@keyframes telveReveal {
+  0% { opacity: 0.12; transform: scaleX(0.9); }
+  55% { opacity: 0.72; transform: scaleX(1.03); }
+  100% { opacity: 0.64; transform: scaleX(1); }
+}
+
+@keyframes headLean {
+  0% { transform: rotate(0deg) translateY(0); }
+  60% { transform: rotate(12deg) translate(4px, 3px); }
+  100% { transform: rotate(10deg) translate(3px, 2px); }
+}
+
+@keyframes armLift {
+  0% { transform: rotate(0deg); }
+  55% { transform: rotate(-22deg); }
+  100% { transform: rotate(-16deg); }
+}
+
+@keyframes katinaFlipLeft {
+  0% { transform: rotate(-16deg); }
+  55% { transform: rotate(-54deg) translate(-8px, -12px); }
+  100% { transform: rotate(-44deg) translate(-5px, -8px); }
+}
+
+@keyframes katinaFlipMid {
+  0% { transform: rotate(-2deg); }
+  55% { transform: rotateY(145deg) rotate(8deg) translateY(-10px); }
+  100% { transform: rotateY(165deg) rotate(10deg) translateY(-7px); }
+}
+
+@keyframes katinaFlipRight {
+  0% { transform: rotate(12deg); }
+  55% { transform: rotate(40deg) translate(8px, -9px); }
+  100% { transform: rotate(32deg) translate(5px, -6px); }
+}
+
+@keyframes armSweep {
+  0% { transform: rotate(0deg); }
+  60% { transform: rotate(-28deg) translateY(-2px); }
+  100% { transform: rotate(-18deg); }
+}
+
+@keyframes tarotSpreadLeft {
+  0% { transform: rotate(-24deg); }
+  60% { transform: rotate(-42deg) translate(-8px, -6px); }
+  100% { transform: rotate(-36deg) translate(-5px, -4px); }
+}
+
+@keyframes tarotSpreadMidLeft {
+  0% { transform: rotate(-8deg); }
+  60% { transform: rotate(-18deg) translate(-6px, -8px); }
+  100% { transform: rotate(-14deg) translate(-3px, -5px); }
+}
+
+@keyframes tarotSpreadMidRight {
+  0% { transform: rotate(8deg); }
+  60% { transform: rotate(22deg) translate(5px, -8px); }
+  100% { transform: rotate(16deg) translate(3px, -5px); }
+}
+
+@keyframes tarotPickCard {
+  0% { transform: rotate(24deg); }
+  58% { transform: rotate(12deg) translate(-14px, -26px); box-shadow: 0 16px 22px rgba(0, 0, 0, 0.3); }
+  100% { transform: rotate(10deg) translate(-11px, -20px); box-shadow: 0 14px 20px rgba(0, 0, 0, 0.28); }
+}
+
+@keyframes armPick {
+  0% { transform: rotate(0deg); }
+  60% { transform: rotate(-34deg) translateY(-1px); }
+  100% { transform: rotate(-24deg); }
 }
 
 .card {

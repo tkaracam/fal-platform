@@ -5,6 +5,7 @@ import os
 import sqlite3
 import hashlib
 import hmac
+import re
 import csv
 import base64
 import mimetypes
@@ -2470,6 +2471,26 @@ def regenerate_ai_for_request(request_kind: str, request_id: int, lang: str) -> 
     return False, f"Yorum üretilemedi: {ai_status}"
 
 
+def validate_reading_quality(text: str) -> list[str]:
+    issues: list[str] = []
+    body = (text or "").strip()
+    if len(body) < 320:
+        issues.append("Yorum çok kısa görünüyor (en az 320 karakter önerilir).")
+
+    lowered = body.lower()
+    if "yapay zeka" in lowered or "as an ai" in lowered or "ki als ki" in lowered:
+        issues.append("Yorumda yapay zeka ifadesi geçiyor.")
+
+    if re.search(r"\b(?:tarot|katina)-kart-\d+\b", lowered):
+        issues.append("Yorumda teknik kart ID görünüyor (ör: tarot-kart-58).")
+
+    signature_markers = ("Falcı:", "Reader:", "Kaffeesatzleserin:", "Kartenlegerin:")
+    if not any(marker in body for marker in signature_markers):
+        issues.append("Yorum sonunda falcı imzası eksik.")
+
+    return issues
+
+
 @app.post("/admin/publish-reading/<request_kind>/<int:request_id>")
 def admin_publish_reading(request_kind: str, request_id: int):
     if not admin_required():
@@ -2489,9 +2510,14 @@ def admin_publish_reading(request_kind: str, request_id: int):
         if row is None:
             flash("Talep bulunamadı.", "error")
             return redirect(url_for("admin"))
-        if str(row["ai_status"]) != "ready" or not str(row["ai_reading"] or "").strip():
+        reading_text = str(row["ai_reading"] or "").strip()
+        if str(row["ai_status"]) != "ready" or not reading_text:
             flash("Yorum hazır değil. Önce yorum üretilmeli.", "error")
             return redirect(url_for("admin"))
+        quality_issues = validate_reading_quality(reading_text)
+        if quality_issues:
+            flash("Yorum kalite kontrolünden geçmedi: " + " | ".join(quality_issues), "error")
+            return redirect(url_for("admin_edit_reading", request_kind=request_kind, request_id=request_id))
         conn.execute(
             f"UPDATE {table_name} SET ai_published = 1 WHERE id = ?",
             (request_id,),

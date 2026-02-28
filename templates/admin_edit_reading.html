@@ -62,9 +62,9 @@
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
             <button type="submit">Yorumu Yeniden Üret</button>
           </form>
-          <form action="/admin/publish-reading/{{ request_kind }}/{{ row['id'] }}" method="post" onsubmit="return confirmPublish(this);">
+          <form action="/admin/publish-reading/{{ request_kind }}/{{ row['id'] }}" method="post">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-            <input type="hidden" name="confirm_publish" value="0" />
+            <input type="hidden" name="confirm_publish" value="1" />
             <button type="submit">Müşteriye Gönder</button>
           </form>
           <form action="/admin/resend-completed-email/{{ request_kind }}/{{ row['id'] }}" method="post">
@@ -75,14 +75,5 @@
         </div>
       </section>
     </main>
-    <script>
-      function confirmPublish(formEl) {
-        const ok = window.confirm("Bu yorumu müşteriye göndermek istediğine emin misin?");
-        if (!ok) return false;
-        const field = formEl.querySelector('input[name="confirm_publish"]');
-        if (field) field.value = "1";
-        return true;
-      }
-    </script>
   </body>
   </html>

@@ -13,7 +13,10 @@
     <div class="scene-glow"></div>
     <main class="container">
       <header class="navbar">
-        <a class="brand" href="{{ url_for('home', lang=lang) }}">{{ t('brand') }}</a>
+        <a class="brand" href="{{ url_for('home', lang=lang) }}">
+          <iframe class="brand-mark brand-mark-anim" src="{{ url_for('static', filename='assets/home-logo-animated.html') }}" title="Orakelia Logo" loading="lazy"></iframe>
+          <span class="brand-text">Orakelia</span>
+        </a>
         <button class="nav-toggle" type="button" aria-label="Menu" data-nav-toggle>Menu</button>
         <nav class="nav-links" data-nav-links>
           <a href="{{ url_for('coffee_page', lang=lang) }}">{{ t('nav_coffee') }}</a>

@@ -128,6 +128,12 @@ TRANSLATIONS = {
         "username": "Kullanıcı Adı",
         "password": "Şifre",
         "login_submit": "Giriş Yap",
+        "forgot_password": "Şifremi Unuttum",
+        "forgot_title": "Şifre Yenile",
+        "forgot_desc": "Kullanıcı adı, e-posta ve telefon bilgini girip yeni şifre belirleyebilirsin.",
+        "forgot_submit": "Şifreyi Yenile",
+        "forgot_not_found": "Bilgiler eşleşmedi. Lütfen kullanıcı adı, e-posta ve telefonu kontrol edin.",
+        "forgot_ok": "Şifreniz yenilendi. Yeni şifrenizle giriş yapabilirsiniz.",
         "logout_submit": "Çıkış Yap",
         "nav_panel": "Panelim",
         "panel_title": "Kullanıcı Paneli",
@@ -265,6 +271,12 @@ TRANSLATIONS = {
         "username": "Username",
         "password": "Password",
         "login_submit": "Sign In",
+        "forgot_password": "Forgot Password",
+        "forgot_title": "Reset Password",
+        "forgot_desc": "Enter your username, email and phone, then set a new password.",
+        "forgot_submit": "Reset Password",
+        "forgot_not_found": "No matching account found. Please check username, email and phone.",
+        "forgot_ok": "Your password has been reset. You can sign in with your new password.",
         "logout_submit": "Sign Out",
         "nav_panel": "My Panel",
         "panel_title": "User Panel",
@@ -402,6 +414,12 @@ TRANSLATIONS = {
         "username": "Benutzername",
         "password": "Passwort",
         "login_submit": "Anmelden",
+        "forgot_password": "Passwort vergessen",
+        "forgot_title": "Passwort erneuern",
+        "forgot_desc": "Gib Benutzername, E-Mail und Telefon ein und lege ein neues Passwort fest.",
+        "forgot_submit": "Passwort erneuern",
+        "forgot_not_found": "Keine passenden Kontodaten gefunden. Bitte Benutzername, E-Mail und Telefon prüfen.",
+        "forgot_ok": "Dein Passwort wurde erneuert. Du kannst dich jetzt mit dem neuen Passwort anmelden.",
         "logout_submit": "Abmelden",
         "nav_panel": "Mein Bereich",
         "panel_title": "Benutzerbereich",
@@ -1992,6 +2010,45 @@ def login_submit():
     session["username"] = username
     flash(t("msg_login_ok"), "ok")
     return redirect(url_for("dashboard_page", lang=get_lang()))
+
+
+@app.get("/forgot-password")
+def forgot_password_page():
+    return render_template("forgot_password.html")
+
+
+@app.post("/forgot-password")
+def forgot_password_submit():
+    username = request.form.get("username", "").strip().lower()
+    email = request.form.get("email", "").strip().lower()
+    phone = request.form.get("phone", "").strip()
+    new_password = request.form.get("new_password", "")
+    new_password_confirm = request.form.get("new_password_confirm", "")
+
+    if len(username) < 3 or "@" not in email or not phone or len(new_password) < 4 or new_password != new_password_confirm:
+        flash(t("msg_register_bad"), "error")
+        return redirect(url_for("forgot_password_page", lang=get_lang()))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            """
+            SELECT id FROM users
+            WHERE lower(username) = ? AND lower(email) = ? AND phone = ?
+            LIMIT 1
+            """,
+            (username, email, phone),
+        ).fetchone()
+        if row is None:
+            flash(t("forgot_not_found"), "error")
+            return redirect(url_for("forgot_password_page", lang=get_lang()))
+        conn.execute(
+            "UPDATE users SET password_hash = ? WHERE id = ?",
+            (generate_password_hash(new_password), int(row["id"])),
+        )
+
+    flash(t("forgot_ok"), "ok")
+    return redirect(url_for("login_page", lang=get_lang()))
 
 
 @app.get("/register")

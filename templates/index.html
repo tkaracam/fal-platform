@@ -14,7 +14,7 @@
     <main class="container">
       <header class="navbar">
         <a class="brand" href="{{ url_for('home', lang=lang) }}">
-          <img class="brand-mark" src="{{ url_for('static', filename='assets/home-logo.svg') }}" alt="{{ t('brand') }}" />
+          <iframe class="brand-mark brand-mark-anim" src="{{ url_for('static', filename='assets/home-logo-animated.html') }}" title="Orakelia Logo" loading="lazy"></iframe>
           <span class="brand-text">Orakelia</span>
         </a>
         <button class="nav-toggle" type="button" aria-label="Menu" data-nav-toggle>Menu</button>

@@ -83,6 +83,15 @@ body {
   padding: 3px;
 }
 
+.brand-mark-anim {
+  display: block;
+  border: 1px solid #d7e8f6;
+  padding: 0;
+  overflow: hidden;
+  background: #ffffff;
+  pointer-events: none;
+}
+
 .brand-text {
   display: inline-block;
 }
@@ -976,6 +985,13 @@ td {
 }
 
 a { color: #e6655e; }
+
+.inline-link {
+  display: inline-block;
+  text-decoration: none;
+  font-weight: 700;
+  color: #35506a;
+}
 
 @media (max-width: 900px) {
   .choice-grid { grid-template-columns: 1fr; }

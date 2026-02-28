@@ -49,12 +49,16 @@
       </section>
 
       <section class="card" style="max-width:720px; margin-inline:auto;">
-        <form class="form-grid" method="post" action="{{ url_for('register_submit', lang=lang) }}">
+        <form class="form-grid" method="post" action="{{ url_for('register_submit', lang=lang) }}" data-register-form data-username-check-url="{{ url_for('username_available_api') }}">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-          <label>{{ t('full_name') }}<input name="full_name" type="text" required /></label>
-          <label>{{ t('username') }}<input name="username" minlength="3" required /></label>
-          <label class="full">{{ t('email') }}<input name="email" type="email" required /></label>
-          <label class="full">{{ t('phone') }}<input name="phone" type="text" required /></label>
+          <label>{{ t('full_name') }}<input name="full_name" type="text" value="{{ prefill.get('full_name', '') }}" required /></label>
+          <label>
+            {{ t('username') }}
+            <input name="username" data-username-input minlength="3" value="{{ prefill.get('username', '') }}" required />
+            <small class="username-status" data-username-status></small>
+          </label>
+          <label class="full">{{ t('email') }}<input name="email" type="email" value="{{ prefill.get('email', '') }}" required /></label>
+          <label class="full">{{ t('phone') }}<input name="phone" type="text" value="{{ prefill.get('phone', '') }}" required /></label>
           <label class="full">{{ t('password') }}<input name="password" type="password" minlength="4" required /></label>
           <button type="submit">{{ t('register_submit') }}</button>
         </form>

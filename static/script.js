@@ -89,6 +89,128 @@ function initPhotoGrid() {
   });
 }
 
+function getUsernameCheckTexts(lang) {
+  const map = {
+    tr: {
+      checking: "Kontrol ediliyor...",
+      available: "Kullanıcı adı uygun.",
+      taken: "Kullanıcı adı zaten var.",
+      tooShort: "Kullanıcı adı en az 3 karakter olmalı.",
+    },
+    en: {
+      checking: "Checking...",
+      available: "Username is available.",
+      taken: "This username already exists.",
+      tooShort: "Username must be at least 3 characters.",
+    },
+    de: {
+      checking: "Wird geprüft...",
+      available: "Benutzername ist verfügbar.",
+      taken: "Dieser Benutzername existiert bereits.",
+      tooShort: "Benutzername muss mindestens 3 Zeichen lang sein.",
+    },
+  };
+  return map[lang] || map.en;
+}
+
+function initRegisterUsernameCheck() {
+  const form = document.querySelector("form[data-register-form]");
+  if (!form) {
+    return;
+  }
+  const usernameInput = form.querySelector("[data-username-input]");
+  const statusEl = form.querySelector("[data-username-status]");
+  const checkUrl = form.getAttribute("data-username-check-url") || "";
+  if (!usernameInput || !statusEl || !checkUrl) {
+    return;
+  }
+
+  const texts = getUsernameCheckTexts(uiLang);
+  let timer = null;
+  let requestSeq = 0;
+  let availableState = null;
+
+  function setState(kind, msg) {
+    statusEl.classList.remove("ok", "bad", "checking");
+    usernameInput.classList.remove("username-ok", "username-bad");
+    statusEl.textContent = msg || "";
+    if (kind) {
+      statusEl.classList.add(kind);
+    }
+    if (kind === "ok") {
+      usernameInput.classList.add("username-ok");
+    }
+    if (kind === "bad") {
+      usernameInput.classList.add("username-bad");
+    }
+  }
+
+  async function checkUsernameNow() {
+    const raw = String(usernameInput.value || "").trim().toLowerCase();
+    if (raw.length < 3) {
+      availableState = false;
+      setState("bad", texts.tooShort);
+      return;
+    }
+    setState("checking", texts.checking);
+    const current = ++requestSeq;
+    try {
+      const resp = await fetch(`${checkUrl}?username=${encodeURIComponent(raw)}`, { credentials: "same-origin" });
+      if (!resp.ok) {
+        return;
+      }
+      const payload = await resp.json();
+      if (current !== requestSeq) {
+        return;
+      }
+      const isAvailable = Boolean(payload && payload.available);
+      availableState = isAvailable;
+      if (isAvailable) {
+        setState("ok", texts.available);
+      } else {
+        setState("bad", texts.taken);
+      }
+    } catch (_) {
+      // Keep silent on temporary network issues.
+    }
+  }
+
+  function scheduleCheck() {
+    if (timer) {
+      clearTimeout(timer);
+    }
+    timer = setTimeout(checkUsernameNow, 250);
+  }
+
+  usernameInput.addEventListener("input", scheduleCheck);
+  usernameInput.addEventListener("blur", checkUsernameNow);
+
+  form.addEventListener("submit", async (event) => {
+    const raw = String(usernameInput.value || "").trim().toLowerCase();
+    usernameInput.value = raw;
+    if (raw.length < 3) {
+      event.preventDefault();
+      availableState = false;
+      setState("bad", texts.tooShort);
+      usernameInput.focus();
+      return;
+    }
+    if (availableState !== true) {
+      event.preventDefault();
+      await checkUsernameNow();
+      if (availableState !== true) {
+        usernameInput.focus();
+      } else {
+        form.submit();
+      }
+    }
+  });
+
+  if (String(usernameInput.value || "").trim()) {
+    checkUsernameNow();
+  }
+}
+
 function shuffle(array) {
   const copy = [...array];
   for (let i = copy.length - 1; i > 0; i -= 1) {
@@ -152,3 +274,4 @@ createDeck("katina");
 createDeck("tarot");
 initNavbar();
 initPhotoGrid();
+initRegisterUsernameCheck();

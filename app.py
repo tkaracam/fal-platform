@@ -20,7 +20,7 @@ from urllib.error import HTTPError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
-from flask import Flask, Response, flash, redirect, render_template, request, session, url_for
+from flask import Flask, Response, flash, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
 try:
@@ -166,6 +166,10 @@ TRANSLATIONS = {
         "msg_register_ok": "Kayıt tamamlandı. Giriş yapabilirsiniz.",
         "msg_register_bad": "Ad soyad, e-posta, telefon, kullanıcı adı (min 3) ve şifre (min 4) zorunludur.",
         "msg_register_exists": "Bu kullanıcı adı zaten kullanılıyor.",
+        "username_checking": "Kontrol ediliyor...",
+        "username_available": "Kullanıcı adı uygun.",
+        "username_taken": "Kullanıcı adı zaten var.",
+        "username_too_short": "Kullanıcı adı en az 3 karakter olmalı.",
         "msg_auth_required": "Bu sayfa için giriş yapmanız gerekli.",
         "msg_profile_saved": "Hesap bilgileri güncellendi.",
         "msg_profile_bad_name": "Ad soyad alanı zorunludur.",
@@ -299,6 +303,10 @@ TRANSLATIONS = {
         "msg_register_ok": "Registration completed. You can sign in now.",
         "msg_register_bad": "Full name, email, phone, username (min 3), and password (min 4) are required.",
         "msg_register_exists": "This username is already in use.",
+        "username_checking": "Checking...",
+        "username_available": "Username is available.",
+        "username_taken": "This username already exists.",
+        "username_too_short": "Username must be at least 3 characters.",
         "msg_auth_required": "You need to sign in for this page.",
         "msg_profile_saved": "Account details updated.",
         "msg_profile_bad_name": "Full name is required.",
@@ -432,6 +440,10 @@ TRANSLATIONS = {
         "msg_register_ok": "Registrierung abgeschlossen. Jetzt anmelden.",
         "msg_register_bad": "Vollständiger Name, E-Mail, Telefon, Benutzername (min. 3) und Passwort (min. 4) sind erforderlich.",
         "msg_register_exists": "Dieser Benutzername ist bereits vergeben.",
+        "username_checking": "Wird geprüft...",
+        "username_available": "Benutzername ist verfügbar.",
+        "username_taken": "Dieser Benutzername existiert bereits.",
+        "username_too_short": "Benutzername muss mindestens 3 Zeichen lang sein.",
         "msg_auth_required": "Für diese Seite ist eine Anmeldung erforderlich.",
         "msg_profile_saved": "Kontodaten wurden aktualisiert.",
         "msg_profile_bad_name": "Vollständiger Name ist erforderlich.",
@@ -1984,7 +1996,23 @@ def login_submit():
 
 @app.get("/register")
 def register_page():
-    return render_template("register.html")
+    prefill = session.pop("register_prefill", None)
+    if not isinstance(prefill, dict):
+        prefill = {}
+    return render_template("register.html", prefill=prefill)
+
+
+@app.get("/api/username-available")
+def username_available_api():
+    username = request.args.get("username", "").strip().lower()
+    if len(username) < 3:
+        return jsonify({"ok": True, "available": False, "reason": "too_short"})
+    with sqlite3.connect(DB_PATH) as conn:
+        exists = conn.execute(
+            "SELECT 1 FROM users WHERE lower(username) = ? LIMIT 1",
+            (username,),
+        ).fetchone()
+    return jsonify({"ok": True, "available": exists is None, "reason": "taken" if exists else ""})
 
 
 @app.post("/register")
@@ -1994,6 +2022,12 @@ def register_submit():
     full_name = request.form.get("full_name", "").strip()
     email = request.form.get("email", "").strip().lower()
     phone = request.form.get("phone", "").strip()
+    session["register_prefill"] = {
+        "username": username,
+        "full_name": full_name,
+        "email": email,
+        "phone": phone,
+    }
     if len(username) < 3 or len(password) < 4 or not full_name or "@" not in email or not phone:
         flash(t("msg_register_bad"), "error")
         return redirect(url_for("register_page", lang=get_lang()))
@@ -2016,6 +2050,7 @@ def register_submit():
         except sqlite3.IntegrityError:
             flash(t("msg_register_exists"), "error")
             return redirect(url_for("register_page", lang=get_lang()))
+    session.pop("register_prefill", None)
     flash(t("msg_register_ok"), "ok")
     return redirect(url_for("login_page", lang=get_lang()))
 

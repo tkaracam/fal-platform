@@ -658,6 +658,35 @@ select:focus {
   border-color: #8ecae6;
 }
 
+input.username-ok {
+  border-color: #2ea66f;
+  box-shadow: 0 0 0 2px rgba(46, 166, 111, 0.16);
+}
+
+input.username-bad {
+  border-color: #df5666;
+  box-shadow: 0 0 0 2px rgba(223, 86, 102, 0.16);
+}
+
+.username-status {
+  min-height: 1.1rem;
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.username-status.ok {
+  color: #2ea66f;
+}
+
+.username-status.bad {
+  color: #df5666;
+}
+
+.username-status.checking {
+  color: #5f7a93;
+}
+
 button,
 .payment-link {
   background: linear-gradient(95deg, var(--accent-a), var(--accent-b));

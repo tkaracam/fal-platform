@@ -664,6 +664,16 @@ def init_db() -> None:
             )
             """
         )
+        try:
+            conn.execute(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_ci
+                ON users(lower(username))
+                """
+            )
+        except sqlite3.IntegrityError:
+            # Existing legacy rows may already violate case-insensitive uniqueness.
+            pass
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS reader_feedback (
@@ -1953,7 +1963,7 @@ def login_submit():
         flash(t("msg_too_many_attempts", minutes=15), "error")
         return redirect(url_for("login_page", lang=get_lang()))
 
-    username = request.form.get("username", "").strip()
+    username = request.form.get("username", "").strip().lower()
     password = request.form.get("password", "")
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
@@ -1988,6 +1998,13 @@ def register_submit():
         flash(t("msg_register_bad"), "error")
         return redirect(url_for("register_page", lang=get_lang()))
     with sqlite3.connect(DB_PATH) as conn:
+        existing = conn.execute(
+            "SELECT 1 FROM users WHERE lower(username) = ? LIMIT 1",
+            (username,),
+        ).fetchone()
+        if existing is not None:
+            flash(t("msg_register_exists"), "error")
+            return redirect(url_for("register_page", lang=get_lang()))
         try:
             conn.execute(
                 """

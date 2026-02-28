@@ -133,7 +133,21 @@
                 <td>{{ row['phone'] }}</td>
                 <td>{{ row['reader_name'] }}</td>
                 <td>{{ row['question'] }}</td>
-                <td>{% if row['ai_status'] == 'ready' %}{{ row['ai_reading'] }}{% else %}{{ row['ai_status'] }}{% endif %}</td>
+                <td>
+                  {% if row['ai_status'] == 'ready' and row['ai_reading'] %}
+                    <div><small>{% if row['ai_published'] == 1 %}Müşteriye Gönderildi{% else %}Admin Onayı Bekliyor{% endif %}</small></div>
+                    <details style="margin-top:6px;">
+                      <summary>Yorumu Gör / Düzenle</summary>
+                      <form action="/admin/save-reading/coffee/{{ row['id'] }}" method="post" style="margin-top:8px;">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+                        <textarea name="ai_reading" rows="8" style="width:100%;">{{ row['ai_reading'] }}</textarea>
+                        <button type="submit" style="margin-top:6px;">Yorumu Kaydet</button>
+                      </form>
+                    </details>
+                  {% else %}
+                    {{ row['ai_status'] }}
+                  {% endif %}
+                </td>
                 <td>{{ row['created_at'] }}</td>
                 <td>
                   {% if row['image_paths'] %}
@@ -173,6 +187,14 @@
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
                     <button type="submit">Mail Tekrar Gönder</button>
                   </form>
+                  <form action="/admin/regenerate-reading/coffee/{{ row['id'] }}" method="post" style="margin-top:6px;">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit">Yorumu Yeniden Üret</button>
+                  </form>
+                  <form action="/admin/publish-reading/coffee/{{ row['id'] }}" method="post" style="margin-top:6px;">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit">Müşteriye Gönder</button>
+                  </form>
                 </td>
               </tr>
               {% endfor %}
@@ -209,7 +231,21 @@
                 <td>{{ row['phone'] }}</td>
                 <td>{{ row['reader_name'] }}</td>
                 <td>{{ row['question'] }}</td>
-                <td>{% if row['ai_status'] == 'ready' %}{{ row['ai_reading'] }}{% else %}{{ row['ai_status'] }}{% endif %}</td>
+                <td>
+                  {% if row['ai_status'] == 'ready' and row['ai_reading'] %}
+                    <div><small>{% if row['ai_published'] == 1 %}Müşteriye Gönderildi{% else %}Admin Onayı Bekliyor{% endif %}</small></div>
+                    <details style="margin-top:6px;">
+                      <summary>Yorumu Gör / Düzenle</summary>
+                      <form action="/admin/save-reading/card/{{ row['id'] }}" method="post" style="margin-top:8px;">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+                        <textarea name="ai_reading" rows="8" style="width:100%;">{{ row['ai_reading'] }}</textarea>
+                        <button type="submit" style="margin-top:6px;">Yorumu Kaydet</button>
+                      </form>
+                    </details>
+                  {% else %}
+                    {{ row['ai_status'] }}
+                  {% endif %}
+                </td>
                 <td>{{ row['created_at'] }}</td>
                 <td>{% if row['wa_link'] %}<a href="{{ row['wa_link'] }}" target="_blank">Mesaj</a>{% endif %}</td>
                 <td>
@@ -239,6 +275,14 @@
                   <form action="/admin/resend-completed-email/card/{{ row['id'] }}" method="post" style="margin-top:6px;">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
                     <button type="submit">Mail Tekrar Gönder</button>
+                  </form>
+                  <form action="/admin/regenerate-reading/card/{{ row['id'] }}" method="post" style="margin-top:6px;">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit">Yorumu Yeniden Üret</button>
+                  </form>
+                  <form action="/admin/publish-reading/card/{{ row['id'] }}" method="post" style="margin-top:6px;">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit">Müşteriye Gönder</button>
                   </form>
                 </td>
               </tr>

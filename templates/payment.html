@@ -57,14 +57,14 @@
 
       <section class="card">
         <h2>{{ t('ai_result_title') }}</h2>
-        {% if ai_status == 'ready' and ai_reading %}
+        {% if can_view_reading %}
         <p class="ai-reading">{{ ai_reading }}</p>
         {% else %}
-        <p class="selection">{{ t('ai_result_pending') }}</p>
+        <p class="selection">{{ t('ai_result_review') }}</p>
         {% endif %}
       </section>
 
-      {% if ai_status == 'ready' and ai_reading %}
+      {% if can_view_reading %}
       <section class="card">
         <h2>{{ t('rate_title') }}</h2>
         <p>{{ t('rate_desc') }}</p>
@@ -91,7 +91,7 @@
       {% else %}
       <section class="card">
         <h2>{{ t('rate_title') }}</h2>
-        <p class="selection">Değerlendirme, fal yorumu hazır olduktan sonra açılır.</p>
+        <p class="selection">Değerlendirme, fal yorumu sana gönderildikten sonra açılır.</p>
       </section>
       {% endif %}
 

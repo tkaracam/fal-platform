@@ -196,6 +196,7 @@ TRANSLATIONS = {
         "rate_error": "Geçersiz değerlendirme.",
         "ai_result_title": "Fal Yorumu",
         "ai_result_pending": "Yorum hazırlanıyor.",
+        "ai_result_review": "Falınız yorumlanıyor (ortalama 20-30 dk).",
     },
     "en": {
         "brand": "Fire Fortune House",
@@ -321,6 +322,7 @@ TRANSLATIONS = {
         "rate_error": "Invalid rating.",
         "ai_result_title": "Reading Result",
         "ai_result_pending": "Interpretation is being generated.",
+        "ai_result_review": "Your reading is being prepared (average 20-30 minutes).",
     },
     "de": {
         "brand": "Feuer Orakelhaus",
@@ -446,6 +448,7 @@ TRANSLATIONS = {
         "rate_error": "Ungültige Bewertung.",
         "ai_result_title": "Orakeldeutung",
         "ai_result_pending": "Deutung wird erstellt.",
+        "ai_result_review": "Dein Orakel wird bearbeitet (durchschnittlich 20-30 Minuten).",
     },
 }
 
@@ -518,6 +521,7 @@ def init_db() -> None:
                 image_paths TEXT NOT NULL DEFAULT '[]',
                 ai_status TEXT NOT NULL DEFAULT 'pending',
                 ai_reading TEXT NOT NULL DEFAULT '',
+                ai_published INTEGER NOT NULL DEFAULT 0,
                 ai_batch_id TEXT NOT NULL DEFAULT '',
                 ai_custom_id TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL,
@@ -538,6 +542,7 @@ def init_db() -> None:
                 selected_cards TEXT NOT NULL,
                 ai_status TEXT NOT NULL DEFAULT 'pending',
                 ai_reading TEXT NOT NULL DEFAULT '',
+                ai_published INTEGER NOT NULL DEFAULT 0,
                 ai_batch_id TEXT NOT NULL DEFAULT '',
                 ai_custom_id TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL,
@@ -652,6 +657,10 @@ def init_db() -> None:
         except sqlite3.OperationalError:
             pass
         try:
+            conn.execute("ALTER TABLE coffee_requests ADD COLUMN ai_published INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
+        try:
             conn.execute("ALTER TABLE coffee_requests ADD COLUMN ai_batch_id TEXT NOT NULL DEFAULT ''")
         except sqlite3.OperationalError:
             pass
@@ -665,6 +674,10 @@ def init_db() -> None:
             pass
         try:
             conn.execute("ALTER TABLE card_requests ADD COLUMN ai_reading TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE card_requests ADD COLUMN ai_published INTEGER NOT NULL DEFAULT 0")
         except sqlite3.OperationalError:
             pass
         try:
@@ -1235,40 +1248,37 @@ def call_openai_reading(input_items: list[dict[str, str]]) -> tuple[str, str, st
 def build_coffee_prompt(question: str, full_name: str, lang: str, image_count: int) -> str:
     if lang == "en":
         return (
-            "You are a professional Turkish coffee grounds reading assistant. "
-            "Use ONLY the uploaded grounds photos and the user question. Do not invent symbols that are not visible. "
-            "First list clear observations from each photo, then interpret.\n"
-            "Output sections:\n"
-            "1) Photo Observations (photo-by-photo)\n"
-            "2) Main Theme\n"
-            "3) Love / Work / Money\n"
-            "4) Timing Clues (near-term)\n"
-            "5) 3 Actionable Suggestions\n"
+            "You are an experienced Turkish coffee reading expert. "
+            "Write in a warm, natural, human tone; avoid robotic language and avoid generic filler. "
+            "Use ONLY the uploaded grounds photos and the user's question. Do not invent symbols that are not visible.\n"
+            "Style:\n"
+            "- Start with one short overall-energy paragraph.\n"
+            "- Then continue with flowing mini-sections (not rigid numbered lists).\n"
+            "- Be clear, practical, and emotionally intelligent.\n"
+            "- End with exactly 3 short actionable suggestions.\n"
             f"Client: {full_name}\nQuestion: {question}\nPhoto count: {image_count}"
         )
     if lang == "de":
         return (
-            "Du bist eine professionelle Kaffeesatz-Orakelassistenz. "
-            "Nutze NUR die hochgeladenen Fotos und die Frage. Keine erfundenen Symbole. "
-            "Zuerst sichtbare Beobachtungen pro Foto, dann Deutung.\n"
-            "Ausgabe:\n"
-            "1) Beobachtungen je Foto\n"
-            "2) Hauptthema\n"
-            "3) Liebe / Beruf / Finanzen\n"
-            "4) Zeitnahe Hinweise\n"
-            "5) 3 konkrete Empfehlungen\n"
+            "Du bist eine erfahrene Kaffeesatz-Orakelberaterin. "
+            "Schreibe warm, natürlich und menschlich; nicht mechanisch. "
+            "Nutze NUR die hochgeladenen Fotos und die Frage. Keine erfundenen Symbole.\n"
+            "Stil:\n"
+            "- Starte mit einem kurzen Absatz zur Gesamtenergie.\n"
+            "- Danach klare, natürliche Abschnitte statt starrer Listen.\n"
+            "- Konkrete, alltagsnahe Sprache.\n"
+            "- Am Ende genau 3 kurze Empfehlungen.\n"
             f"Kundin: {full_name}\nFrage: {question}\nAnzahl Fotos: {image_count}"
         )
     return (
-        "Profesyonel bir kahve falı yorumcususun. "
-        "Sadece yüklenen telve fotoğraflarını ve soruyu kullan. Fotoğraflarda olmayan sembol uydurma. "
-        "Önce her foto için gördüğün işaretleri yaz, sonra yorumla.\n"
-        "Çıktı başlıkları:\n"
-        "1) Fotoğraf Bazlı Gözlemler\n"
-        "2) Ana Tema\n"
-        "3) Aşk / İş / Para\n"
-        "4) Yakın Dönem Zaman İşaretleri\n"
-        "5) 3 Net Öneri\n"
+        "Deneyimli bir kahve falı yorumcususun. "
+        "Yorumu sıcak, doğal ve insan gibi yaz; mekanik ve şablon cümlelerden kaçın. "
+        "Sadece yüklenen telve fotoğraflarını ve soruyu kullan. Fotoğrafta görünmeyen sembol uydurma.\n"
+        "Yazım tarzı:\n"
+        "- Kısa bir 'genel enerji' paragrafıyla başla.\n"
+        "- Sonra akıcı ara başlıklarla devam et (katı numaralı liste olmasın).\n"
+        "- Gerçekçi, net ve duygusal olarak dengeli bir dil kullan.\n"
+        "- Sonda tam 3 kısa, uygulanabilir tavsiye ver.\n"
         f"Müşteri: {full_name}\nSoru: {question}\nFotoğraf Sayısı: {image_count}"
     )
 
@@ -1298,21 +1308,36 @@ def build_card_prompt(reading_type: str, question: str, full_name: str, selected
         return (
             f"You are a professional {reading_type} reader. Interpret based on the selected spread and user question.\n"
             f"Spread: {layout}\nClient: {full_name}\nQuestion: {question}\nSelected cards/positions:\n{cards_detail}\n"
-            "Provide: core theme, position-by-position interpretation, risk/opportunity notes, and 3 concise recommendations. "
-            "Use the selected cards and positions directly."
+            "Important: card values above are internal technical IDs. Never print these IDs in the final text.\n"
+            "Write naturally and warmly, not mechanically. Avoid generic template wording.\n"
+            "Flow:\n"
+            "- Short overall theme paragraph\n"
+            "- Position-based interpretation in human language\n"
+            "- Risk/opportunity notes\n"
+            "- Exactly 3 concise recommendations"
         )
     if lang == "de":
         return (
             f"Du bist eine professionelle {reading_type}-Legung Assistenz. Deute basierend auf den gezogenen Karten und der Frage.\n"
             f"Legung: {layout}\nKundin: {full_name}\nFrage: {question}\nGezogene Karten/Positionen:\n{cards_detail}\n"
-            "Gib: Kernthema, positionsbasierte Deutung, Risiko/Chance und 3 klare Empfehlungen. "
-            "Beziehe dich direkt auf die gezogenen Positionen."
+            "Wichtig: Die Kartenwerte oben sind interne technische IDs. Diese IDs dürfen im finalen Text nicht erscheinen.\n"
+            "Schreibe natürlich, warm und nicht mechanisch.\n"
+            "Struktur:\n"
+            "- Kurzer Absatz zur Gesamtenergie\n"
+            "- Deutung nach Positionen in natürlicher Sprache\n"
+            "- Risiko/Chance\n"
+            "- Genau 3 klare Empfehlungen"
         )
     return (
         f"Profesyonel bir {reading_type} fal yorumcususun. Seçilen açılım ve soru üzerinden yorum üret.\n"
         f"Açılım: {layout}\nMüşteri: {full_name}\nSoru: {question}\nSeçilen kart/pozisyonlar:\n{cards_detail}\n"
-        "Çıktı: ana tema, pozisyon bazlı yorum, fırsat-risk notları ve 3 kısa öneri. "
-        "Kartları ve pozisyonları doğrudan referans al."
+        "Önemli: Yukarıdaki kart değerleri sistem içi teknik ID'dir. Nihai yorum metninde bu ID'leri asla yazma.\n"
+        "Dil sıcak, doğal ve insan gibi olsun; mekanik şablon cümlelerden kaçın.\n"
+        "Akış:\n"
+        "- Kısa bir genel enerji paragrafı\n"
+        "- Pozisyonlara göre yorum (doğal cümlelerle)\n"
+        "- Fırsat/risk notları\n"
+        "- Tam 3 kısa ve uygulanabilir öneri"
     )
 
 
@@ -1705,7 +1730,7 @@ def dashboard_page():
             return redirect(url_for("login_page", lang=get_lang()))
         coffee_rows = conn.execute(
             """
-            SELECT id, 'coffee' AS reading_type, reader_name, question, ai_status, ai_reading, created_at,
+            SELECT id, 'coffee' AS reading_type, reader_name, question, ai_status, ai_reading, ai_published, created_at,
                    COALESCE(
                      (SELECT status FROM payment_requests p
                       WHERE p.request_kind = 'coffee' AND p.request_id = coffee_requests.id
@@ -1721,7 +1746,7 @@ def dashboard_page():
         ).fetchall()
         card_rows = conn.execute(
             """
-            SELECT id, reading_type, reader_name, question, ai_status, ai_reading, created_at,
+            SELECT id, reading_type, reader_name, question, ai_status, ai_reading, ai_published, created_at,
                    COALESCE(
                      (SELECT status FROM payment_requests p
                       WHERE p.request_kind = 'card' AND p.request_id = card_requests.id
@@ -1744,7 +1769,7 @@ def dashboard_page():
                 "type": str(row["reading_type"]),
                 "reader_name": str(row["reader_name"]),
                 "question": str(row["question"]),
-                "result": str(row["ai_reading"] or (t("ai_result_pending") if row["ai_status"] != "ready" else "")),
+                "result": str(row["ai_reading"]) if (str(row["ai_status"]) == "ready" and int(row["ai_published"] or 0) == 1) else t("ai_result_review"),
                 "created_at": str(row["created_at"]),
                 "order_status": normalize_order_status(str(row["order_status"])),
             }
@@ -1756,7 +1781,7 @@ def dashboard_page():
                 "type": str(row["reading_type"]),
                 "reader_name": str(row["reader_name"]),
                 "question": str(row["question"]),
-                "result": str(row["ai_reading"] or (t("ai_result_pending") if row["ai_status"] != "ready" else "")),
+                "result": str(row["ai_reading"]) if (str(row["ai_status"]) == "ready" and int(row["ai_published"] or 0) == 1) else t("ai_result_review"),
                 "created_at": str(row["created_at"]),
                 "order_status": normalize_order_status(str(row["order_status"])),
             }
@@ -1877,8 +1902,8 @@ def submit_coffee():
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.execute(
             """
-            INSERT INTO coffee_requests (user_id, full_name, phone, question, reader_name, image_path, image_paths, ai_status, ai_reading, ai_batch_id, ai_custom_id, created_at, paid)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+            INSERT INTO coffee_requests (user_id, full_name, phone, question, reader_name, image_path, image_paths, ai_status, ai_reading, ai_published, ai_batch_id, ai_custom_id, created_at, paid)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, 0)
             """,
             (
                 user_id,
@@ -1900,7 +1925,7 @@ def submit_coffee():
     ai_status, ai_reading, ai_batch_id, ai_custom_id = generate_coffee_ai_reading(question, full_name, saved_paths, lang)
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
-            "UPDATE coffee_requests SET ai_status = ?, ai_reading = ?, ai_batch_id = ?, ai_custom_id = ? WHERE id = ?",
+            "UPDATE coffee_requests SET ai_status = ?, ai_reading = ?, ai_published = 0, ai_batch_id = ?, ai_custom_id = ? WHERE id = ?",
             (ai_status, ai_reading, ai_batch_id, ai_custom_id, int(request_id)),
         )
 
@@ -1961,8 +1986,8 @@ def submit_cards():
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.execute(
             """
-            INSERT INTO card_requests (user_id, reading_type, full_name, phone, question, reader_name, selected_cards, ai_status, ai_reading, ai_batch_id, ai_custom_id, created_at, paid)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+            INSERT INTO card_requests (user_id, reading_type, full_name, phone, question, reader_name, selected_cards, ai_status, ai_reading, ai_published, ai_batch_id, ai_custom_id, created_at, paid)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, 0)
             """,
             (
                 user_id,
@@ -1984,7 +2009,7 @@ def submit_cards():
     ai_status, ai_reading, ai_batch_id, ai_custom_id = generate_card_ai_reading(reading_type, question, full_name, selected_cards, lang)
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
-            "UPDATE card_requests SET ai_status = ?, ai_reading = ?, ai_batch_id = ?, ai_custom_id = ? WHERE id = ?",
+            "UPDATE card_requests SET ai_status = ?, ai_reading = ?, ai_published = 0, ai_batch_id = ?, ai_custom_id = ? WHERE id = ?",
             (ai_status, ai_reading, ai_batch_id, ai_custom_id, int(request_id)),
         )
 
@@ -2022,13 +2047,13 @@ def payment_page(request_kind: str, request_id: int):
 
         if request_kind == "coffee":
             req = conn.execute(
-                "SELECT reader_name, ai_status, ai_reading, ai_batch_id, ai_custom_id FROM coffee_requests WHERE id = ?",
+                "SELECT reader_name, ai_status, ai_reading, ai_published, ai_batch_id, ai_custom_id FROM coffee_requests WHERE id = ?",
                 (request_id,),
             ).fetchone()
             reading_type = "coffee"
         else:
             req = conn.execute(
-                "SELECT reading_type, reader_name, ai_status, ai_reading, ai_batch_id, ai_custom_id FROM card_requests WHERE id = ?",
+                "SELECT reading_type, reader_name, ai_status, ai_reading, ai_published, ai_batch_id, ai_custom_id FROM card_requests WHERE id = ?",
                 (request_id,),
             ).fetchone()
             reading_type = str(req["reading_type"]) if req else "tarot"
@@ -2039,6 +2064,7 @@ def payment_page(request_kind: str, request_id: int):
 
     ai_status = str(req["ai_status"])
     ai_reading = str(req["ai_reading"])
+    ai_published = int(req["ai_published"] or 0)
     ai_batch_id = str(req["ai_batch_id"])
     ai_custom_id = str(req["ai_custom_id"])
     payment_state = request.args.get("payment", "").strip().lower()
@@ -2060,6 +2086,7 @@ def payment_page(request_kind: str, request_id: int):
     reader_name = str(req["reader_name"])
     reader_id = get_reader_id_by_name(reading_type, reader_name)
     stripe_enabled = PAYMENT_PROVIDER == "stripe" and bool(STRIPE_SECRET_KEY)
+    can_view_reading = bool(ai_status == "ready" and ai_reading and ai_published == 1)
     return render_template(
         "payment.html",
         row=row,
@@ -2073,6 +2100,8 @@ def payment_page(request_kind: str, request_id: int):
         feedback_row=feedback_row,
         ai_status=ai_status,
         ai_reading=ai_reading,
+        ai_published=ai_published,
+        can_view_reading=can_view_reading,
     )
 
 
@@ -2344,6 +2373,158 @@ def admin_resend_completed_email(request_kind: str, request_id: int):
     return redirect(url_for("admin"))
 
 
+def regenerate_ai_for_request(request_kind: str, request_id: int, lang: str) -> tuple[bool, str]:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        if request_kind == "coffee":
+            row = conn.execute(
+                """
+                SELECT question, full_name, image_path, image_paths
+                FROM coffee_requests
+                WHERE id = ?
+                """,
+                (request_id,),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                """
+                SELECT reading_type, question, full_name, selected_cards
+                FROM card_requests
+                WHERE id = ?
+                """,
+                (request_id,),
+            ).fetchone()
+    if row is None:
+        return False, "Talep bulunamadı"
+
+    if request_kind == "coffee":
+        image_paths = parse_json_list(str(row["image_paths"] or "[]"))
+        if not image_paths and str(row["image_path"] or "").strip():
+            image_paths = [str(row["image_path"]).strip()]
+        ai_status, ai_reading, ai_batch_id, ai_custom_id = generate_coffee_ai_reading(
+            str(row["question"] or ""),
+            str(row["full_name"] or ""),
+            image_paths,
+            lang,
+        )
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute(
+                """
+                UPDATE coffee_requests
+                SET ai_status = ?, ai_reading = ?, ai_published = 0, ai_batch_id = ?, ai_custom_id = ?
+                WHERE id = ?
+                """,
+                (ai_status, ai_reading, ai_batch_id, ai_custom_id, request_id),
+            )
+    else:
+        ai_status, ai_reading, ai_batch_id, ai_custom_id = generate_card_ai_reading(
+            str(row["reading_type"] or "tarot"),
+            str(row["question"] or ""),
+            str(row["full_name"] or ""),
+            str(row["selected_cards"] or "[]"),
+            lang,
+        )
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute(
+                """
+                UPDATE card_requests
+                SET ai_status = ?, ai_reading = ?, ai_published = 0, ai_batch_id = ?, ai_custom_id = ?
+                WHERE id = ?
+                """,
+                (ai_status, ai_reading, ai_batch_id, ai_custom_id, request_id),
+            )
+
+    if ai_status == "ready":
+        return True, "Yorum yeniden üretildi. Müşteriye göndermek için yayınlayın."
+    if ai_status == "batched":
+        return True, "Yorum kuyruğa alındı (batch). Hazır olunca yayınlayabilirsiniz."
+    if ai_status == "no_key":
+        return False, "OpenAI anahtarı eksik (OPENAI_API_KEY)."
+    return False, f"Yorum üretilemedi: {ai_status}"
+
+
+@app.post("/admin/publish-reading/<request_kind>/<int:request_id>")
+def admin_publish_reading(request_kind: str, request_id: int):
+    if not admin_required():
+        flash("Bu alan için admin girişi gerekli.", "error")
+        return redirect(url_for("admin"))
+    if request_kind not in {"coffee", "card"}:
+        flash("Geçersiz işlem.", "error")
+        return redirect(url_for("admin"))
+
+    table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            f"SELECT ai_status, ai_reading FROM {table_name} WHERE id = ?",
+            (request_id,),
+        ).fetchone()
+        if row is None:
+            flash("Talep bulunamadı.", "error")
+            return redirect(url_for("admin"))
+        if str(row["ai_status"]) != "ready" or not str(row["ai_reading"] or "").strip():
+            flash("Yorum hazır değil. Önce yorum üretilmeli.", "error")
+            return redirect(url_for("admin"))
+        conn.execute(
+            f"UPDATE {table_name} SET ai_published = 1 WHERE id = ?",
+            (request_id,),
+        )
+    flash("Yorum müşteriye yayınlandı.", "ok")
+    return redirect(url_for("admin"))
+
+
+@app.post("/admin/regenerate-reading/<request_kind>/<int:request_id>")
+def admin_regenerate_reading(request_kind: str, request_id: int):
+    if not admin_required():
+        flash("Bu alan için admin girişi gerekli.", "error")
+        return redirect(url_for("admin"))
+    if request_kind not in {"coffee", "card"}:
+        flash("Geçersiz işlem.", "error")
+        return redirect(url_for("admin"))
+    ok, message = regenerate_ai_for_request(request_kind, request_id, get_lang())
+    flash(message, "ok" if ok else "error")
+    return redirect(url_for("admin"))
+
+
+@app.post("/admin/save-reading/<request_kind>/<int:request_id>")
+def admin_save_reading(request_kind: str, request_id: int):
+    if not admin_required():
+        flash("Bu alan için admin girişi gerekli.", "error")
+        return redirect(url_for("admin"))
+    if request_kind not in {"coffee", "card"}:
+        flash("Geçersiz işlem.", "error")
+        return redirect(url_for("admin"))
+
+    edited = request.form.get("ai_reading", "").strip()
+    if not edited:
+        flash("Yorum metni boş olamaz.", "error")
+        return redirect(url_for("admin"))
+
+    table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(
+            f"SELECT id FROM {table_name} WHERE id = ?",
+            (request_id,),
+        ).fetchone()
+        if row is None:
+            flash("Talep bulunamadı.", "error")
+            return redirect(url_for("admin"))
+        conn.execute(
+            f"""
+            UPDATE {table_name}
+            SET ai_status = 'ready',
+                ai_reading = ?,
+                ai_published = 0,
+                ai_batch_id = '',
+                ai_custom_id = ''
+            WHERE id = ?
+            """,
+            (edited, request_id),
+        )
+    flash("Yorum kaydedildi. Müşteriye göndermek için 'Müşteriye Gönder' butonunu kullan.", "ok")
+    return redirect(url_for("admin"))
+
+
 def parse_admin_filters() -> dict[str, str]:
     raw_type = request.args.get("type", "all").strip().lower()
     raw_status = request.args.get("status", "all").strip().lower()
@@ -2562,6 +2743,7 @@ def admin():
             "image_paths": parse_json_list(row["image_paths"]),
             "ai_status": row["ai_status"],
             "ai_reading": row["ai_reading"],
+            "ai_published": int(row["ai_published"] or 0),
             "paid": row["paid"],
             "order_status": normalize_order_status(str(row["order_status"])),
             "next_status": ORDER_STATUS_NEXT[normalize_order_status(str(row["order_status"]))],
@@ -2582,6 +2764,7 @@ def admin():
             "selected_cards": row["selected_cards"],
             "ai_status": row["ai_status"],
             "ai_reading": row["ai_reading"],
+            "ai_published": int(row["ai_published"] or 0),
             "created_at": row["created_at"],
             "paid": row["paid"],
             "order_status": normalize_order_status(str(row["order_status"])),

@@ -1271,7 +1271,7 @@ def build_coffee_prompt(question: str, full_name: str, reader_name: str, lang: s
             "- Danach klare, natürliche Abschnitte statt starrer Listen.\n"
             "- Konkrete, alltagsnahe Sprache.\n"
             "- Am Ende genau 3 kurze Empfehlungen.\n"
-            f"Letzte Zeile muss exakt sein: Falcı: {reader_name}\n"
+            f"Letzte Zeile muss exakt sein: Kaffeesatzleserin: {reader_name}\n"
             f"Kundin: {full_name}\nFrage: {question}\nAnzahl Fotos: {image_count}"
         )
     return (
@@ -1336,7 +1336,7 @@ def build_card_prompt(reading_type: str, question: str, full_name: str, reader_n
             "- Deutung nach Positionen in natürlicher Sprache\n"
             "- Risiko/Chance\n"
             "- Genau 3 klare Empfehlungen\n"
-            f"Letzte Zeile muss exakt sein: Falcı: {reader_name}"
+            f"Letzte Zeile muss exakt sein: Kartenlegerin: {reader_name}"
         )
     return (
         f"Profesyonel bir {reading_type} fal yorumcususun. Seçilen açılım ve soru üzerinden yorum üret.\n"

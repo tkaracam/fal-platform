@@ -63,6 +63,8 @@ LIVE_SUPPORT_URL = os.getenv("LIVE_SUPPORT_URL", "https://t.me")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 OPENAI_USE_BATCH = os.getenv("OPENAI_USE_BATCH", "0").strip() == "1"
+AI_INPUT_COST_PER_1M = float(os.getenv("AI_INPUT_COST_PER_1M", "0"))
+AI_OUTPUT_COST_PER_1M = float(os.getenv("AI_OUTPUT_COST_PER_1M", "0"))
 EXPECTED_CARD_COUNT = {"katina": 7, "tarot": 3}
 LANGUAGES = {"tr", "en", "de"}
 DEFAULT_LANG = "tr"
@@ -626,6 +628,12 @@ def init_db() -> None:
                 action TEXT NOT NULL,
                 ai_status TEXT NOT NULL DEFAULT '',
                 ai_reading TEXT NOT NULL DEFAULT '',
+                model_name TEXT NOT NULL DEFAULT '',
+                token_input INTEGER NOT NULL DEFAULT 0,
+                token_output INTEGER NOT NULL DEFAULT 0,
+                token_total INTEGER NOT NULL DEFAULT 0,
+                cost_estimate REAL NOT NULL DEFAULT 0,
+                quality_flags TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL
             )
             """
@@ -738,6 +746,30 @@ def init_db() -> None:
             conn.execute("ALTER TABLE users ADD COLUMN email TEXT NOT NULL DEFAULT ''")
         except sqlite3.OperationalError:
             pass
+        try:
+            conn.execute("ALTER TABLE reading_audit ADD COLUMN model_name TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE reading_audit ADD COLUMN token_input INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE reading_audit ADD COLUMN token_output INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE reading_audit ADD COLUMN token_total INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE reading_audit ADD COLUMN cost_estimate REAL NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE reading_audit ADD COLUMN quality_flags TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
 
 
 def allowed_file(filename: str) -> bool:
@@ -753,6 +785,57 @@ def get_admin_actor() -> str:
     return actor or "admin"
 
 
+def estimate_tokens_from_text(text: str) -> int:
+    body = (text or "").strip()
+    if not body:
+        return 0
+    return max(1, (len(body) + 3) // 4)
+
+
+def get_model_cost_rates(model_name: str) -> tuple[float, float]:
+    if AI_INPUT_COST_PER_1M > 0 and AI_OUTPUT_COST_PER_1M > 0:
+        return AI_INPUT_COST_PER_1M, AI_OUTPUT_COST_PER_1M
+    defaults: dict[str, tuple[float, float]] = {
+        "gpt-4.1-mini": (0.40, 1.60),
+        "gpt-4.1": (2.00, 8.00),
+        "gpt-4o-mini": (0.15, 0.60),
+        "gpt-4o": (2.50, 10.00),
+    }
+    return defaults.get(model_name, defaults["gpt-4.1-mini"])
+
+
+def estimate_ai_observability(
+    reading_type: str,
+    question: str,
+    ai_reading: str,
+    image_count: int = 0,
+    selected_cards_raw: str = "",
+    model_name: str = "",
+) -> tuple[int, int, int, float, str]:
+    q_tokens = estimate_tokens_from_text(question)
+    cards_tokens = estimate_tokens_from_text(selected_cards_raw)
+    output_tokens = estimate_tokens_from_text(ai_reading)
+
+    if reading_type == "coffee":
+        input_tokens = 420 + q_tokens + (image_count * 850)
+    else:
+        input_tokens = 320 + q_tokens + cards_tokens
+
+    total_tokens = input_tokens + output_tokens
+    in_rate, out_rate = get_model_cost_rates(model_name or OPENAI_MODEL)
+    cost_estimate = (input_tokens / 1_000_000.0) * in_rate + (output_tokens / 1_000_000.0) * out_rate
+
+    flags: list[str] = []
+    if len((ai_reading or "").strip()) > 2600:
+        flags.append("long")
+    if (ai_reading or "").strip():
+        issues = validate_reading_quality(ai_reading)
+        if issues:
+            flags.append("quality_risk")
+
+    return input_tokens, output_tokens, total_tokens, round(cost_estimate, 6), ",".join(flags)
+
+
 def log_reading_event(
     request_kind: str,
     request_id: int,
@@ -763,15 +846,21 @@ def log_reading_event(
     action: str,
     ai_status: str,
     ai_reading: str,
+    model_name: str = "",
+    token_input: int = 0,
+    token_output: int = 0,
+    token_total: int = 0,
+    cost_estimate: float = 0.0,
+    quality_flags: str = "",
 ) -> None:
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
             """
             INSERT INTO reading_audit (
                 request_kind, request_id, reading_type, customer_name, reader_name,
-                actor, action, ai_status, ai_reading, created_at
+                actor, action, ai_status, ai_reading, model_name, token_input, token_output, token_total, cost_estimate, quality_flags, created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 request_kind,
@@ -783,6 +872,12 @@ def log_reading_event(
                 action,
                 ai_status,
                 ai_reading,
+                model_name or OPENAI_MODEL,
+                max(0, int(token_input or 0)),
+                max(0, int(token_output or 0)),
+                max(0, int(token_total or 0)),
+                float(cost_estimate or 0.0),
+                quality_flags or "",
                 datetime.utcnow().isoformat(),
             ),
         )
@@ -2032,6 +2127,13 @@ def submit_coffee():
             "UPDATE coffee_requests SET ai_status = ?, ai_reading = ?, ai_published = 0, ai_batch_id = ?, ai_custom_id = ? WHERE id = ?",
             (ai_status, ai_reading, ai_batch_id, ai_custom_id, int(request_id)),
         )
+    token_input, token_output, token_total, cost_estimate, quality_flags = estimate_ai_observability(
+        reading_type="coffee",
+        question=question,
+        ai_reading=ai_reading,
+        image_count=len(saved_paths),
+        model_name=OPENAI_MODEL,
+    )
     log_reading_event(
         request_kind="coffee",
         request_id=int(request_id),
@@ -2042,6 +2144,12 @@ def submit_coffee():
         action="generated",
         ai_status=ai_status,
         ai_reading=ai_reading,
+        model_name=OPENAI_MODEL,
+        token_input=(token_input if ai_status in {"ready", "batched"} else 0),
+        token_output=(token_output if ai_status == "ready" else 0),
+        token_total=(token_total if ai_status in {"ready", "batched"} else 0),
+        cost_estimate=(cost_estimate if ai_status in {"ready", "batched"} else 0.0),
+        quality_flags=quality_flags,
     )
 
     create_payment_record("coffee", int(request_id), full_name, phone, amount, currency, user_id=user_id)
@@ -2134,6 +2242,13 @@ def submit_cards():
             "UPDATE card_requests SET ai_status = ?, ai_reading = ?, ai_published = 0, ai_batch_id = ?, ai_custom_id = ? WHERE id = ?",
             (ai_status, ai_reading, ai_batch_id, ai_custom_id, int(request_id)),
         )
+    token_input, token_output, token_total, cost_estimate, quality_flags = estimate_ai_observability(
+        reading_type=reading_type,
+        question=question,
+        ai_reading=ai_reading,
+        selected_cards_raw=selected_cards,
+        model_name=OPENAI_MODEL,
+    )
     log_reading_event(
         request_kind="card",
         request_id=int(request_id),
@@ -2144,6 +2259,12 @@ def submit_cards():
         action="generated",
         ai_status=ai_status,
         ai_reading=ai_reading,
+        model_name=OPENAI_MODEL,
+        token_input=(token_input if ai_status in {"ready", "batched"} else 0),
+        token_output=(token_output if ai_status == "ready" else 0),
+        token_total=(token_total if ai_status in {"ready", "batched"} else 0),
+        cost_estimate=(cost_estimate if ai_status in {"ready", "batched"} else 0.0),
+        quality_flags=quality_flags,
     )
 
     create_payment_record("card", int(request_id), full_name, phone, amount, currency, user_id=user_id)
@@ -2560,6 +2681,13 @@ def regenerate_ai_for_request(request_kind: str, request_id: int, lang: str) -> 
                 """,
                 (ai_status, ai_reading, ai_batch_id, ai_custom_id, request_id),
             )
+        token_input, token_output, token_total, cost_estimate, quality_flags = estimate_ai_observability(
+            reading_type="coffee",
+            question=str(row["question"] or ""),
+            ai_reading=ai_reading,
+            image_count=len(image_paths),
+            model_name=OPENAI_MODEL,
+        )
     else:
         ai_status, ai_reading, ai_batch_id, ai_custom_id = generate_card_ai_reading(
             str(row["reading_type"] or "tarot"),
@@ -2578,6 +2706,13 @@ def regenerate_ai_for_request(request_kind: str, request_id: int, lang: str) -> 
                 """,
                 (ai_status, ai_reading, ai_batch_id, ai_custom_id, request_id),
             )
+        token_input, token_output, token_total, cost_estimate, quality_flags = estimate_ai_observability(
+            reading_type=reading_type,
+            question=str(row["question"] or ""),
+            ai_reading=ai_reading,
+            selected_cards_raw=str(row["selected_cards"] or ""),
+            model_name=OPENAI_MODEL,
+        )
     log_reading_event(
         request_kind=request_kind,
         request_id=request_id,
@@ -2588,6 +2723,12 @@ def regenerate_ai_for_request(request_kind: str, request_id: int, lang: str) -> 
         action="regenerated",
         ai_status=ai_status,
         ai_reading=ai_reading,
+        model_name=OPENAI_MODEL,
+        token_input=(token_input if ai_status in {"ready", "batched"} else 0),
+        token_output=(token_output if ai_status == "ready" else 0),
+        token_total=(token_total if ai_status in {"ready", "batched"} else 0),
+        cost_estimate=(cost_estimate if ai_status in {"ready", "batched"} else 0.0),
+        quality_flags=quality_flags,
     )
 
     if ai_status == "ready":
@@ -2613,7 +2754,10 @@ def validate_reading_quality(text: str) -> list[str]:
         issues.append("Yorumda teknik kart ID görünüyor (ör: tarot-kart-58).")
 
     signature_markers = ("Falcı:", "Reader:", "Kaffeesatzleserin:", "Kartenlegerin:")
-    if not any(marker in body for marker in signature_markers):
+    lines = [ln.strip() for ln in body.splitlines() if ln.strip()]
+    last_line = lines[-1] if lines else ""
+    plain_name_signature = bool(last_line and 1 <= len(last_line.split()) <= 3 and len(last_line) <= 32)
+    if (not any(marker in body for marker in signature_markers)) and (not plain_name_signature):
         issues.append("Yorum sonunda falcı imzası eksik.")
 
     return issues
@@ -2669,6 +2813,12 @@ def admin_publish_reading(request_kind: str, request_id: int):
         action="published",
         ai_status="ready",
         ai_reading=reading_text,
+        model_name=OPENAI_MODEL,
+        token_input=estimate_tokens_from_text(reading_text),
+        token_output=estimate_tokens_from_text(reading_text),
+        token_total=estimate_tokens_from_text(reading_text) * 2,
+        cost_estimate=0.0,
+        quality_flags=("quality_risk" if validate_reading_quality(reading_text) else ""),
     )
     mail_ok, mail_reason = notify_reading_completed(request_kind, request_id)
     log_reading_event(
@@ -2681,6 +2831,12 @@ def admin_publish_reading(request_kind: str, request_id: int):
         action=("mail_sent" if mail_ok else "mail_failed"),
         ai_status=("sent" if mail_ok else "failed"),
         ai_reading=("Yayın sonrası bildirim e-postası gönderildi." if mail_ok else f"Mail gönderilemedi: {mail_reason}"),
+        model_name=OPENAI_MODEL,
+        token_input=0,
+        token_output=0,
+        token_total=0,
+        cost_estimate=0.0,
+        quality_flags="",
     )
     if mail_ok:
         flash("Yorum müşteriye yayınlandı ve bilgilendirme e-postası gönderildi.", "ok")
@@ -2723,7 +2879,7 @@ def admin_save_reading(request_kind: str, request_id: int):
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         row = conn.execute(
-            f"SELECT id, full_name, reader_name, {'\"coffee\" AS reading_type' if request_kind == 'coffee' else 'reading_type'} FROM {table_name} WHERE id = ?",
+            f"SELECT id, full_name, reader_name, question, {'\"\" AS selected_cards' if request_kind == 'coffee' else 'selected_cards'}, {'\"coffee\" AS reading_type' if request_kind == 'coffee' else 'reading_type'} FROM {table_name} WHERE id = ?",
             (request_id,),
         ).fetchone()
         if row is None:
@@ -2744,6 +2900,13 @@ def admin_save_reading(request_kind: str, request_id: int):
             """,
             (edited, request_id),
         )
+    token_input, token_output, token_total, _, quality_flags = estimate_ai_observability(
+        reading_type=reading_type,
+        question=str(row["question"] or ""),
+        ai_reading=edited,
+        selected_cards_raw=str(row["selected_cards"] or ""),
+        model_name=OPENAI_MODEL,
+    )
     log_reading_event(
         request_kind=request_kind,
         request_id=request_id,
@@ -2754,6 +2917,12 @@ def admin_save_reading(request_kind: str, request_id: int):
         action="edited",
         ai_status="ready",
         ai_reading=edited,
+        model_name=OPENAI_MODEL,
+        token_input=token_input,
+        token_output=token_output,
+        token_total=token_total,
+        cost_estimate=0.0,
+        quality_flags=quality_flags,
     )
     flash("Yorum kaydedildi. Müşteriye göndermek için 'Müşteriye Gönder' butonunu kullan.", "ok")
     if request.form.get("next", "").strip() == "edit":
@@ -3012,7 +3181,22 @@ def fetch_admin_summary() -> dict[str, int]:
             GROUP BY status
             """
         ).fetchall()
+        ai_row = conn.execute(
+            """
+            SELECT
+                COUNT(*) AS c,
+                COALESCE(SUM(cost_estimate), 0) AS cost_sum,
+                COALESCE(SUM(token_total), 0) AS token_sum
+            FROM reading_audit
+            WHERE created_at >= ?
+              AND action IN ('generated', 'regenerated')
+            """,
+            (today_start,),
+        ).fetchone()
     status_counts = {str(row["status"]): int(row["c"]) for row in payment_status_rows}
+    ai_count = int(ai_row["c"] or 0)
+    ai_cost = float(ai_row["cost_sum"] or 0.0)
+    ai_tokens = int(ai_row["token_sum"] or 0)
     return {
         "users_total": users_total,
         "users_today": users_today,
@@ -3024,6 +3208,10 @@ def fetch_admin_summary() -> dict[str, int]:
         "paid_count": status_counts.get("paid", 0),
         "in_progress_count": status_counts.get("in_progress", 0),
         "completed_count": status_counts.get("completed", 0),
+        "ai_runs_today": ai_count,
+        "ai_tokens_today": ai_tokens,
+        "ai_cost_today": ai_cost,
+        "ai_cost_avg": (ai_cost / ai_count) if ai_count else 0.0,
     }
 
 
@@ -3079,6 +3267,12 @@ def admin_audit_export_csv():
             "actor",
             "action",
             "ai_status",
+            "model_name",
+            "token_input",
+            "token_output",
+            "token_total",
+            "cost_estimate",
+            "quality_flags",
             "created_at",
             "ai_reading",
         ]
@@ -3095,6 +3289,12 @@ def admin_audit_export_csv():
                 row["actor"],
                 row["action"],
                 row["ai_status"],
+                row["model_name"],
+                row["token_input"],
+                row["token_output"],
+                row["token_total"],
+                row["cost_estimate"],
+                row["quality_flags"],
                 row["created_at"],
                 row["ai_reading"],
             ]
@@ -3128,6 +3328,11 @@ def admin():
             "ai_status": row["ai_status"],
             "ai_reading": row["ai_reading"],
             "ai_published": int(row["ai_published"] or 0),
+            "quality_flags": (
+                (("long" if len(str(row["ai_reading"] or "").strip()) > 2600 else "") +
+                 (",quality_risk" if validate_reading_quality(str(row["ai_reading"] or "").strip()) else ""))
+                .strip(",")
+            ) if str(row["ai_status"]) == "ready" else "",
             "paid": row["paid"],
             "order_status": normalize_order_status(str(row["order_status"])),
             "next_status": ORDER_STATUS_NEXT[normalize_order_status(str(row["order_status"]))],
@@ -3149,6 +3354,11 @@ def admin():
             "ai_status": row["ai_status"],
             "ai_reading": row["ai_reading"],
             "ai_published": int(row["ai_published"] or 0),
+            "quality_flags": (
+                (("long" if len(str(row["ai_reading"] or "").strip()) > 2600 else "") +
+                 (",quality_risk" if validate_reading_quality(str(row["ai_reading"] or "").strip()) else ""))
+                .strip(",")
+            ) if str(row["ai_status"]) == "ready" else "",
             "created_at": row["created_at"],
             "paid": row["paid"],
             "order_status": normalize_order_status(str(row["order_status"])),
@@ -3172,6 +3382,10 @@ def admin():
             "action": row["action"],
             "ai_status": row["ai_status"],
             "created_at": row["created_at"],
+            "model_name": row["model_name"],
+            "token_total": int(row["token_total"] or 0),
+            "cost_estimate": float(row["cost_estimate"] or 0.0),
+            "quality_flags": row["quality_flags"],
             "ai_excerpt": (str(row["ai_reading"] or "").strip()[:220] + ("..." if len(str(row["ai_reading"] or "").strip()) > 220 else "")),
         }
         for row in reading_audit_rows

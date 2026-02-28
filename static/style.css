@@ -56,8 +56,8 @@ body {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(8px);
-  position: sticky;
-  top: 10px;
+  position: relative;
+  top: auto;
   z-index: 1000;
 }
 

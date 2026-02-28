@@ -28,6 +28,11 @@
         font-weight: 500;
         color: #64748b;
       }
+      .audit-excerpt {
+        max-width: 360px;
+        white-space: normal;
+        line-height: 1.3;
+      }
     </style>
   </head>
   <body>
@@ -289,6 +294,44 @@
                     <button type="submit">Yorumu Aç</button>
                   </form>
                 </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Yorum Geçmişi</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Talep</th>
+                <th>Tür</th>
+                <th>Kim</th>
+                <th>Falcı</th>
+                <th>İşlem</th>
+                <th>Durum</th>
+                <th>Yapan</th>
+                <th>Tarih/Saat</th>
+                <th>Özet</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in reading_audit_rows %}
+              <tr>
+                <td>{{ row['id'] }}</td>
+                <td>{{ row['request_kind'] }}-{{ row['request_id'] }}</td>
+                <td>{{ row['reading_type'] }}</td>
+                <td>{{ row['customer_name'] }}</td>
+                <td>{{ row['reader_name'] }}</td>
+                <td>{{ row['action'] }}</td>
+                <td>{{ row['ai_status'] }}</td>
+                <td>{{ row['actor'] }}</td>
+                <td>{{ row['created_at'] }}</td>
+                <td class="audit-excerpt">{{ row['ai_excerpt'] }}</td>
               </tr>
               {% endfor %}
             </tbody>

@@ -35,6 +35,12 @@
         <p><strong>Soru:</strong> {{ row['question'] }}</p>
         <p><strong>AI Durumu:</strong> {{ row['ai_status'] }}</p>
         <p><strong>Yayın:</strong> {% if row['ai_published'] == 1 %}Müşteriye Gönderildi{% else %}Admin Onayı Bekliyor{% endif %}</p>
+        {% if row['ai_published_at'] %}
+        <p><strong>Yayın Saati:</strong> {{ row['ai_published_at'] }}</p>
+        {% endif %}
+        {% if row['ai_published_by'] %}
+        <p><strong>Yayınlayan:</strong> {{ row['ai_published_by'] }}</p>
+        {% endif %}
       </section>
 
       <section class="card">

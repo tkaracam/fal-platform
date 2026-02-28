@@ -613,6 +613,35 @@ def init_db() -> None:
             ON auth_attempts(scope, ip, attempted_at)
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS reading_audit (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                request_kind TEXT NOT NULL,
+                request_id INTEGER NOT NULL,
+                reading_type TEXT NOT NULL,
+                customer_name TEXT NOT NULL DEFAULT '',
+                reader_name TEXT NOT NULL DEFAULT '',
+                actor TEXT NOT NULL DEFAULT '',
+                action TEXT NOT NULL,
+                ai_status TEXT NOT NULL DEFAULT '',
+                ai_reading TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_reading_audit_request
+            ON reading_audit(request_kind, request_id, created_at)
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_reading_audit_created
+            ON reading_audit(created_at)
+            """
+        )
         try:
             conn.execute("ALTER TABLE coffee_requests ADD COLUMN paid INTEGER NOT NULL DEFAULT 0")
         except sqlite3.OperationalError:
@@ -690,6 +719,22 @@ def init_db() -> None:
         except sqlite3.OperationalError:
             pass
         try:
+            conn.execute("ALTER TABLE coffee_requests ADD COLUMN ai_published_at TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE coffee_requests ADD COLUMN ai_published_by TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE card_requests ADD COLUMN ai_published_at TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE card_requests ADD COLUMN ai_published_by TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
+        try:
             conn.execute("ALTER TABLE users ADD COLUMN email TEXT NOT NULL DEFAULT ''")
         except sqlite3.OperationalError:
             pass
@@ -701,6 +746,46 @@ def allowed_file(filename: str) -> bool:
 
 def admin_required() -> bool:
     return bool(session.get("is_admin"))
+
+
+def get_admin_actor() -> str:
+    actor = str(session.get("admin_username", "")).strip()
+    return actor or "admin"
+
+
+def log_reading_event(
+    request_kind: str,
+    request_id: int,
+    reading_type: str,
+    customer_name: str,
+    reader_name: str,
+    actor: str,
+    action: str,
+    ai_status: str,
+    ai_reading: str,
+) -> None:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            """
+            INSERT INTO reading_audit (
+                request_kind, request_id, reading_type, customer_name, reader_name,
+                actor, action, ai_status, ai_reading, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                request_kind,
+                int(request_id),
+                reading_type,
+                (customer_name or "").strip(),
+                (reader_name or "").strip(),
+                (actor or "").strip(),
+                action,
+                ai_status,
+                ai_reading,
+                datetime.utcnow().isoformat(),
+            ),
+        )
 
 
 def get_current_user_id() -> int:
@@ -1947,6 +2032,17 @@ def submit_coffee():
             "UPDATE coffee_requests SET ai_status = ?, ai_reading = ?, ai_published = 0, ai_batch_id = ?, ai_custom_id = ? WHERE id = ?",
             (ai_status, ai_reading, ai_batch_id, ai_custom_id, int(request_id)),
         )
+    log_reading_event(
+        request_kind="coffee",
+        request_id=int(request_id),
+        reading_type="coffee",
+        customer_name=full_name,
+        reader_name=selected_reader["name"],
+        actor="system-ai",
+        action="generated",
+        ai_status=ai_status,
+        ai_reading=ai_reading,
+    )
 
     create_payment_record("coffee", int(request_id), full_name, phone, amount, currency, user_id=user_id)
 
@@ -2038,6 +2134,17 @@ def submit_cards():
             "UPDATE card_requests SET ai_status = ?, ai_reading = ?, ai_published = 0, ai_batch_id = ?, ai_custom_id = ? WHERE id = ?",
             (ai_status, ai_reading, ai_batch_id, ai_custom_id, int(request_id)),
         )
+    log_reading_event(
+        request_kind="card",
+        request_id=int(request_id),
+        reading_type=reading_type,
+        customer_name=full_name,
+        reader_name=selected_reader["name"],
+        actor="system-ai",
+        action="generated",
+        ai_status=ai_status,
+        ai_reading=ai_reading,
+    )
 
     create_payment_record("card", int(request_id), full_name, phone, amount, currency, user_id=user_id)
 
@@ -2335,6 +2442,7 @@ def admin_login():
     if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
         clear_auth_failures("admin_login", ip)
         session["is_admin"] = True
+        session["admin_username"] = username
         return redirect(url_for("admin"))
     record_auth_failure("admin_login", ip)
     flash("Admin kullanıcı adı veya şifresi hatalı.", "error")
@@ -2400,6 +2508,9 @@ def admin_resend_completed_email(request_kind: str, request_id: int):
 
 
 def regenerate_ai_for_request(request_kind: str, request_id: int, lang: str) -> tuple[bool, str]:
+    reading_type = "coffee"
+    customer_name = ""
+    reader_name = ""
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         if request_kind == "coffee":
@@ -2422,6 +2533,12 @@ def regenerate_ai_for_request(request_kind: str, request_id: int, lang: str) -> 
             ).fetchone()
     if row is None:
         return False, "Talep bulunamadı"
+    if request_kind == "coffee":
+        reading_type = "coffee"
+    else:
+        reading_type = str(row["reading_type"] or "tarot")
+    customer_name = str(row["full_name"] or "")
+    reader_name = str(row["reader_name"] or "")
 
     if request_kind == "coffee":
         image_paths = parse_json_list(str(row["image_paths"] or "[]"))
@@ -2461,6 +2578,17 @@ def regenerate_ai_for_request(request_kind: str, request_id: int, lang: str) -> 
                 """,
                 (ai_status, ai_reading, ai_batch_id, ai_custom_id, request_id),
             )
+    log_reading_event(
+        request_kind=request_kind,
+        request_id=request_id,
+        reading_type=reading_type,
+        customer_name=customer_name,
+        reader_name=reader_name,
+        actor=get_admin_actor(),
+        action="regenerated",
+        ai_status=ai_status,
+        ai_reading=ai_reading,
+    )
 
     if ai_status == "ready":
         return True, "Yorum yeniden üretildi. Müşteriye göndermek için yayınlayın."
@@ -2503,8 +2631,9 @@ def admin_publish_reading(request_kind: str, request_id: int):
     table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
+        select_type_sql = "'coffee' AS reading_type" if request_kind == "coffee" else "reading_type"
         row = conn.execute(
-            f"SELECT ai_status, ai_reading FROM {table_name} WHERE id = ?",
+            f"SELECT ai_status, ai_reading, full_name, reader_name, {select_type_sql} FROM {table_name} WHERE id = ?",
             (request_id,),
         ).fetchone()
         if row is None:
@@ -2518,10 +2647,23 @@ def admin_publish_reading(request_kind: str, request_id: int):
         if quality_issues:
             flash("Yorum kalite kontrolünden geçmedi: " + " | ".join(quality_issues), "error")
             return redirect(url_for("admin_edit_reading", request_kind=request_kind, request_id=request_id))
+        published_at = datetime.utcnow().isoformat()
+        published_by = get_admin_actor()
         conn.execute(
-            f"UPDATE {table_name} SET ai_published = 1 WHERE id = ?",
-            (request_id,),
+            f"UPDATE {table_name} SET ai_published = 1, ai_published_at = ?, ai_published_by = ? WHERE id = ?",
+            (published_at, published_by, request_id),
         )
+    log_reading_event(
+        request_kind=request_kind,
+        request_id=request_id,
+        reading_type=("coffee" if request_kind == "coffee" else str(row["reading_type"] or "tarot")),
+        customer_name=str(row["full_name"] or ""),
+        reader_name=str(row["reader_name"] or ""),
+        actor=published_by,
+        action="published",
+        ai_status="ready",
+        ai_reading=reading_text,
+    )
     flash("Yorum müşteriye yayınlandı.", "ok")
     return redirect(url_for("admin"))
 
@@ -2554,14 +2696,21 @@ def admin_save_reading(request_kind: str, request_id: int):
         return redirect(url_for("admin"))
 
     table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"
+    customer_name = ""
+    reader_name = ""
+    reading_type = "coffee" if request_kind == "coffee" else "tarot"
     with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
         row = conn.execute(
-            f"SELECT id FROM {table_name} WHERE id = ?",
+            f"SELECT id, full_name, reader_name, {'\"coffee\" AS reading_type' if request_kind == 'coffee' else 'reading_type'} FROM {table_name} WHERE id = ?",
             (request_id,),
         ).fetchone()
         if row is None:
             flash("Talep bulunamadı.", "error")
             return redirect(url_for("admin"))
+        customer_name = str(row["full_name"] or "")
+        reader_name = str(row["reader_name"] or "")
+        reading_type = str(row["reading_type"] or reading_type)
         conn.execute(
             f"""
             UPDATE {table_name}
@@ -2574,6 +2723,17 @@ def admin_save_reading(request_kind: str, request_id: int):
             """,
             (edited, request_id),
         )
+    log_reading_event(
+        request_kind=request_kind,
+        request_id=request_id,
+        reading_type=reading_type,
+        customer_name=customer_name,
+        reader_name=reader_name,
+        actor=get_admin_actor(),
+        action="edited",
+        ai_status="ready",
+        ai_reading=edited,
+    )
     flash("Yorum kaydedildi. Müşteriye göndermek için 'Müşteriye Gönder' butonunu kullan.", "ok")
     if request.form.get("next", "").strip() == "edit":
         return redirect(url_for("admin_edit_reading", request_kind=request_kind, request_id=request_id))
@@ -2595,7 +2755,7 @@ def admin_edit_reading(request_kind: str, request_id: int):
         if request_kind == "coffee":
             row = conn.execute(
                 f"""
-                SELECT id, full_name, phone, question, reader_name, ai_status, ai_reading, ai_published, created_at
+                SELECT id, full_name, phone, question, reader_name, ai_status, ai_reading, ai_published, ai_published_at, ai_published_by, created_at
                 FROM {table_name}
                 WHERE id = ?
                 """,
@@ -2604,7 +2764,7 @@ def admin_edit_reading(request_kind: str, request_id: int):
         else:
             row = conn.execute(
                 f"""
-                SELECT id, full_name, phone, question, reader_name, reading_type, ai_status, ai_reading, ai_published, created_at
+                SELECT id, full_name, phone, question, reader_name, reading_type, ai_status, ai_reading, ai_published, ai_published_at, ai_published_by, created_at
                 FROM {table_name}
                 WHERE id = ?
                 """,
@@ -2742,6 +2902,31 @@ def fetch_filtered_admin_data(filters: dict[str, str]) -> tuple[list[sqlite3.Row
     return coffee_rows, card_rows, payment_rows
 
 
+def fetch_reading_audit_rows(filters: dict[str, str]) -> list[sqlite3.Row]:
+    date_start, date_end = build_date_range(filters["date_from"], filters["date_to"])
+    query = filters["q"]
+    type_filter = filters["type"]
+    sql = "SELECT * FROM reading_audit WHERE 1=1"
+    params: list[object] = []
+    if type_filter in {"coffee", "katina", "tarot"}:
+        sql += " AND reading_type = ?"
+        params.append(type_filter)
+    if date_start:
+        sql += " AND created_at >= ?"
+        params.append(date_start)
+    if date_end:
+        sql += " AND created_at < ?"
+        params.append(date_end)
+    if query:
+        like = f"%{query}%"
+        sql += " AND (customer_name LIKE ? OR reader_name LIKE ? OR actor LIKE ? OR ai_reading LIKE ?)"
+        params.extend([like, like, like, like])
+    sql += " ORDER BY id DESC LIMIT 500"
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        return conn.execute(sql, tuple(params)).fetchall()
+
+
 def fetch_admin_summary() -> dict[str, int]:
     today_start = datetime.utcnow().strftime("%Y-%m-%dT00:00:00")
     with sqlite3.connect(DB_PATH) as conn:
@@ -2822,6 +3007,7 @@ def admin():
 
     filters = parse_admin_filters()
     coffee_rows, card_rows, payment_rows = fetch_filtered_admin_data(filters)
+    reading_audit_rows = fetch_reading_audit_rows(filters)
     summary = fetch_admin_summary()
 
     coffee_was = [
@@ -2869,12 +3055,29 @@ def admin():
         }
         for row in card_rows
     ]
+    audit_was = [
+        {
+            "id": row["id"],
+            "request_kind": row["request_kind"],
+            "request_id": row["request_id"],
+            "reading_type": row["reading_type"],
+            "customer_name": row["customer_name"],
+            "reader_name": row["reader_name"],
+            "actor": row["actor"],
+            "action": row["action"],
+            "ai_status": row["ai_status"],
+            "created_at": row["created_at"],
+            "ai_excerpt": (str(row["ai_reading"] or "").strip()[:220] + ("..." if len(str(row["ai_reading"] or "").strip()) > 220 else "")),
+        }
+        for row in reading_audit_rows
+    ]
 
     return render_template(
         "admin.html",
         coffee_rows=coffee_was,
         card_rows=card_was,
         payment_rows=payment_rows,
+        reading_audit_rows=audit_was,
         filters=filters,
         summary=summary,
     )

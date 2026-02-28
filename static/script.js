@@ -89,40 +89,6 @@ function initPhotoGrid() {
   });
 }
 
-function initHomeChoiceAnimations() {
-  const cards = document.querySelectorAll(".choice-card[data-fortune-card]");
-  if (!cards.length) {
-    return;
-  }
-
-  cards.forEach((card) => {
-    card.addEventListener("click", (event) => {
-      if (event.defaultPrevented) {
-        return;
-      }
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
-        return;
-      }
-      const href = card.getAttribute("href");
-      if (!href) {
-        return;
-      }
-      if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        return;
-      }
-      if (card.classList.contains("is-animating")) {
-        event.preventDefault();
-        return;
-      }
-      event.preventDefault();
-      card.classList.add("is-animating");
-      window.setTimeout(() => {
-        window.location.assign(href);
-      }, 920);
-    });
-  });
-}
-
 function shuffle(array) {
   const copy = [...array];
   for (let i = copy.length - 1; i > 0; i -= 1) {
@@ -186,4 +152,3 @@ createDeck("katina");
 createDeck("tarot");
 initNavbar();
 initPhotoGrid();
-initHomeChoiceAnimations();

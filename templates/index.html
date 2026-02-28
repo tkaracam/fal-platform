@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260228-anim1" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260224-11" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -49,53 +49,17 @@
       </section>
 
       <section class="choice-grid" id="secimler">
-        <a class="choice-card card-coffee" data-fortune-card="coffee" href="{{ url_for('coffee_page', lang=lang) }}">
-          <div class="fortune-scene coffee-scene" aria-hidden="true">
-            <div class="fortune-reader">
-              <span class="reader-head"></span>
-              <span class="reader-body"></span>
-              <span class="reader-arm"></span>
-            </div>
-            <div class="coffee-cup">
-              <span class="coffee-lid"></span>
-              <span class="coffee-telve"></span>
-            </div>
-          </div>
+        <a class="choice-card card-coffee" href="{{ url_for('coffee_page', lang=lang) }}">
           <span class="choice-content">
             <strong>{{ t('choice_coffee') }}</strong>
           </span>
         </a>
-        <a class="choice-card card-katina" data-fortune-card="katina" href="{{ url_for('katina_page', lang=lang) }}">
-          <div class="fortune-scene katina-scene" aria-hidden="true">
-            <div class="fortune-reader">
-              <span class="reader-head"></span>
-              <span class="reader-body"></span>
-              <span class="reader-arm"></span>
-            </div>
-            <div class="katina-cards">
-              <span class="k-card k1"></span>
-              <span class="k-card k2"></span>
-              <span class="k-card k3"></span>
-            </div>
-          </div>
+        <a class="choice-card card-katina" href="{{ url_for('katina_page', lang=lang) }}">
           <span class="choice-content">
             <strong>{{ t('choice_katina') }}</strong>
           </span>
         </a>
-        <a class="choice-card card-tarot" data-fortune-card="tarot" href="{{ url_for('tarot_page', lang=lang) }}">
-          <div class="fortune-scene tarot-scene" aria-hidden="true">
-            <div class="fortune-reader">
-              <span class="reader-head"></span>
-              <span class="reader-body"></span>
-              <span class="reader-arm"></span>
-            </div>
-            <div class="tarot-fan">
-              <span class="t-card t1"></span>
-              <span class="t-card t2"></span>
-              <span class="t-card t3"></span>
-              <span class="t-card t4"></span>
-            </div>
-          </div>
+        <a class="choice-card card-tarot" href="{{ url_for('tarot_page', lang=lang) }}">
           <span class="choice-content">
             <strong>{{ t('choice_tarot') }}</strong>
           </span>
@@ -135,6 +99,6 @@
         </div>
       </footer>
     </main>
-    <script src="{{ url_for('static', filename='script.js') }}?v=20260228-anim1"></script>
+    <script src="{{ url_for('static', filename='script.js') }}?v=20260224-10"></script>
   </body>
 </html>

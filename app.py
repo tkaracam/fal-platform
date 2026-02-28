@@ -145,6 +145,10 @@ TRANSLATIONS = {
         "panel_detail_toggle": "Detay",
         "panel_detail_question": "Soru Detayı",
         "panel_detail_result": "Yorum Detayı",
+        "panel_open_reading": "Fal Detayı",
+        "reading_focus_title": "Fal Detayı",
+        "reading_focus_desc": "Bu sayfada yalnızca seçtiğin fal yorumu gösterilir.",
+        "msg_reading_not_ready": "Bu fal henüz yayınlanmadı.",
         "profile_title": "Hesap Bilgileri",
         "profile_desc": "İsim, e-posta, telefon bilgilerini güncelleyebilir ve şifreni yenileyebilirsin.",
         "profile_new_password": "Yeni Şifre",
@@ -271,6 +275,10 @@ TRANSLATIONS = {
         "panel_detail_toggle": "Details",
         "panel_detail_question": "Question Details",
         "panel_detail_result": "Reading Details",
+        "panel_open_reading": "Open Reading",
+        "reading_focus_title": "Reading Detail",
+        "reading_focus_desc": "This page shows only the selected reading for easier viewing.",
+        "msg_reading_not_ready": "This reading is not published yet.",
         "profile_title": "Account Details",
         "profile_desc": "Update your name, email and phone details, and reset your password.",
         "profile_new_password": "New Password",
@@ -397,6 +405,10 @@ TRANSLATIONS = {
         "panel_detail_toggle": "Details",
         "panel_detail_question": "Fragedetails",
         "panel_detail_result": "Deutungsdetails",
+        "panel_open_reading": "Orakel Öffnen",
+        "reading_focus_title": "Orakel-Detail",
+        "reading_focus_desc": "Auf dieser Seite siehst du nur das ausgewählte Orakel für besseres Lesen.",
+        "msg_reading_not_ready": "Dieses Orakel ist noch nicht veröffentlicht.",
         "profile_title": "Kontodaten",
         "profile_desc": "Du kannst Name, E-Mail und Telefon aktualisieren und dein Passwort erneuern.",
         "profile_new_password": "Neues Passwort",
@@ -2028,6 +2040,7 @@ def dashboard_page():
         merged.append(
             {
                 "id": str(row["id"]),
+                "request_kind": "coffee",
                 "type": str(row["reading_type"]),
                 "reader_name": str(row["reader_name"]),
                 "question": str(row["question"]),
@@ -2040,6 +2053,7 @@ def dashboard_page():
         merged.append(
             {
                 "id": str(row["id"]),
+                "request_kind": "card",
                 "type": str(row["reading_type"]),
                 "reader_name": str(row["reader_name"]),
                 "question": str(row["question"]),
@@ -2054,6 +2068,55 @@ def dashboard_page():
         merged = [row for row in merged if row["type"] == selected_type]
     merged = merged[:20]
     return render_template("dashboard.html", rows=merged, user=user_row, selected_type=selected_type)
+
+
+@app.get("/reading/<request_kind>/<int:request_id>")
+def customer_reading_page(request_kind: str, request_id: int):
+    if request_kind not in {"coffee", "card"}:
+        flash(t("msg_bad_type"), "error")
+        return redirect(url_for("dashboard_page", lang=get_lang()))
+
+    user_id = get_current_user_id()
+    if user_id <= 0:
+        flash(t("msg_auth_required"), "error")
+        return redirect(url_for("login_page", lang=get_lang()))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        if request_kind == "coffee":
+            row = conn.execute(
+                """
+                SELECT id, 'coffee' AS reading_type, reader_name, question, ai_status, ai_reading, ai_published, created_at
+                FROM coffee_requests
+                WHERE id = ? AND user_id = ?
+                LIMIT 1
+                """,
+                (request_id, user_id),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                """
+                SELECT id, reading_type, reader_name, question, ai_status, ai_reading, ai_published, created_at
+                FROM card_requests
+                WHERE id = ? AND user_id = ?
+                LIMIT 1
+                """,
+                (request_id, user_id),
+            ).fetchone()
+
+    if row is None:
+        flash(t("msg_no_payment"), "error")
+        return redirect(url_for("dashboard_page", lang=get_lang()))
+
+    if str(row["ai_status"]) != "ready" or int(row["ai_published"] or 0) != 1 or not str(row["ai_reading"]).strip():
+        flash(t("msg_reading_not_ready"), "error")
+        return redirect(url_for("dashboard_page", lang=get_lang()))
+
+    return render_template(
+        "customer_reading.html",
+        row=row,
+        request_kind=request_kind,
+    )
 
 
 @app.post("/account/update")

@@ -582,6 +582,35 @@ h2 {
 .form-grid.compact { margin-top: 12px; }
 .full { grid-column: 1 / -1; }
 
+.panel-open-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 130px;
+}
+
+.reading-focus-card {
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+.reading-meta {
+  margin: 0 0 10px;
+  color: #3f5a74;
+}
+
+.reading-focus-text {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #d4e4f3;
+  background: #f9fcff;
+  color: #1d3852;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  font-size: 1.02rem;
+}
+
 label {
   display: flex;
   flex-direction: column;

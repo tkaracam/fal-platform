@@ -86,7 +86,7 @@
                 <th>{{ t('panel_type') }}</th>
                 <th>{{ t('panel_reader') }}</th>
                 <th>{{ t('panel_status') }}</th>
-                <th>{{ t('panel_detail_toggle') }}</th>
+                <th>{{ t('panel_open_reading') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -117,11 +117,9 @@
                   {% endif %}
                 </td>
                 <td>
-                  <details class="panel-detail">
-                    <summary>{{ t('panel_detail_toggle') }}</summary>
-                    <p><strong>{{ t('panel_detail_question') }}:</strong> {{ row.question }}</p>
-                    <p class="ai-reading"><strong>{{ t('panel_detail_result') }}:</strong> {{ row.result }}</p>
-                  </details>
+                  <a class="menu-cta panel-open-btn" href="{{ url_for('customer_reading_page', request_kind=row.request_kind, request_id=row.id, lang=lang) }}">
+                    {{ t('panel_open_reading') }}
+                  </a>
                 </td>
               </tr>
               {% endfor %}

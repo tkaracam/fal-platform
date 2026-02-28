@@ -2237,6 +2237,22 @@ def admin_set_status(request_kind: str, request_id: int, new_status: str):
     return redirect(url_for("admin"))
 
 
+@app.post("/admin/resend-completed-email/<request_kind>/<int:request_id>")
+def admin_resend_completed_email(request_kind: str, request_id: int):
+    if not admin_required():
+        flash("Bu alan için admin girişi gerekli.", "error")
+        return redirect(url_for("admin"))
+    if request_kind not in {"coffee", "card"}:
+        flash("Geçersiz işlem.", "error")
+        return redirect(url_for("admin"))
+    delivered, reason = notify_reading_completed(request_kind, request_id)
+    if delivered:
+        flash("Müşteriye e-posta tekrar gönderildi.", "ok")
+    else:
+        flash(f"E-posta tekrar gönderilemedi: {reason}", "error")
+    return redirect(url_for("admin"))
+
+
 def parse_admin_filters() -> dict[str, str]:
     raw_type = request.args.get("type", "all").strip().lower()
     raw_status = request.args.get("status", "all").strip().lower()

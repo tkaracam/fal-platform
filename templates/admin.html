@@ -168,9 +168,11 @@
                       <button type="submit">Tamamlandı Yap</button>
                       {% endif %}
                     </form>
-                  {% else %}
-                    -
                   {% endif %}
+                  <form action="/admin/resend-completed-email/coffee/{{ row['id'] }}" method="post" style="margin-top:6px;">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit">Mail Tekrar Gönder</button>
+                  </form>
                 </td>
               </tr>
               {% endfor %}
@@ -233,9 +235,11 @@
                       <button type="submit">Tamamlandı Yap</button>
                       {% endif %}
                     </form>
-                  {% else %}
-                    -
                   {% endif %}
+                  <form action="/admin/resend-completed-email/card/{{ row['id'] }}" method="post" style="margin-top:6px;">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit">Mail Tekrar Gönder</button>
+                  </form>
                 </td>
               </tr>
               {% endfor %}

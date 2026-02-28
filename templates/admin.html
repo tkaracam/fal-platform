@@ -5,6 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fal Platformu Admin</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260224-11" />
+    <style>
+      .admin-timer {
+        display: inline-block;
+        margin-top: 6px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        background: #ffe3e3;
+        color: #8a1f11;
+      }
+      .admin-timer.is-ready {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .admin-arrival {
+        font-weight: 600;
+      }
+      .admin-arrival small {
+        display: block;
+        font-weight: 500;
+        color: #64748b;
+      }
+    </style>
   </head>
   <body>
     <main class="container">
@@ -119,6 +143,7 @@
                 <th>Soru</th>
                 <th>AI Yorum</th>
                 <th>Tarih</th>
+                <th>Sayaç</th>
                 <th>Görsel</th>
                 <th>WhatsApp</th>
                 <th>Durum</th>
@@ -141,7 +166,8 @@
                     {{ row['ai_status'] }}
                   {% endif %}
                 </td>
-                <td>{{ row['created_at'] }}</td>
+                <td class="admin-arrival" data-created-at="{{ row['created_at'] }}">-</td>
+                <td><span class="admin-timer" data-created-at="{{ row['created_at'] }}" data-threshold-minutes="30">00:00</span></td>
                 <td>
                   {% if row['image_paths'] %}
                     {% for path in row['image_paths'] %}
@@ -205,6 +231,7 @@
                 <th>Soru</th>
                 <th>AI Yorum</th>
                 <th>Tarih</th>
+                <th>Sayaç</th>
                 <th>WhatsApp</th>
                 <th>Durum</th>
                 <th>İşlem</th>
@@ -227,7 +254,8 @@
                     {{ row['ai_status'] }}
                   {% endif %}
                 </td>
-                <td>{{ row['created_at'] }}</td>
+                <td class="admin-arrival" data-created-at="{{ row['created_at'] }}">-</td>
+                <td><span class="admin-timer" data-created-at="{{ row['created_at'] }}" data-threshold-minutes="30">00:00</span></td>
                 <td>{% if row['wa_link'] %}<a href="{{ row['wa_link'] }}" target="_blank">Mesaj</a>{% endif %}</td>
                 <td>
                   {% if row['order_status'] == 'pending' %}
@@ -300,5 +328,67 @@
         </div>
       </section>
     </main>
+    <script>
+      function parseIsoLike(value) {
+        const m = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+        if (!m) {
+          return null;
+        }
+        return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]), Number(m[6]));
+      }
+
+      function pad2(n) {
+        return String(n).padStart(2, "0");
+      }
+
+      function fmtClock(d) {
+        return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+      }
+
+      function fmtElapsed(seconds) {
+        const s = Math.max(0, Math.floor(seconds));
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const sec = s % 60;
+        if (h > 0) {
+          return `${pad2(h)}:${pad2(m)}:${pad2(sec)}`;
+        }
+        return `${pad2(m)}:${pad2(sec)}`;
+      }
+
+      function initArrivalCells() {
+        document.querySelectorAll(".admin-arrival[data-created-at]").forEach((cell) => {
+          const d = parseIsoLike(cell.dataset.createdAt);
+          if (!d) {
+            cell.textContent = String(cell.dataset.createdAt || "-");
+            return;
+          }
+          cell.innerHTML = `${fmtClock(d)}<small>${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}</small>`;
+        });
+      }
+
+      function tickTimers() {
+        const now = new Date();
+        document.querySelectorAll(".admin-timer[data-created-at]").forEach((el) => {
+          const created = parseIsoLike(el.dataset.createdAt);
+          if (!created) {
+            el.textContent = "--:--";
+            return;
+          }
+          const thresholdMin = Number(el.dataset.thresholdMinutes || "30");
+          const elapsedSec = (now.getTime() - created.getTime()) / 1000;
+          el.textContent = fmtElapsed(elapsedSec);
+          if (elapsedSec >= thresholdMin * 60) {
+            el.classList.add("is-ready");
+          } else {
+            el.classList.remove("is-ready");
+          }
+        });
+      }
+
+      initArrivalCells();
+      tickTimers();
+      window.setInterval(tickTimers, 1000);
+    </script>
   </body>
 </html>

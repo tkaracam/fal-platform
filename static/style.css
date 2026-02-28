@@ -468,40 +468,84 @@ body {
   margin-top: 18px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 
 .choice-card {
   position: relative;
-  min-height: 235px;
-  border-radius: 16px;
+  min-height: 260px;
+  border-radius: 18px;
   overflow: hidden;
+  isolation: isolate;
   background-size: cover;
-  background-position: center;
-  border: 1px solid #d7e8f6;
+  background-position: center center;
+  border: 1px solid rgba(214, 231, 247, 0.9);
   text-decoration: none;
-  box-shadow: var(--shadow);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 18px 34px rgba(26, 46, 68, 0.2);
+  transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+}
+
+.choice-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(26rem 10rem at 20% 0%, rgba(255, 255, 255, 0.18), transparent 58%),
+    linear-gradient(to top, rgba(6, 10, 15, 0.78), rgba(6, 10, 15, 0.16) 52%, rgba(6, 10, 15, 0.22));
+  z-index: 1;
 }
 
 .choice-card::before {
   content: "";
   position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(16, 9, 6, 0.72), rgba(16, 9, 6, 0.04));
+  inset: -6%;
+  background: inherit;
+  background-size: cover;
+  background-position: center;
+  filter: saturate(1.05);
+  transform: scale(1.03);
+  transition: transform 0.4s ease;
+  z-index: 0;
 }
 
-.choice-card span {
+.choice-content {
   position: absolute;
-  left: 14px;
-  bottom: 14px;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2;
+}
+
+.choice-content strong {
+  display: inline-block;
+  font-family: "Space Grotesk", sans-serif;
+  letter-spacing: 0.01em;
+  font-size: 1.02rem;
   font-weight: 700;
-  color: #fff5ec;
+  color: #f8fbff;
+  text-shadow: 0 8px 22px rgba(0, 0, 0, 0.56);
 }
 
 .choice-card:hover {
-  transform: translateY(-5px);
-  border-color: #b9d6ee;
+  transform: translateY(-7px);
+  border-color: #b8d8ef;
+  box-shadow: 0 24px 42px rgba(20, 38, 58, 0.26);
+}
+
+.choice-card:hover::before {
+  transform: scale(1.08);
+}
+
+.choice-card.card-coffee {
+  background-image: url("https://images.pexels.com/photos/5946971/pexels-photo-5946971.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=900&w=1200");
+}
+
+.choice-card.card-katina {
+  background-image: url("https://images.pexels.com/photos/7179816/pexels-photo-7179816.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=900&w=1200");
+}
+
+.choice-card.card-tarot {
+  background-image: url("https://images.pexels.com/photos/6801648/pexels-photo-6801648.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=900&w=1200");
 }
 
 .card {

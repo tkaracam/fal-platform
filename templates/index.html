@@ -49,14 +49,20 @@
       </section>
 
       <section class="choice-grid" id="secimler">
-        <a class="choice-card" href="{{ url_for('coffee_page', lang=lang) }}" style="background-image:url('{{ url_for('static', filename='assets/coffee-option.svg') }}')">
-          <span>{{ t('choice_coffee') }}</span>
+        <a class="choice-card card-coffee" href="{{ url_for('coffee_page', lang=lang) }}">
+          <span class="choice-content">
+            <strong>{{ t('choice_coffee') }}</strong>
+          </span>
         </a>
-        <a class="choice-card" href="{{ url_for('katina_page', lang=lang) }}" style="background-image:url('{{ url_for('static', filename='assets/katina-option.svg') }}')">
-          <span>{{ t('choice_katina') }}</span>
+        <a class="choice-card card-katina" href="{{ url_for('katina_page', lang=lang) }}">
+          <span class="choice-content">
+            <strong>{{ t('choice_katina') }}</strong>
+          </span>
         </a>
-        <a class="choice-card" href="{{ url_for('tarot_page', lang=lang) }}" style="background-image:url('{{ url_for('static', filename='assets/tarot-option.svg') }}')">
-          <span>{{ t('choice_tarot') }}</span>
+        <a class="choice-card card-tarot" href="{{ url_for('tarot_page', lang=lang) }}">
+          <span class="choice-content">
+            <strong>{{ t('choice_tarot') }}</strong>
+          </span>
         </a>
       </section>
           <footer class="site-footer">

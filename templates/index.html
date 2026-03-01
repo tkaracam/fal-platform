@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-coffeeslogan-top" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-coffeeslogan-premium" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -42,7 +42,10 @@
 
       <section class="choice-grid" id="secimler">
         <div class="choice-column">
-          <div class="coffee-slogan">{{ t('home_coffee_slogan') }}</div>
+          <div class="coffee-slogan">
+            <span class="coffee-slogan-kicker">{{ t('home_coffee_slogan_kicker') }}</span>
+            <p class="coffee-slogan-text">{{ t('home_coffee_slogan') }}</p>
+          </div>
           <a class="choice-card card-coffee" href="{{ url_for('coffee_page', lang=lang) }}">
             <iframe
               class="choice-anim"

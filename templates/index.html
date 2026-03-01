@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-navspace2" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-coffeeslogan-top" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -41,17 +41,20 @@
       </header>
 
       <section class="choice-grid" id="secimler">
-        <a class="choice-card card-coffee" href="{{ url_for('coffee_page', lang=lang) }}">
-          <iframe
-            class="choice-anim"
-            src="{{ url_for('static', filename='assets/home-coffee-animated.html') }}"
-            title="Kahve Fali Animasyonu"
-            loading="lazy"
-          ></iframe>
-          <span class="choice-content">
-            <strong>{{ t('choice_coffee') }}</strong>
-          </span>
-        </a>
+        <div class="choice-column">
+          <div class="coffee-slogan">{{ t('home_coffee_slogan') }}</div>
+          <a class="choice-card card-coffee" href="{{ url_for('coffee_page', lang=lang) }}">
+            <iframe
+              class="choice-anim"
+              src="{{ url_for('static', filename='assets/home-coffee-animated.html') }}"
+              title="Kahve Fali Animasyonu"
+              loading="lazy"
+            ></iframe>
+            <span class="choice-content">
+              <strong>{{ t('choice_coffee') }}</strong>
+            </span>
+          </a>
+        </div>
         <a class="choice-card card-katina" href="{{ url_for('katina_page', lang=lang) }}">
           <iframe
             class="choice-anim"

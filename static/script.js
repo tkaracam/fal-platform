@@ -315,7 +315,28 @@ function createDeck(readingType) {
   const deckCards = Array.from({ length: config.deckSize }, (_, index) => `${readingType}-kart-${index + 1}`);
   const shuffled = shuffle(deckCards);
   const picked = [];
+  const cardButtons = new Map();
   selectionElement.textContent = `${currentText.selected}: 0/${config.picksRequired}`;
+
+  function syncSelectionState() {
+    selectionElement.textContent = `${currentText.selected}: ${picked.length}/${config.picksRequired}${picked.length ? ` - ${currentText.next}: ${positions[picked.length] || currentText.done}` : ""}`;
+    if (hiddenInput) {
+      hiddenInput.value = JSON.stringify(picked);
+    }
+  }
+
+  function redrawPickedLabels() {
+    picked.forEach((entry, index) => {
+      entry.position = positions[index];
+      const pickedButton = cardButtons.get(entry.card);
+      if (pickedButton) {
+        pickedButton.classList.add("picked");
+        pickedButton.textContent = `${currentText.chosen} ${index + 1}`;
+      }
+    });
+  }
+
+  syncSelectionState();
 
   shuffled.forEach((cardName) => {
     const button = document.createElement("button");
@@ -323,9 +344,22 @@ function createDeck(readingType) {
     button.className = `card-back ${backClass}`;
     button.textContent = "";
     button.setAttribute("aria-label", currentText.closed);
+    cardButtons.set(cardName, button);
 
     button.addEventListener("click", () => {
-      if (picked.length >= config.picksRequired || button.classList.contains("picked")) {
+      if (button.classList.contains("picked")) {
+        const removeIndex = picked.findIndex((entry) => entry.card === cardName);
+        if (removeIndex === -1) {
+          return;
+        }
+        picked.splice(removeIndex, 1);
+        button.classList.remove("picked");
+        button.textContent = "";
+        redrawPickedLabels();
+        syncSelectionState();
+        return;
+      }
+      if (picked.length >= config.picksRequired) {
         return;
       }
 
@@ -333,9 +367,7 @@ function createDeck(readingType) {
       button.classList.add("picked");
       button.textContent = `${currentText.chosen} ${step + 1}`;
       picked.push({ position: positions[step], card: cardName });
-
-      selectionElement.textContent = `${currentText.selected}: ${picked.length}/${config.picksRequired} - ${currentText.next}: ${positions[picked.length] || currentText.done}`;
-      hiddenInput.value = JSON.stringify(picked);
+      syncSelectionState();
     });
 
     deckElement.appendChild(button);

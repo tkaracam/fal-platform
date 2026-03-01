@@ -996,15 +996,7 @@ button:hover,
 }
 
 .card-back::after {
-  content: "Kapalı";
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  font-size: 0.7rem;
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.46);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  content: none;
 }
 
 .card-back.picked {

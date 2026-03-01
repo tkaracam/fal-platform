@@ -822,6 +822,13 @@ button:hover,
   font-size: 0.95rem;
 }
 
+.reading-subtitle {
+  margin: 4px 0 8px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #5b748d;
+}
+
 .reader-grid {
   margin-top: 10px;
   display: grid;

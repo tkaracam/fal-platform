@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-readerslogan" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-readerlayout2" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -50,8 +50,8 @@
       {% endwith %}
 
       <section class="card">
-        <p class="reading-slogan">{{ t('katina_reader_slogan') }}</p>
-        <h2>{{ t('choose_reader_title') }}</h2>
+        <h2>{{ t('katina_reader_slogan') }}</h2>
+        <p class="reading-subtitle">{{ t('choose_reader_title') }}</p>
         <p>{{ t('choose_reader_desc') }}</p>
         <div class="reader-grid">
           {% for reader in readers %}

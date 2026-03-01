@@ -18,10 +18,7 @@
         </a>
         <div class="nav-quick">
           {% if is_logged_in %}
-          <form method="post" action="{{ url_for('logout_submit', lang=lang) }}" class="quick-logout-form">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-            <button type="submit" class="quick-btn quick-logout">{{ t("logout_submit") }}</button>
-          </form>
+          <a class="quick-btn quick-btn-primary" href="{{ url_for('dashboard_page', lang=lang) }}">{{ t("nav_panel") }}</a>
           {% else %}
           <a class="quick-btn" href="{{ url_for('login_page', lang=lang) }}">{{ t("nav_login") }}</a>
           <a class="quick-btn quick-btn-primary" href="{{ url_for('register_page', lang=lang) }}">{{ t("nav_register") }}</a>
@@ -32,11 +29,15 @@
           <a href="{{ url_for('coffee_page', lang=lang) }}">{{ t('nav_coffee') }}</a>
           <a href="{{ url_for('katina_page', lang=lang) }}">{{ t('nav_katina') }}</a>
           <a href="{{ url_for('tarot_page', lang=lang) }}">{{ t('nav_tarot') }}</a>
-          <a href="{{ url_for('dashboard_page', lang=lang) }}" data-panel-link>{{ t('nav_panel') }}</a>
-          <form method="post" action="{{ url_for('logout_submit', lang=lang) }}" class="nav-logout-form">
-          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-            <button type="submit" class="menu-cta nav-logout">{{ t('logout_submit') }}</button>
-          </form>        </nav>
+          <div class="lang-switch lang-switch-group" data-lang-group>
+            <button type="button" class="lang-toggle-btn" data-lang-toggle aria-expanded="false">{{ t('menu_languages') }}</button>
+            <div class="lang-switch-list" data-lang-list hidden>
+              <a href="{{ lang_url('tr') }}">🇹🇷 {{ t('lang_tr') }}</a>
+              <a href="{{ lang_url('en') }}">🇬🇧 {{ t('lang_en') }}</a>
+              <a href="{{ lang_url('de') }}">🇩🇪 {{ t('lang_de') }}</a>
+            </div>
+          </div>
+        </nav>
       </header>
 
       {% with messages = get_flashed_messages(with_categories=true) %}

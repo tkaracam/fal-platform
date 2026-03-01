@@ -57,6 +57,18 @@ function initNavbar() {
     return;
   }
   const body = document.body;
+  const langGroup = links.querySelector("[data-lang-group]");
+  const langToggle = links.querySelector("[data-lang-toggle]");
+  const langList = links.querySelector("[data-lang-list]");
+
+  function setLangMenuState(isOpen) {
+    if (!langGroup || !langToggle || !langList) {
+      return;
+    }
+    langGroup.classList.toggle("is-open", isOpen);
+    langToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    langList.hidden = !isOpen;
+  }
 
   function setMenuState(isOpen) {
     links.classList.toggle("is-open", isOpen);
@@ -64,14 +76,27 @@ function initNavbar() {
     if (body) {
       body.classList.toggle("nav-open", isOpen);
     }
+    if (!isOpen) {
+      setLangMenuState(false);
+    }
   }
 
   setMenuState(false);
+  setLangMenuState(false);
 
   toggle.addEventListener("click", () => {
     const isOpen = !links.classList.contains("is-open");
     setMenuState(isOpen);
   });
+
+  if (langToggle) {
+    langToggle.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const isOpen = !langGroup.classList.contains("is-open");
+      setLangMenuState(isOpen);
+    });
+  }
 
   links.addEventListener("click", (event) => {
     const target = event.target;

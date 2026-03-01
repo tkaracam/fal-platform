@@ -289,9 +289,47 @@ body.nav-open {
   gap: 10px;
   margin-top: 0;
   order: 70;
+  width: 100%;
 }
 
-.lang-switch a {
+.lang-toggle-btn {
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: 1px solid #d5e6f6;
+  border-radius: 10px;
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fcff;
+  color: var(--menu-text);
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.lang-toggle-btn::after {
+  content: "▾";
+  font-size: 0.92rem;
+  color: #537391;
+}
+
+.lang-switch-group.is-open .lang-toggle-btn::after {
+  content: "▴";
+}
+
+.lang-switch-list {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lang-switch-group.is-open .lang-switch-list {
+  display: flex;
+}
+
+.lang-switch-list a {
   text-align: left;
   font-size: 0.9rem;
   font-weight: 700;

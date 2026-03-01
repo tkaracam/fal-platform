@@ -7,15 +7,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-whitebg" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-logo1" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
     <main class="container">
       <header class="navbar">
         <a class="brand" href="{{ url_for('home', lang=lang) }}">
-          <iframe class="brand-mark brand-mark-anim" src="{{ url_for('static', filename='assets/home-logo-animated.html') }}" title="Orakelia Logo" loading="lazy"></iframe>
-          <span class="brand-text">Orakelia</span>
+          <img class="brand-logo" src="{{ url_for('static', filename='assets/vectorized-4-nobg.svg') }}" alt="Orakelia" loading="lazy" />
         </a>
         <button class="nav-toggle" type="button" aria-label="Menu" data-nav-toggle>Menu</button>
         <nav class="nav-links" data-nav-links>

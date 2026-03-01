@@ -529,6 +529,7 @@ body.nav-open {
   line-height: 1.4;
   font-weight: 700;
   text-align: center;
+  white-space: pre-line;
 }
 
 .choice-card {

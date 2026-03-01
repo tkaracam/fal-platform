@@ -404,7 +404,7 @@ TRANSLATIONS = {
         "home_welcome_item_3": "Mehrsprachig: TR / EN / DE",
         "home_welcome_cta": "Orakelart Wählen",
         "choice_coffee": "Kaffeesatz-Orakel",
-        "home_coffee_slogan_kicker": "Willkommen bei Orakelia",
+        "home_coffee_slogan_kicker": "Finde Klarheit durch Kaffeesatz, Tarot und Katina Liebesorakel.\nWillkommen bei Orakelia – deiner Plattform für professionelle Orakel Beratung online.\nOb Kaffeesatz lesen, Tarot Kartenlegen oder Katina Liebesorakel – wir helfen dir, Antworten auf Liebe, Zukunft und Lebensfragen zu finden.",
         "home_coffee_slogan": "Willkommen bei Orakelia. Starte dein Kaffee-Orakel mit Klarheit und ruhiger Energie.",
         "choice_katina": "Katina-Liebesorakel",
         "choice_tarot": "Tarot-Orakel",

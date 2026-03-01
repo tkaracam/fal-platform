@@ -104,7 +104,7 @@ TRANSLATIONS = {
         "home_welcome_item_3": "TR / EN / DE çok dilli kullanım",
         "home_welcome_cta": "Fal Türünü Seç",
         "choice_coffee": "Kahve Falı",
-        "home_coffee_slogan_kicker": "Kahve falı, Tarot ve Katina aşk falı ile netlik bul.\nOrakelia'ya hoş geldin – online profesyonel fal danışmanlığı platformun.\nKahve falı, Tarot kartları veya Katina aşk falı ile aşk, gelecek ve yaşam sorularına birlikte cevap bulalım.",
+        "home_coffee_slogan_kicker": "Orakelia'ya hoş geldin – online profesyonel fal danışmanlığı platformun.",
         "home_coffee_slogan": "Orakelia'ya hoş geldiniz. Kahve falında sezgini güçlendir, net bir başlangıç yap.",
         "choice_katina": "Katina Aşk Falı",
         "choice_tarot": "Tarot Falı",

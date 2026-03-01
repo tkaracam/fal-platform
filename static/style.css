@@ -844,6 +844,17 @@ button:hover,
   border-color: rgba(255, 255, 255, 0.24);
 }
 
+.reading-slogan {
+  margin: 0 0 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid #d7e6f5;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.95), rgba(246, 251, 255, 0.95));
+  color: #2a4660;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
 .reader-grid {
   margin-top: 10px;
   display: grid;

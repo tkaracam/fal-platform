@@ -507,10 +507,14 @@ body.nav-open {
 }
 
 .choice-grid {
-  margin-top: 18px;
+  margin-top: 12px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+}
+
+.choice-slogan-row {
+  margin-top: 18px;
 }
 
 .choice-column {

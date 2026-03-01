@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-menuclean" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-sloganrow" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -39,12 +39,14 @@
         </nav>
       </header>
 
-      <section class="choice-grid" id="secimler">
-        <div class="choice-column">
+      <section id="secimler">
+        <div class="choice-slogan-row">
           <div class="coffee-slogan">
             <span class="coffee-slogan-kicker">{{ t('home_coffee_slogan_kicker') }}</span>
             <p class="coffee-slogan-text">{{ t('home_coffee_slogan') }}</p>
           </div>
+        </div>
+        <div class="choice-grid">
           <a class="choice-card card-coffee" href="{{ url_for('coffee_page', lang=lang) }}">
             <iframe
               class="choice-anim"
@@ -56,29 +58,29 @@
               <strong>{{ t('choice_coffee') }}</strong>
             </span>
           </a>
+          <a class="choice-card card-katina" href="{{ url_for('katina_page', lang=lang) }}">
+            <iframe
+              class="choice-anim"
+              src="{{ url_for('static', filename='assets/home-katina-animated.html') }}"
+              title="Katina Fali Animasyonu"
+              loading="lazy"
+            ></iframe>
+            <span class="choice-content">
+              <strong>{{ t('choice_katina') }}</strong>
+            </span>
+          </a>
+          <a class="choice-card card-tarot" href="{{ url_for('tarot_page', lang=lang) }}">
+            <iframe
+              class="choice-anim"
+              src="{{ url_for('static', filename='assets/home-tarot-animated.html') }}"
+              title="Tarot Fali Animasyonu"
+              loading="lazy"
+            ></iframe>
+            <span class="choice-content">
+              <strong>{{ t('choice_tarot') }}</strong>
+            </span>
+          </a>
         </div>
-        <a class="choice-card card-katina" href="{{ url_for('katina_page', lang=lang) }}">
-          <iframe
-            class="choice-anim"
-            src="{{ url_for('static', filename='assets/home-katina-animated.html') }}"
-            title="Katina Fali Animasyonu"
-            loading="lazy"
-          ></iframe>
-          <span class="choice-content">
-            <strong>{{ t('choice_katina') }}</strong>
-          </span>
-        </a>
-        <a class="choice-card card-tarot" href="{{ url_for('tarot_page', lang=lang) }}">
-          <iframe
-            class="choice-anim"
-            src="{{ url_for('static', filename='assets/home-tarot-animated.html') }}"
-            title="Tarot Fali Animasyonu"
-            loading="lazy"
-          ></iframe>
-          <span class="choice-content">
-            <strong>{{ t('choice_tarot') }}</strong>
-          </span>
-        </a>
       </section>
           <footer class="site-footer">
         <div class="footer-grid">

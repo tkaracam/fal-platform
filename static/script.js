@@ -235,6 +235,61 @@ function initRegisterUsernameCheck() {
   }
 }
 
+function getPasswordMatchTexts(lang) {
+  const map = {
+    tr: { mismatch: "Şifreler uyuşmuyor." },
+    en: { mismatch: "Passwords do not match." },
+    de: { mismatch: "Passwörter stimmen nicht überein." },
+  };
+  return map[lang] || map.en;
+}
+
+function initRegisterPasswordConfirm() {
+  const form = document.querySelector("form[data-register-form]");
+  if (!form) {
+    return;
+  }
+  const passwordInput = form.querySelector("[data-register-password]");
+  const confirmInput = form.querySelector("[data-register-password-confirm]");
+  const statusEl = form.querySelector("[data-password-status]");
+  if (!passwordInput || !confirmInput || !statusEl) {
+    return;
+  }
+
+  const texts = getPasswordMatchTexts(uiLang);
+
+  function validateMatch() {
+    const password = String(passwordInput.value || "");
+    const confirm = String(confirmInput.value || "");
+    statusEl.classList.remove("bad");
+    confirmInput.classList.remove("password-bad");
+
+    if (!confirm) {
+      statusEl.textContent = "";
+      return true;
+    }
+    if (password !== confirm) {
+      statusEl.textContent = texts.mismatch;
+      statusEl.classList.add("bad");
+      confirmInput.classList.add("password-bad");
+      return false;
+    }
+    statusEl.textContent = "";
+    return true;
+  }
+
+  passwordInput.addEventListener("input", validateMatch);
+  confirmInput.addEventListener("input", validateMatch);
+  confirmInput.addEventListener("blur", validateMatch);
+
+  form.addEventListener("submit", (event) => {
+    if (!validateMatch()) {
+      event.preventDefault();
+      confirmInput.focus();
+    }
+  });
+}
+
 function shuffle(array) {
   const copy = [...array];
   for (let i = copy.length - 1; i > 0; i -= 1) {
@@ -299,3 +354,4 @@ createDeck("tarot");
 initNavbar();
 initPhotoGrid();
 initRegisterUsernameCheck();
+initRegisterPasswordConfirm();

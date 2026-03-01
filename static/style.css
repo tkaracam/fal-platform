@@ -742,6 +742,11 @@ input.username-bad {
   box-shadow: 0 0 0 2px rgba(223, 86, 102, 0.16);
 }
 
+input.password-bad {
+  border-color: #df5666;
+  box-shadow: 0 0 0 2px rgba(223, 86, 102, 0.16);
+}
+
 .username-status {
   min-height: 1.1rem;
   display: inline-block;
@@ -759,6 +764,17 @@ input.username-bad {
 
 .username-status.checking {
   color: #5f7a93;
+}
+
+.password-status {
+  min-height: 1.1rem;
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.password-status.bad {
+  color: #df5666;
 }
 
 button,

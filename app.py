@@ -134,6 +134,7 @@ TRANSLATIONS = {
         "forgot_title": "Şifre Yenile",
         "forgot_desc": "Kullanıcı adı, e-posta ve telefon bilgini girip yeni şifre belirleyebilirsin.",
         "forgot_submit": "Şifreyi Yenile",
+        "forgot_bad": "Kullanıcı adı (min 3), e-posta, telefon, yeni şifre (min 4) ve şifre tekrarı zorunludur.",
         "forgot_not_found": "Bilgiler eşleşmedi. Lütfen kullanıcı adı, e-posta ve telefonu kontrol edin.",
         "forgot_ok": "Şifreniz yenilendi. Yeni şifrenizle giriş yapabilirsiniz.",
         "logout_submit": "Çıkış Yap",
@@ -164,6 +165,7 @@ TRANSLATIONS = {
         "profile_desc": "İsim, e-posta, telefon bilgilerini güncelleyebilir ve şifreni yenileyebilirsin.",
         "profile_new_password": "Yeni Şifre",
         "profile_new_password_confirm": "Yeni Şifre (Tekrar)",
+        "register_password_repeat": "Şifre (Tekrar)",
         "profile_save": "Bilgileri Kaydet",
         "register_title": "Kayıt Ol",
         "register_kicker": "Yeni Hesap",
@@ -172,7 +174,7 @@ TRANSLATIONS = {
         "msg_login_ok": "Giriş başarılı.",
         "msg_login_bad": "Kullanıcı adı veya şifre hatalı.",
         "msg_register_ok": "Kayıt tamamlandı. Giriş yapabilirsiniz.",
-        "msg_register_bad": "Ad soyad, e-posta, telefon, kullanıcı adı (min 3) ve şifre (min 4) zorunludur.",
+        "msg_register_bad": "Ad soyad, e-posta, telefon, kullanıcı adı (min 3) zorunludur. Şifre en az 6 karakter olmalı, en az 1 büyük harf ve 1 özel karakter içermeli ve tekrar alanı ile aynı olmalıdır.",
         "msg_register_exists": "Bu kullanıcı adı zaten kullanılıyor.",
         "username_checking": "Kontrol ediliyor...",
         "username_available": "Kullanıcı adı uygun.",
@@ -279,6 +281,7 @@ TRANSLATIONS = {
         "forgot_title": "Reset Password",
         "forgot_desc": "Enter your username, email and phone, then set a new password.",
         "forgot_submit": "Reset Password",
+        "forgot_bad": "Username (min 3), email, phone, new password (min 4), and repeated password are required.",
         "forgot_not_found": "No matching account found. Please check username, email and phone.",
         "forgot_ok": "Your password has been reset. You can sign in with your new password.",
         "logout_submit": "Sign Out",
@@ -309,6 +312,7 @@ TRANSLATIONS = {
         "profile_desc": "Update your name, email and phone details, and reset your password.",
         "profile_new_password": "New Password",
         "profile_new_password_confirm": "New Password (Repeat)",
+        "register_password_repeat": "Password (Repeat)",
         "profile_save": "Save Details",
         "register_title": "Sign Up",
         "register_kicker": "Create Account",
@@ -317,7 +321,7 @@ TRANSLATIONS = {
         "msg_login_ok": "Signed in successfully.",
         "msg_login_bad": "Invalid username or password.",
         "msg_register_ok": "Registration completed. You can sign in now.",
-        "msg_register_bad": "Full name, email, phone, username (min 3), and password (min 4) are required.",
+        "msg_register_bad": "Full name, email, phone, and username (min 3) are required. Password must be at least 6 characters, include 1 uppercase letter and 1 special character, and match the repeat field.",
         "msg_register_exists": "This username is already in use.",
         "username_checking": "Checking...",
         "username_available": "Username is available.",
@@ -424,6 +428,7 @@ TRANSLATIONS = {
         "forgot_title": "Passwort erneuern",
         "forgot_desc": "Gib Benutzername, E-Mail und Telefon ein und lege ein neues Passwort fest.",
         "forgot_submit": "Passwort erneuern",
+        "forgot_bad": "Benutzername (min. 3), E-Mail, Telefon, neues Passwort (min. 4) und Passwortwiederholung sind erforderlich.",
         "forgot_not_found": "Keine passenden Kontodaten gefunden. Bitte Benutzername, E-Mail und Telefon prüfen.",
         "forgot_ok": "Dein Passwort wurde erneuert. Du kannst dich jetzt mit dem neuen Passwort anmelden.",
         "logout_submit": "Abmelden",
@@ -454,6 +459,7 @@ TRANSLATIONS = {
         "profile_desc": "Du kannst Name, E-Mail und Telefon aktualisieren und dein Passwort erneuern.",
         "profile_new_password": "Neues Passwort",
         "profile_new_password_confirm": "Neues Passwort (Wiederholen)",
+        "register_password_repeat": "Passwort (Wiederholen)",
         "profile_save": "Daten Speichern",
         "register_title": "Registrieren",
         "register_kicker": "Neues Konto",
@@ -462,7 +468,7 @@ TRANSLATIONS = {
         "msg_login_ok": "Anmeldung erfolgreich.",
         "msg_login_bad": "Benutzername oder Passwort ist falsch.",
         "msg_register_ok": "Registrierung abgeschlossen. Jetzt anmelden.",
-        "msg_register_bad": "Vollständiger Name, E-Mail, Telefon, Benutzername (min. 3) und Passwort (min. 4) sind erforderlich.",
+        "msg_register_bad": "Vollständiger Name, E-Mail, Telefon und Benutzername (min. 3) sind erforderlich. Das Passwort muss mindestens 6 Zeichen lang sein, mindestens 1 Großbuchstaben und 1 Sonderzeichen enthalten und mit der Wiederholung übereinstimmen.",
         "msg_register_exists": "Dieser Benutzername ist bereits vergeben.",
         "username_checking": "Wird geprüft...",
         "username_available": "Benutzername ist verfügbar.",
@@ -1829,6 +1835,16 @@ def t(key: str, **kwargs: object) -> str:
     return raw
 
 
+def is_strong_registration_password(password: str) -> bool:
+    if len(password) < 6:
+        return False
+    if re.search(r"[A-Z]", password) is None:
+        return False
+    if re.search(r"[^A-Za-z0-9]", password) is None:
+        return False
+    return True
+
+
 def lang_url(target_lang: str) -> str:
     if target_lang not in LANGUAGES:
         target_lang = DEFAULT_LANG
@@ -2032,7 +2048,7 @@ def forgot_password_submit():
     new_password_confirm = request.form.get("new_password_confirm", "")
 
     if len(username) < 3 or "@" not in email or not phone or len(new_password) < 4 or new_password != new_password_confirm:
-        flash(t("msg_register_bad"), "error")
+        flash(t("forgot_bad"), "error")
         return redirect(url_for("forgot_password_page", lang=get_lang()))
 
     with sqlite3.connect(DB_PATH) as conn:
@@ -2082,6 +2098,7 @@ def username_available_api():
 def register_submit():
     username = request.form.get("username", "").strip().lower()
     password = request.form.get("password", "")
+    password_confirm = request.form.get("password_confirm", "")
     full_name = request.form.get("full_name", "").strip()
     email = request.form.get("email", "").strip().lower()
     phone = request.form.get("phone", "").strip()
@@ -2091,7 +2108,14 @@ def register_submit():
         "email": email,
         "phone": phone,
     }
-    if len(username) < 3 or len(password) < 4 or not full_name or "@" not in email or not phone:
+    if (
+        len(username) < 3
+        or not full_name
+        or "@" not in email
+        or not phone
+        or not is_strong_registration_password(password)
+        or password != password_confirm
+    ):
         flash(t("msg_register_bad"), "error")
         return redirect(url_for("register_page", lang=get_lang()))
     with sqlite3.connect(DB_PATH) as conn:

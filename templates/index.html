@@ -32,7 +32,13 @@
           {% else %}
           <a href="{{ url_for('login_page', lang=lang) }}">{{ t('nav_login') }}</a>
           <a class="menu-cta" href="{{ url_for('register_page', lang=lang) }}">{{ t('nav_register') }}</a>
-          {% endif %}        </nav>
+          {% endif %}
+          <div class="lang-switch">
+            <a href="{{ lang_url('tr') }}">🇹🇷 {{ t('lang_tr') }}</a>
+            <a href="{{ lang_url('en') }}">🇬🇧 {{ t('lang_en') }}</a>
+            <a href="{{ lang_url('de') }}">🇩🇪 {{ t('lang_de') }}</a>
+          </div>
+        </nav>
       </header>
 
       <section class="choice-grid" id="secimler">

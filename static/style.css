@@ -220,6 +220,25 @@ body {
   pointer-events: auto;
 }
 
+.lang-switch {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.lang-switch a {
+  text-align: left;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: 1px solid #d5e6f6;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #f8fcff;
+  color: #2d455c;
+  text-decoration: none;
+}
+
 .hero {
   border: 1px solid var(--stroke);
   border-radius: 24px;

@@ -58,8 +58,8 @@ body.nav-open {
   margin-bottom: 0;
   border: 1px solid #d7e8f6;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(8px);
+  background: #ffffff;
+  backdrop-filter: none;
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + 10px);
   left: max(4vw, calc(50% - 560px));
@@ -1097,7 +1097,7 @@ a { color: #e6655e; }
     padding: 8px 0;
     border: 0;
     border-radius: 0;
-    background: transparent;
+    background: #ffffff;
     backdrop-filter: none;
     position: fixed;
     top: calc(env(safe-area-inset-top, 0px) + 10px);

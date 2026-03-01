@@ -513,59 +513,27 @@ body.nav-open {
   gap: 16px;
 }
 
-.choice-slogan-row {
+.home-slogan-grid {
   margin-top: 18px;
-}
-
-.choice-column {
   display: grid;
-  gap: 10px;
-  align-content: start;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.coffee-slogan {
-  position: relative;
-  overflow: hidden;
+.home-slogan-item {
   border-radius: 14px;
-  border: 1px solid #ffd4c6;
-  background:
-    radial-gradient(17rem 8rem at 88% -28%, rgba(255, 255, 255, 0.5), transparent 64%),
-    linear-gradient(120deg, #fff4ee, #ffe7dd 58%, #ffeef4);
-  box-shadow: 0 12px 28px rgba(255, 122, 86, 0.16);
-  color: #5f2f21;
-  padding: 12px 14px;
+  border: 1px solid #d8e7f5;
+  background: linear-gradient(120deg, #fffdfb, #f6fbff);
+  box-shadow: 0 8px 20px rgba(34, 62, 92, 0.08);
+  padding: 10px 12px;
 }
 
-.coffee-slogan::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  background: linear-gradient(95deg, rgba(255, 138, 87, 0.25), rgba(255, 95, 127, 0.2));
-  z-index: -1;
-}
-
-.coffee-slogan-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  font-weight: 800;
-  color: #b14e35;
-}
-
-.coffee-slogan-kicker::before {
-  content: "✦";
-  font-size: 0.76rem;
-}
-
-.coffee-slogan-text {
-  margin: 6px 0 0;
-  font-size: 0.85rem;
-  line-height: 1.45;
+.home-slogan-text {
+  margin: 0;
+  color: #2d4760;
+  font-size: 0.82rem;
+  line-height: 1.4;
   font-weight: 700;
-  color: #6a3a2c;
 }
 
 .choice-card {
@@ -1090,6 +1058,7 @@ a { color: #e6655e; }
 }
 
 @media (max-width: 900px) {
+  .home-slogan-grid { grid-template-columns: 1fr; }
   .choice-grid { grid-template-columns: 1fr; }
   .hero-intro { grid-template-columns: 1fr; }
   .welcome-items { grid-template-columns: 1fr; }

@@ -82,7 +82,7 @@ body.nav-open {
   display: inline-flex;
   align-items: center;
   gap: 0;
-  padding-left: 1.5px;
+  padding-left: 0.75px;
 }
 
 .brand-logo {

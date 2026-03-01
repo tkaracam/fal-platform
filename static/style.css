@@ -676,6 +676,12 @@ body.nav-open {
   background: #dfe4ea;
 }
 
+.choice-card.card-katina .choice-image {
+  object-fit: contain;
+  transform: scale(1.28);
+  transform-origin: center center;
+}
+
 .choice-card.card-tarot {
   background-image: url("/static/assets/home-tarot.svg");
   background-size: cover;

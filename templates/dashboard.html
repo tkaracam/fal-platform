@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-coffeeslogan-premium" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-menuclean" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -141,8 +141,7 @@
             <a href="{{ url_for('coffee_page', lang=lang) }}">{{ t('nav_coffee') }}</a>
             <a href="{{ url_for('katina_page', lang=lang) }}">{{ t('nav_katina') }}</a>
             <a href="{{ url_for('tarot_page', lang=lang) }}">{{ t('nav_tarot') }}</a>
-            <a href="{{ url_for('agb_page', lang=lang) }}">{{ t('nav_agb') }}</a>
-          </div>
+            </div>
           <div class="footer-social">
             <a href="{{ instagram_url }}" target="_blank" rel="noopener" class="social-link"><span>Instagram</span></a>
             <a href="{{ x_url }}" target="_blank" rel="noopener" class="social-link"><span>X</span></a>

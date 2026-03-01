@@ -1051,13 +1051,13 @@ button:hover,
 }
 
 .card-back.katina-back {
-  background-image: url("/static/assets/katina-back.svg");
+  background-image: url("/static/assets/katina_card.jpg");
   background-size: cover;
   background-position: center;
 }
 
 .card-back.tarot-back {
-  background-image: url("/static/assets/tarot-back.svg");
+  background-image: url("/static/assets/tarot_card.png");
   background-size: cover;
   background-position: center;
 }

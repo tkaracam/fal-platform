@@ -356,7 +356,7 @@ function createDeck(readingType) {
       const pickedButton = cardButtons.get(entry.card);
       if (pickedButton) {
         pickedButton.classList.add("picked");
-        pickedButton.textContent = `${currentText.chosen} ${index + 1}`;
+        pickedButton.textContent = "";
       }
     });
   }
@@ -390,7 +390,7 @@ function createDeck(readingType) {
 
       const step = picked.length;
       button.classList.add("picked");
-      button.textContent = `${currentText.chosen} ${step + 1}`;
+      button.textContent = "";
       picked.push({ position: positions[step], card: cardName });
       syncSelectionState();
     });

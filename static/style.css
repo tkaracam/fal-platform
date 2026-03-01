@@ -184,11 +184,6 @@ body.nav-open {
   background: linear-gradient(90deg, var(--accent-a), var(--accent-c));
 }
 
-body.nav-open .nav-toggle {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .menu-overlay {
   position: fixed;
   inset: 0;

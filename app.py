@@ -81,6 +81,8 @@ TRANSLATIONS = {
         "nav_katina": "Katina",
         "nav_tarot": "Tarot",
         "nav_agb": "AGB",
+        "nav_impressum": "Impressum",
+        "nav_datenschutz": "Datenschutz",
         "nav_login": "Üye Girişi",
         "nav_register": "Kayıt Ol",
         "lang_tr": "Türkçe",
@@ -192,6 +194,24 @@ TRANSLATIONS = {
         "agb_title": "AGB ve Yasal Bilgilendirme",
         "agb_desc": "Bu sayfa kullanım koşulları ve görsel lisans bilgilerini içerir.",
         "agb_photo_license": "Falcı fotoğrafları Pexels ücretsiz lisansı ile kullanılmaktadır.",
+        "impressum_title": "Impressum",
+        "impressum_desc": "Bu sayfa yasal sağlayıcı ve iletişim bilgilerini içerir.",
+        "impressum_provider_title": "Hizmet Sağlayıcı",
+        "impressum_provider_body": "Orakelia • Online Fal Danışmanlığı Platformu",
+        "impressum_contact_title": "İletişim",
+        "impressum_contact_body": "E-posta: support@orakelia.com",
+        "impressum_disclaimer_title": "Yasal Uyarı",
+        "impressum_disclaimer_body": "Bu platformdaki içerikler manevi ve eğlence amaçlıdır; tıbbi, hukuki veya finansal danışmanlık yerine geçmez.",
+        "datenschutz_title": "Datenschutz",
+        "datenschutz_desc": "Bu sayfa veri işleme ve gizlilik ilkelerini açıklar.",
+        "datenschutz_intro_title": "Toplanan Veriler",
+        "datenschutz_intro_body": "Hesap ve talep sürecinde ad, e-posta, telefon, fal sorusu ve yüklenen dosyalar işlenebilir.",
+        "datenschutz_usage_title": "Veri Kullanımı",
+        "datenschutz_usage_body": "Veriler; hesap yönetimi, ödeme durumu, fal yorumlama ve destek süreçlerini yürütmek için kullanılır.",
+        "datenschutz_rights_title": "Haklarınız",
+        "datenschutz_rights_body": "Veri görüntüleme, düzeltme ve silme talepleriniz için bizimle iletişime geçebilirsiniz.",
+        "datenschutz_contact_title": "Gizlilik İletişimi",
+        "datenschutz_contact_body": "Gizlilik talepleri için: support@orakelia.com",
         "msg_fill_coffee": "Lütfen tüm kahve falı alanlarını doldurun.",
         "msg_need_photo": "Telve fotoğrafı yüklemeniz gerekiyor.",
         "msg_bad_file": "Sadece png, jpg, jpeg veya webp dosyaları kabul edilir.",
@@ -232,6 +252,8 @@ TRANSLATIONS = {
         "nav_katina": "Katina",
         "nav_tarot": "Tarot",
         "nav_agb": "AGB",
+        "nav_impressum": "Impressum",
+        "nav_datenschutz": "Datenschutz",
         "nav_login": "Sign In",
         "nav_register": "Sign Up",
         "lang_tr": "Türkçe",
@@ -343,6 +365,24 @@ TRANSLATIONS = {
         "agb_title": "AGB and Legal Information",
         "agb_desc": "This page contains terms of use and image license information.",
         "agb_photo_license": "Reader photos are used under the free Pexels license.",
+        "impressum_title": "Impressum",
+        "impressum_desc": "This page contains legal provider and contact information.",
+        "impressum_provider_title": "Service Provider",
+        "impressum_provider_body": "Orakelia • Online Fortune Guidance Platform",
+        "impressum_contact_title": "Contact",
+        "impressum_contact_body": "Email: support@orakelia.com",
+        "impressum_disclaimer_title": "Legal Notice",
+        "impressum_disclaimer_body": "Content on this platform is spiritual/entertainment-oriented and does not replace medical, legal, or financial advice.",
+        "datenschutz_title": "Datenschutz",
+        "datenschutz_desc": "This page explains data processing and privacy principles.",
+        "datenschutz_intro_title": "Collected Data",
+        "datenschutz_intro_body": "During account and request flows, name, email, phone, reading question, and uploaded files may be processed.",
+        "datenschutz_usage_title": "How Data Is Used",
+        "datenschutz_usage_body": "Data is used for account management, payment status, reading interpretation, and support workflows.",
+        "datenschutz_rights_title": "Your Rights",
+        "datenschutz_rights_body": "You can contact us to request access, correction, or deletion of your data.",
+        "datenschutz_contact_title": "Privacy Contact",
+        "datenschutz_contact_body": "For privacy requests: support@orakelia.com",
         "msg_fill_coffee": "Please fill in all coffee reading fields.",
         "msg_need_photo": "You need to upload a coffee grounds photo.",
         "msg_bad_file": "Only png, jpg, jpeg or webp files are allowed.",
@@ -383,6 +423,8 @@ TRANSLATIONS = {
         "nav_katina": "Katina",
         "nav_tarot": "Tarot",
         "nav_agb": "AGB",
+        "nav_impressum": "Impressum",
+        "nav_datenschutz": "Datenschutz",
         "nav_login": "Anmelden",
         "nav_register": "Registrieren",
         "lang_tr": "Türkisch",
@@ -494,6 +536,24 @@ TRANSLATIONS = {
         "agb_title": "AGB und Rechtliche Hinweise",
         "agb_desc": "Diese Seite enthält Nutzungsbedingungen und Bildlizenz-Informationen.",
         "agb_photo_license": "Die Fotos werden unter der kostenlosen Pexels-Lizenz genutzt.",
+        "impressum_title": "Impressum",
+        "impressum_desc": "Diese Seite enthält rechtliche Anbieter- und Kontaktinformationen.",
+        "impressum_provider_title": "Diensteanbieter",
+        "impressum_provider_body": "Orakelia • Online-Orakelberatungsplattform",
+        "impressum_contact_title": "Kontakt",
+        "impressum_contact_body": "E-Mail: support@orakelia.com",
+        "impressum_disclaimer_title": "Rechtlicher Hinweis",
+        "impressum_disclaimer_body": "Die Inhalte dieser Plattform dienen spirituellen/unterhaltenden Zwecken und ersetzen keine medizinische, rechtliche oder finanzielle Beratung.",
+        "datenschutz_title": "Datenschutz",
+        "datenschutz_desc": "Diese Seite erläutert Datenverarbeitung und Datenschutzgrundsätze.",
+        "datenschutz_intro_title": "Erhobene Daten",
+        "datenschutz_intro_body": "Im Konto- und Anfrageprozess können Name, E-Mail, Telefon, Orakelfrage und hochgeladene Dateien verarbeitet werden.",
+        "datenschutz_usage_title": "Datenverwendung",
+        "datenschutz_usage_body": "Die Daten werden für Kontoverwaltung, Zahlungsstatus, Orakeldeutung und Supportprozesse verwendet.",
+        "datenschutz_rights_title": "Ihre Rechte",
+        "datenschutz_rights_body": "Für Auskunft, Berichtigung oder Löschung Ihrer Daten können Sie uns kontaktieren.",
+        "datenschutz_contact_title": "Datenschutzkontakt",
+        "datenschutz_contact_body": "Für Datenschutzanfragen: support@orakelia.com",
         "msg_fill_coffee": "Bitte alle Felder für das Kaffee-Orakel ausfüllen.",
         "msg_need_photo": "Bitte ein Foto vom Kaffeesatz hochladen.",
         "msg_bad_file": "Nur png-, jpg-, jpeg- oder webp-Dateien sind erlaubt.",
@@ -2352,6 +2412,16 @@ def account_update():
 @app.get("/agb")
 def agb_page():
     return render_template("agb.html")
+
+
+@app.get("/impressum")
+def impressum_page():
+    return render_template("impressum.html")
+
+
+@app.get("/datenschutz")
+def datenschutz_page():
+    return render_template("datenschutz.html")
 
 
 @app.post("/submit-coffee")

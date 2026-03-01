@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ t('reading_focus_title') }}</title>
+    <title>{{ t('impressum_title') }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-menuclean" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-legal1" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -29,6 +29,10 @@
           <a href="{{ url_for('coffee_page', lang=lang) }}">{{ t('nav_coffee') }}</a>
           <a href="{{ url_for('katina_page', lang=lang) }}">{{ t('nav_katina') }}</a>
           <a href="{{ url_for('tarot_page', lang=lang) }}">{{ t('nav_tarot') }}</a>
+          {% if not is_logged_in %}
+          <a href="{{ url_for('login_page', lang=lang) }}">{{ t('nav_login') }}</a>
+          <a class="menu-cta" href="{{ url_for('register_page', lang=lang) }}">{{ t('nav_register') }}</a>
+          {% endif %}
           {% if is_logged_in %}
           <form method="post" action="{{ url_for('logout_submit', lang=lang) }}" class="nav-logout-form">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
@@ -46,40 +50,24 @@
         </nav>
       </header>
 
-      {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-      <section class="alerts">
-        {% for category, message in messages %}
-        <div class="alert {{ category }}">{{ message }}</div>
-        {% endfor %}
-      </section>
-      {% endif %}
-      {% endwith %}
-
-      <section class="hero">
-        <p class="kicker">{{ t('reading_focus_title') }}</p>
-        <h1>{{ row.reader_name }}</h1>
-        <p>{{ t('reading_focus_desc') }}</p>
+      <section class="card">
+        <h2>{{ t('impressum_title') }}</h2>
+        <p>{{ t('impressum_desc') }}</p>
       </section>
 
-      <section class="card reading-focus-card">
-        <p class="reading-meta">
-          <strong>{{ t('panel_date') }}:</strong> {{ row.created_at[:16].replace('T', ' ') }}
-        </p>
-        <p class="reading-meta">
-          <strong>{{ t('panel_type') }}:</strong>
-          {% if row.reading_type == 'coffee' %}
-            {{ t('nav_coffee') }}
-          {% elif row.reading_type == 'katina' %}
-            {{ t('nav_katina') }}
-          {% elif row.reading_type == 'tarot' %}
-            {{ t('nav_tarot') }}
-          {% else %}
-            {{ row.reading_type }}
-          {% endif %}
-        </p>
-        <p class="reading-meta"><strong>{{ t('panel_question') }}:</strong> {{ row.question }}</p>
-        <div class="reading-focus-text">{{ row.ai_reading }}</div>
+      <section class="card">
+        <h3>{{ t('impressum_provider_title') }}</h3>
+        <p>{{ t('impressum_provider_body') }}</p>
+      </section>
+
+      <section class="card">
+        <h3>{{ t('impressum_contact_title') }}</h3>
+        <p>{{ t('impressum_contact_body') }}</p>
+      </section>
+
+      <section class="card">
+        <h3>{{ t('impressum_disclaimer_title') }}</h3>
+        <p>{{ t('impressum_disclaimer_body') }}</p>
       </section>
 
       <footer class="site-footer">

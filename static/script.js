@@ -56,10 +56,34 @@ function initNavbar() {
   if (!toggle || !links) {
     return;
   }
-  toggle.setAttribute("aria-expanded", "false");
-  toggle.addEventListener("click", () => {
-    const isOpen = links.classList.toggle("is-open");
+  const body = document.body;
+
+  function setMenuState(isOpen) {
+    links.classList.toggle("is-open", isOpen);
     toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    if (body) {
+      body.classList.toggle("nav-open", isOpen);
+    }
+  }
+
+  setMenuState(false);
+
+  toggle.addEventListener("click", () => {
+    const isOpen = !links.classList.contains("is-open");
+    setMenuState(isOpen);
+  });
+
+  links.addEventListener("click", (event) => {
+    const target = event.target;
+    if (target instanceof HTMLElement && (target.tagName === "A" || target.closest("a"))) {
+      setMenuState(false);
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && links.classList.contains("is-open")) {
+      setMenuState(false);
+    }
   });
 }
 

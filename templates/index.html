@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-sloganrow2" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-welcomeonly" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -40,16 +40,8 @@
       </header>
 
       <section id="secimler">
-        <div class="home-slogan-grid">
-          <div class="home-slogan-item">
-            <p class="home-slogan-text">{{ t('coffee_reader_slogan') }}</p>
-          </div>
-          <div class="home-slogan-item">
-            <p class="home-slogan-text">{{ t('katina_reader_slogan') }}</p>
-          </div>
-          <div class="home-slogan-item">
-            <p class="home-slogan-text">{{ t('tarot_reader_slogan') }}</p>
-          </div>
+        <div class="home-welcome-row">
+          <p class="home-welcome-text">{{ t('home_coffee_slogan_kicker') }}</p>
         </div>
         <div class="choice-grid">
           <a class="choice-card card-coffee" href="{{ url_for('coffee_page', lang=lang) }}">

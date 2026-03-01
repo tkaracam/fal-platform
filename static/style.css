@@ -513,27 +513,22 @@ body.nav-open {
   gap: 16px;
 }
 
-.home-slogan-grid {
+.home-welcome-row {
   margin-top: 18px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
 }
 
-.home-slogan-item {
+.home-welcome-text {
+  margin: 0;
   border-radius: 14px;
   border: 1px solid #d8e7f5;
   background: linear-gradient(120deg, #fffdfb, #f6fbff);
   box-shadow: 0 8px 20px rgba(34, 62, 92, 0.08);
   padding: 10px 12px;
-}
-
-.home-slogan-text {
-  margin: 0;
   color: #2d4760;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   line-height: 1.4;
   font-weight: 700;
+  text-align: center;
 }
 
 .choice-card {
@@ -1058,7 +1053,6 @@ a { color: #e6655e; }
 }
 
 @media (max-width: 900px) {
-  .home-slogan-grid { grid-template-columns: 1fr; }
   .choice-grid { grid-template-columns: 1fr; }
   .hero-intro { grid-template-columns: 1fr; }
   .welcome-items { grid-template-columns: 1fr; }

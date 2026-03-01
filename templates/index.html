@@ -16,6 +16,17 @@
         <a class="brand" href="{{ url_for('home', lang=lang) }}">
           <img class="brand-logo" src="{{ url_for('static', filename='assets/orakelia-logo-main.png') }}" alt="Orakelia" loading="lazy" />
         </a>
+        <div class="nav-quick">
+          {% if is_logged_in %}
+          <form method="post" action="{{ url_for('logout_submit', lang=lang) }}" class="quick-logout-form">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="quick-btn quick-logout">{{ t("logout_submit") }}</button>
+          </form>
+          {% else %}
+          <a class="quick-btn" href="{{ url_for('login_page', lang=lang) }}">{{ t("nav_login") }}</a>
+          <a class="quick-btn quick-btn-primary" href="{{ url_for('register_page', lang=lang) }}">{{ t("nav_register") }}</a>
+          {% endif %}
+        </div>
         <button class="nav-toggle" type="button" aria-label="Menu" data-nav-toggle>Menu</button>
         <nav class="nav-links" data-nav-links>
           <a href="{{ url_for('coffee_page', lang=lang) }}">{{ t('nav_coffee') }}</a>
@@ -90,7 +101,6 @@
             <a href="{{ url_for('katina_page', lang=lang) }}">{{ t('nav_katina') }}</a>
             <a href="{{ url_for('tarot_page', lang=lang) }}">{{ t('nav_tarot') }}</a>
             <a href="{{ url_for('agb_page', lang=lang) }}">{{ t('nav_agb') }}</a>
-            <a href="{{ url_for('login_page', lang=lang) }}">{{ t('nav_login') }}</a>
           </div>
           <div class="footer-social">
             <a href="{{ instagram_url }}" target="_blank" rel="noopener" class="social-link">

@@ -116,6 +116,43 @@ body.nav-open {
   display: inline-block;
 }
 
+.nav-quick {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.quick-logout-form {
+  margin: 0;
+}
+
+.quick-btn {
+  text-decoration: none;
+  color: var(--menu-text);
+  border: 1px solid #d7e8f6;
+  background: #f8fcff;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.quick-btn-primary {
+  background: linear-gradient(95deg, var(--accent-a), var(--accent-b));
+  color: #210f1a;
+  border-color: transparent;
+}
+
+.quick-logout {
+  background: linear-gradient(95deg, var(--accent-a), var(--accent-b));
+  color: #210f1a;
+  border-color: transparent;
+  cursor: pointer;
+}
+
 .menu,
 .nav-links {
   display: flex;
@@ -134,24 +171,30 @@ body.nav-open {
   font-size: 0.9rem;
 }
 
-.nav-links a[href*="/coffee"]::before,
-.nav-links a[href*="/katina"]::before,
-.nav-links a[href*="/tarot"]::before,
-.nav-links a[href*="/login"]::before,
-.nav-links a[href*="/register"]::before,
-.nav-links a[href*="/dashboard"]::before {
+.nav-links > a[href*="/coffee"]::before,
+.nav-links > a[href*="/katina"]::before,
+.nav-links > a[href*="/tarot"]::before,
+.nav-links > a[href*="/login"]::before,
+.nav-links > a[href*="/register"]::before,
+.nav-links > a[href*="/dashboard"]::before {
   display: inline-block;
   margin-right: 6px;
   font-size: 0.9em;
   line-height: 1;
 }
 
-.nav-links a[href*="/coffee"]::before { content: "☕"; }
-.nav-links a[href*="/katina"]::before { content: "♥"; }
-.nav-links a[href*="/tarot"]::before { content: "✦"; }
-.nav-links a[href*="/login"]::before { content: "👤"; }
-.nav-links a[href*="/register"]::before { content: "✍"; }
-.nav-links a[href*="/dashboard"]::before { content: "🗂"; }
+.nav-links > a[href*="/coffee"]::before { content: "☕"; }
+.nav-links > a[href*="/katina"]::before { content: "♥"; }
+.nav-links > a[href*="/tarot"]::before { content: "✦"; }
+.nav-links > a[href*="/login"]::before { content: "👤"; }
+.nav-links > a[href*="/register"]::before { content: "✍"; }
+.nav-links > a[href*="/dashboard"]::before { content: "🗂"; }
+
+.lang-switch a::before {
+  content: none !important;
+  display: none !important;
+  margin-right: 0 !important;
+}
 
 .nav-logout-form {
   margin: 0;

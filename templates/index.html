@@ -67,12 +67,12 @@
             </span>
           </a>
           <a class="choice-card card-katina" href="{{ url_for('katina_page', lang=lang) }}">
-            <iframe
-              class="choice-anim"
-              src="{{ url_for('static', filename='assets/home-katina-animated.html') }}"
-              title="Katina Fali Animasyonu"
+            <img
+              class="choice-anim choice-image"
+              src="{{ url_for('static', filename='assets/home-katina.svg') }}?v=20260301-katinaimg"
+              alt="Katina Fali Gorseli"
               loading="lazy"
-            ></iframe>
+            />
             <span class="choice-content">
               <strong>{{ t('choice_katina') }}</strong>
             </span>

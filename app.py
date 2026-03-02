@@ -3021,6 +3021,71 @@ def admin_resend_completed_email(request_kind: str, request_id: int):
     return redirect(url_for("admin"))
 
 
+@app.post("/admin/delete-request/coffee/<int:request_id>")
+def admin_delete_coffee_request(request_id: int):
+    if not admin_required():
+        flash("Bu alan için admin girişi gerekli.", "error")
+        return redirect(url_for("admin"))
+
+    deleted_request = 0
+    deleted_payments = 0
+    deleted_feedback = 0
+    deleted_audit = 0
+
+    with sqlite3.connect(DB_PATH) as conn:
+        exists = conn.execute("SELECT id FROM coffee_requests WHERE id = ?", (request_id,)).fetchone()
+        if not exists:
+            flash("Kahve falı kaydı bulunamadı.", "error")
+            return redirect(request.referrer or url_for("admin"))
+
+        deleted_payments = conn.execute(
+            "DELETE FROM payment_requests WHERE request_kind = 'coffee' AND request_id = ?",
+            (request_id,),
+        ).rowcount
+        deleted_feedback = conn.execute(
+            "DELETE FROM reader_feedback WHERE request_kind = 'coffee' AND request_id = ?",
+            (request_id,),
+        ).rowcount
+        try:
+            deleted_audit = conn.execute(
+                "DELETE FROM reading_audit WHERE request_kind = 'coffee' AND request_id = ?",
+                (request_id,),
+            ).rowcount
+        except sqlite3.OperationalError:
+            deleted_audit = 0
+
+        deleted_request = conn.execute(
+            "DELETE FROM coffee_requests WHERE id = ?",
+            (request_id,),
+        ).rowcount
+
+    flash(
+        f"Kahve falı kaydı silindi. Talep: {deleted_request}, Ödeme: {deleted_payments}, Değerlendirme: {deleted_feedback}, Log: {deleted_audit}",
+        "ok",
+    )
+    return redirect(request.referrer or url_for("admin"))
+
+
+@app.post("/admin/delete-audit/<int:audit_id>")
+def admin_delete_audit(audit_id: int):
+    if not admin_required():
+        flash("Bu alan için admin girişi gerekli.", "error")
+        return redirect(url_for("admin"))
+
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            deleted = conn.execute("DELETE FROM reading_audit WHERE id = ?", (audit_id,)).rowcount
+    except sqlite3.OperationalError:
+        flash("Yorum geçmişi tablosu bulunamadı.", "error")
+        return redirect(request.referrer or url_for("admin"))
+
+    if deleted:
+        flash("Yorum geçmişi kaydı silindi.", "ok")
+    else:
+        flash("Yorum geçmişi kaydı bulunamadı.", "error")
+    return redirect(request.referrer or url_for("admin"))
+
+
 def regenerate_ai_for_request(request_kind: str, request_id: int, lang: str) -> tuple[bool, str]:
     reading_type = "coffee"
     customer_name = ""

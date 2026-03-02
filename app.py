@@ -1521,7 +1521,7 @@ def queue_openai_batch(input_items: list[dict[str, str]]) -> tuple[str, str, str
         "body": {
             "model": OPENAI_MODEL,
             "input": [{"role": "user", "content": input_items}],
-            "temperature": 0.8,
+            "temperature": 0.9,
         },
     }
     file_bytes = (json.dumps(batch_line, ensure_ascii=False) + "\n").encode("utf-8")
@@ -1620,7 +1620,7 @@ def call_openai_reading(input_items: list[dict[str, str]]) -> tuple[str, str, st
             body={
                 "model": OPENAI_MODEL,
                 "input": [{"role": "user", "content": input_items}],
-                "temperature": 0.8,
+                "temperature": 0.9,
             },
             timeout=45,
         )
@@ -1642,8 +1642,10 @@ def build_coffee_prompt(question: str, full_name: str, reader_name: str, lang: s
             f"{character}\n"
             "Language rule: Write the full response in English only.\n"
             "Style:\n"
+            "- Write as if you are speaking one-to-one with the client in a warm, human tone.\n"
             "- Start with one short overall-energy paragraph.\n"
             "- Then continue with flowing mini-sections (not rigid numbered lists).\n"
+            "- Use varied sentence lengths; avoid repetitive template phrases.\n"
             "- Be clear, practical, and emotionally intelligent.\n"
             "- End with exactly 3 short actionable suggestions.\n"
             f"Final line must be exactly this name only: {reader_name}\n"
@@ -1657,8 +1659,10 @@ def build_coffee_prompt(question: str, full_name: str, reader_name: str, lang: s
             f"{character}\n"
             "Sprachregel: Schreibe die komplette Antwort nur auf Deutsch.\n"
             "Stil:\n"
+            "- Schreibe wie in einem persönlichen Gespräch: warm, nahbar und menschlich.\n"
             "- Starte mit einem kurzen Absatz zur Gesamtenergie.\n"
             "- Danach klare, natürliche Abschnitte statt starrer Listen.\n"
+            "- Nutze abwechslungsreiche Satzlängen und vermeide Schablonensätze.\n"
             "- Konkrete, alltagsnahe Sprache.\n"
             "- Am Ende genau 3 kurze Empfehlungen.\n"
             f"Letzte Zeile muss exakt nur dieser Name sein: {reader_name}\n"
@@ -1671,8 +1675,10 @@ def build_coffee_prompt(question: str, full_name: str, reader_name: str, lang: s
         f"{character}\n"
         "Dil kuralı: Cevabın tamamını yalnızca Türkçe yaz.\n"
         "Yazım tarzı:\n"
+        "- Müşteriyle birebir konuşur gibi samimi ve sıcak bir dil kullan.\n"
         "- Kısa bir 'genel enerji' paragrafıyla başla.\n"
         "- Sonra akıcı ara başlıklarla devam et (katı numaralı liste olmasın).\n"
+        "- Cümle uzunluklarını çeşitlendir; tekrarlayan şablon kalıplardan kaçın.\n"
         "- Gerçekçi, net ve duygusal olarak dengeli bir dil kullan.\n"
         "- Sonda tam 3 kısa, uygulanabilir tavsiye ver.\n"
         f"Son satır yalnızca şu isim olsun: {reader_name}\n"
@@ -1717,6 +1723,8 @@ def build_card_prompt(reading_type: str, question: str, full_name: str, reader_n
             "Important: card values above are internal technical IDs. Never print these IDs in the final text.\n"
             "Language rule: Write the full response in English only.\n"
             "Write naturally and warmly, not mechanically. Avoid generic template wording.\n"
+            "Write like a real human conversation with the client: clear, personal, and emotionally aware.\n"
+            "Use varied sentence lengths and transitions so it reads natural, not formulaic.\n"
             "Flow:\n"
             "- Short overall theme paragraph\n"
             "- Position-based interpretation in human language\n"
@@ -1738,6 +1746,8 @@ def build_card_prompt(reading_type: str, question: str, full_name: str, reader_n
             "Wichtig: Die Kartenwerte oben sind interne technische IDs. Diese IDs dürfen im finalen Text nicht erscheinen.\n"
             "Sprachregel: Schreibe die komplette Antwort nur auf Deutsch.\n"
             "Schreibe natürlich, warm und nicht mechanisch.\n"
+            "Schreibe wie in einem echten Beratungsgespräch: persönlich, klar und empathisch.\n"
+            "Nutze abwechslungsreiche Satzlängen und natürliche Übergänge statt starrer Formeln.\n"
             "Struktur:\n"
             "- Kurzer Absatz zur Gesamtenergie\n"
             "- Deutung nach Positionen in natürlicher Sprache\n"
@@ -1758,6 +1768,8 @@ def build_card_prompt(reading_type: str, question: str, full_name: str, reader_n
         "Önemli: Yukarıdaki kart değerleri sistem içi teknik ID'dir. Nihai yorum metninde bu ID'leri asla yazma.\n"
         "Dil kuralı: Cevabın tamamını yalnızca Türkçe yaz.\n"
         "Dil sıcak, doğal ve insan gibi olsun; mekanik şablon cümlelerden kaçın.\n"
+        "Müşteriyle gerçek bir sohbet ediyor gibi yaz: kişisel, anlaşılır ve empatik ol.\n"
+        "Cümle ritmini çeşitlendir, doğal geçişler kullan; kalıp metin gibi görünmesin.\n"
         "Akış:\n"
         "- Kısa bir genel enerji paragrafı\n"
         "- Pozisyonlara göre yorum (doğal cümlelerle)\n"

@@ -65,7 +65,7 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 OPENAI_USE_BATCH = os.getenv("OPENAI_USE_BATCH", "0").strip() == "1"
 AI_INPUT_COST_PER_1M = float(os.getenv("AI_INPUT_COST_PER_1M", "0"))
 AI_OUTPUT_COST_PER_1M = float(os.getenv("AI_OUTPUT_COST_PER_1M", "0"))
-EXPECTED_CARD_COUNT = {"katina": 7, "tarot": 3}
+EXPECTED_CARD_COUNT = {"katina": 7, "tarot": 10}
 LANGUAGES = {"tr", "en", "de", "fr"}
 DEFAULT_LANG = "tr"
 EUROPE_COUNTRIES = {
@@ -123,7 +123,7 @@ TRANSLATIONS = {
         "katina_question": "Aşk Sorunuz",
         "submit_katina": "Katina Falını Gönder",
         "tarot_title": "Tarot Falı",
-        "tarot_desc": "3 kart açılımı: geçmiş, şimdi, gelecek.",
+        "tarot_desc": "10 kart detaylı açılım (Celtic Cross): durum, engel, temel etki, yakın geçmiş, olası gelişme, yakın gelecek, sen, çevre, umut/korkular, sonuç.",
         "tarot_question": "Tarot Sorunuz",
         "submit_tarot": "Tarot Falını Gönder",
         "login_title": "Üye Girişi",
@@ -294,7 +294,7 @@ TRANSLATIONS = {
         "katina_question": "Your Love Question",
         "submit_katina": "Submit Katina Reading",
         "tarot_title": "Tarot Reading",
-        "tarot_desc": "3-card spread: past, present, future.",
+        "tarot_desc": "10-card detailed spread (Celtic Cross): situation, challenge, root influence, recent past, potential outcome, near future, self, environment, hopes/fears, final outcome.",
         "tarot_question": "Your Tarot Question",
         "submit_tarot": "Submit Tarot Reading",
         "login_title": "Sign In",
@@ -465,7 +465,7 @@ TRANSLATIONS = {
         "katina_question": "Deine Liebesfrage",
         "submit_katina": "Katina senden",
         "tarot_title": "Tarot-Orakel",
-        "tarot_desc": "3-Karten-Legung: Vergangenheit, Gegenwart, Zukunft.",
+        "tarot_desc": "Detaillierte 10-Karten-Legung (Keltisches Kreuz): Situation, Hindernis, Grundenergie, jüngste Vergangenheit, mögliche Entwicklung, nahe Zukunft, du selbst, Umfeld, Hoffnungen/Ängste, Ergebnis.",
         "tarot_question": "Deine Tarot-Frage",
         "submit_tarot": "Tarot senden",
         "login_title": "Anmelden",
@@ -1699,14 +1699,21 @@ def format_cards_for_prompt(selected_cards: str) -> str:
 
 
 def build_card_prompt(reading_type: str, question: str, full_name: str, reader_name: str, selected_cards: str, lang: str) -> str:
-    layout = "7 kart Katina aşk açılımı" if reading_type == "katina" else "3 kart Tarot açılımı"
+    is_tarot = reading_type == "tarot"
+    layout = "7 kart Katina aşk açılımı" if reading_type == "katina" else "10 kart Tarot açılımı (Kelt Haçı)"
     cards_detail = format_cards_for_prompt(selected_cards)
     character = reader_style_prompt(reader_name, lang)
     if lang == "en":
+        depth_rule = (
+            "Tarot depth rule: Interpret all 10 positions one by one, then provide a combined synthesis of the full spread.\n"
+            if is_tarot
+            else ""
+        )
         return (
             f"You are a professional {reading_type} reader. Interpret based on the selected spread and user question.\n"
             f"Spread: {layout}\nClient: {full_name}\nQuestion: {question}\nSelected cards/positions:\n{cards_detail}\n"
             f"{character}\n"
+            f"{depth_rule}"
             "Important: card values above are internal technical IDs. Never print these IDs in the final text.\n"
             "Language rule: Write the full response in English only.\n"
             "Write naturally and warmly, not mechanically. Avoid generic template wording.\n"
@@ -1718,10 +1725,16 @@ def build_card_prompt(reading_type: str, question: str, full_name: str, reader_n
             f"Final line must be exactly this name only: {reader_name}"
         )
     if lang == "de":
+        depth_rule = (
+            "Tarot-Tiefe: Deute alle 10 Positionen nacheinander und fasse danach die Gesamtenergie der Legung zusammen.\n"
+            if is_tarot
+            else ""
+        )
         return (
             f"Du bist eine professionelle {reading_type}-Legung Assistenz. Deute basierend auf den gezogenen Karten und der Frage.\n"
             f"Legung: {layout}\nKundin: {full_name}\nFrage: {question}\nGezogene Karten/Positionen:\n{cards_detail}\n"
             f"{character}\n"
+            f"{depth_rule}"
             "Wichtig: Die Kartenwerte oben sind interne technische IDs. Diese IDs dürfen im finalen Text nicht erscheinen.\n"
             "Sprachregel: Schreibe die komplette Antwort nur auf Deutsch.\n"
             "Schreibe natürlich, warm und nicht mechanisch.\n"
@@ -1732,10 +1745,16 @@ def build_card_prompt(reading_type: str, question: str, full_name: str, reader_n
             "- Genau 3 klare Empfehlungen\n"
             f"Letzte Zeile muss exakt nur dieser Name sein: {reader_name}"
         )
+    depth_rule = (
+        "Tarot derinlik kuralı: 10 kartın tüm pozisyonlarını tek tek yorumla, ardından açılımın toplam enerjisini birleştirerek özetle.\n"
+        if is_tarot
+        else ""
+    )
     return (
         f"Profesyonel bir {reading_type} fal yorumcususun. Seçilen açılım ve soru üzerinden yorum üret.\n"
         f"Açılım: {layout}\nMüşteri: {full_name}\nSoru: {question}\nSeçilen kart/pozisyonlar:\n{cards_detail}\n"
         f"{character}\n"
+        f"{depth_rule}"
         "Önemli: Yukarıdaki kart değerleri sistem içi teknik ID'dir. Nihai yorum metninde bu ID'leri asla yazma.\n"
         "Dil kuralı: Cevabın tamamını yalnızca Türkçe yaz.\n"
         "Dil sıcak, doğal ve insan gibi olsun; mekanik şablon cümlelerden kaçın.\n"

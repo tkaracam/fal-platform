@@ -10,7 +10,18 @@ const uiText = {
     chooseWarn: "Lütfen önce {count} kart seçin.",
     positions: {
       katina: ["Sen", "Partner", "İlişki Enerjisi", "Engel", "Yakın Gelecek", "Tavsiye", "Olası Sonuç"],
-      tarot: ["Geçmiş", "Şimdi", "Gelecek"],
+      tarot: [
+        "Mevcut Durum",
+        "Engel / Karşı Etki",
+        "Temel Etki",
+        "Yakın Geçmiş",
+        "Olası Gelişme",
+        "Yakın Gelecek",
+        "Sen",
+        "Çevre",
+        "Umutlar / Korkular",
+        "Sonuç",
+      ],
     },
   },
   en: {
@@ -22,7 +33,18 @@ const uiText = {
     chooseWarn: "Please select {count} cards first.",
     positions: {
       katina: ["You", "Partner", "Relationship Energy", "Obstacle", "Near Future", "Advice", "Outcome"],
-      tarot: ["Past", "Present", "Future"],
+      tarot: [
+        "Current Situation",
+        "Challenge / Crossing Energy",
+        "Root Influence",
+        "Recent Past",
+        "Potential Development",
+        "Near Future",
+        "Self",
+        "Environment",
+        "Hopes / Fears",
+        "Outcome",
+      ],
     },
   },
   de: {
@@ -34,14 +56,25 @@ const uiText = {
     chooseWarn: "Bitte zuerst {count} Karten auswählen.",
     positions: {
       katina: ["Du", "Partner", "Beziehungsenergie", "Hindernis", "Nächste Phase", "Rat", "Ergebnis"],
-      tarot: ["Vergangenheit", "Gegenwart", "Zukunft"],
+      tarot: [
+        "Aktuelle Situation",
+        "Hindernis / Gegenenergie",
+        "Grundenergie",
+        "Jüngste Vergangenheit",
+        "Mögliche Entwicklung",
+        "Nahe Zukunft",
+        "Du selbst",
+        "Umfeld",
+        "Hoffnungen / Ängste",
+        "Ergebnis",
+      ],
     },
   },
 };
 
 const readingConfigs = {
   katina: { deckSize: 65, picksRequired: 7 },
-  tarot: { deckSize: 78, picksRequired: 3 },
+  tarot: { deckSize: 78, picksRequired: 10 },
 };
 
 const currentText = uiText[uiLang] || uiText.tr;

@@ -1037,7 +1037,7 @@ button:hover,
 
 .deck {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(74px, 92px));
+  grid-template-columns: repeat(auto-fit, minmax(56px, 69px));
   justify-content: start;
   gap: 12px;
   margin-top: 12px;

@@ -364,30 +364,24 @@ function initHomeVideoEndReveal() {
     const progress = Math.min(Math.max(video.currentTime / duration, 0), 1);
     const fog = 0.01 + (0.30 - 0.01) * progress;
     const blur = 0.10 + 2.3 * progress;
+    const revealOpacity = 0.10 + 0.90 * progress;
+    const revealScale = 0.94 + 0.06 * progress;
     shell.style.setProperty("--fog-opacity", fog.toFixed(3));
     shell.style.setProperty("--video-blur", `${blur.toFixed(2)}px`);
-  }
-
-  function showReveal() {
-    shell.style.setProperty("--fog-opacity", "0.30");
-    shell.style.setProperty("--video-blur", "2.40px");
-    reveal.classList.add("is-visible");
-  }
-
-  function hideReveal() {
-    reveal.classList.remove("is-visible");
+    reveal.style.opacity = revealOpacity.toFixed(3);
+    reveal.style.transform = `scale(${revealScale.toFixed(3)})`;
   }
 
   video.addEventListener("loadedmetadata", setFogByProgress);
   video.addEventListener("timeupdate", setFogByProgress);
-  video.addEventListener("ended", showReveal);
-  video.addEventListener("play", hideReveal);
+  video.addEventListener("ended", () => {
+    shell.style.setProperty("--fog-opacity", "0.30");
+    shell.style.setProperty("--video-blur", "2.40px");
+    reveal.style.opacity = "1";
+    reveal.style.transform = "scale(1)";
+  });
 
-  if (video.ended) {
-    showReveal();
-  } else {
-    setFogByProgress();
-  }
+  setFogByProgress();
 }
 
 function shuffle(array) {

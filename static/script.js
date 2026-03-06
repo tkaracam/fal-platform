@@ -354,14 +354,12 @@ function initHomeHeroSlider() {
     return;
   }
   const slides = Array.from(slider.querySelectorAll("[data-home-slide]"));
-  const prevBtn = slider.querySelector("[data-home-prev]");
-  const nextBtn = slider.querySelector("[data-home-next]");
   if (slides.length < 2) {
     return;
   }
 
-  const FOG_OUT_MS = 1920;
-  const FOG_IN_MS = 1920;
+  const FOG_OUT_MS = 920;
+  const FOG_IN_MS = 920;
   const AUTO_MS = 6000;
   let currentIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));
   if (currentIndex < 0) {
@@ -423,22 +421,6 @@ function initHomeHeroSlider() {
       clearInterval(autoTimer);
     }
     autoTimer = window.setInterval(stepNextAuto, AUTO_MS);
-  }
-
-  if (prevBtn) {
-    prevBtn.addEventListener("click", () => {
-      const prevIndex = (currentIndex - 1 + slides.length) % slides.length;
-      goTo(prevIndex);
-      restartAuto();
-    });
-  }
-
-  if (nextBtn) {
-    nextBtn.addEventListener("click", () => {
-      const nextIndex = (currentIndex + 1) % slides.length;
-      goTo(nextIndex);
-      restartAuto();
-    });
   }
 
   restartAuto();

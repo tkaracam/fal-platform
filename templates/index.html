@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260306-homeslider11" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260306-homeslider12" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -52,10 +52,6 @@
 
       <section id="secimler">
         <div class="home-welcome-row">
-          <div class="home-welcome-banner">
-            <p class="home-welcome-title">{{ t('home_slider_welcome') }}</p>
-            <p class="home-welcome-subtext">{{ t('home_slider_subtext') }}</p>
-          </div>
           <div class="home-slider" data-home-slider>
             <figure class="home-slide is-active" data-home-slide>
               <img
@@ -64,10 +60,6 @@
                 loading="lazy"
                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='assets/home-coffee.svg') }}';"
               />
-              <figcaption class="home-slide-overlay">
-                <p class="home-slide-slogan">{{ t('coffee_reader_slogan') }}</p>
-                <a class="home-slide-btn" href="{{ url_for('coffee_page', lang=lang) }}">{{ t('home_slide_cta') }}</a>
-              </figcaption>
             </figure>
             <figure class="home-slide" data-home-slide>
               <img
@@ -76,10 +68,6 @@
                 loading="lazy"
                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='assets/katina_card.jpg') }}';"
               />
-              <figcaption class="home-slide-overlay">
-                <p class="home-slide-slogan">{{ t('katina_reader_slogan') }}</p>
-                <a class="home-slide-btn" href="{{ url_for('katina_page', lang=lang) }}">{{ t('home_slide_cta') }}</a>
-              </figcaption>
             </figure>
             <figure class="home-slide" data-home-slide>
               <img
@@ -88,10 +76,6 @@
                 loading="lazy"
                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='assets/tarot_card.png') }}';"
               />
-              <figcaption class="home-slide-overlay">
-                <p class="home-slide-slogan">{{ t('tarot_reader_slogan') }}</p>
-                <a class="home-slide-btn" href="{{ url_for('tarot_page', lang=lang) }}">{{ t('home_slide_cta') }}</a>
-              </figcaption>
             </figure>
             <button type="button" class="home-slider-arrow home-slider-arrow-left" data-home-prev aria-label="{{ t('slider_prev') }}">‹</button>
             <button type="button" class="home-slider-arrow home-slider-arrow-right" data-home-next aria-label="{{ t('slider_next') }}">›</button>
@@ -168,6 +152,6 @@
         </div>
       </footer>
     </main>
-    <script src="{{ url_for('static', filename='script.js') }}?v=20260306-homeslider11"></script>
+    <script src="{{ url_for('static', filename='script.js') }}?v=20260306-homeslider12"></script>
   </body>
 </html>

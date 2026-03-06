@@ -370,6 +370,44 @@ function initHomeHeroSlider() {
   let animating = false;
   let fallbackTimer = null;
 
+  function getSlideVideo(index) {
+    return slides[index]?.querySelector("video") || null;
+  }
+
+  function configureVideo(video) {
+    if (!video) {
+      return;
+    }
+    video.loop = false;
+    video.defaultPlaybackRate = VIDEO_RATE;
+    video.playbackRate = VIDEO_RATE;
+  }
+
+  function playFromStart(video) {
+    if (!video) {
+      return;
+    }
+    configureVideo(video);
+    try {
+      video.currentTime = 0;
+    } catch (_) {
+      // ignore
+    }
+    video.play().catch(() => {});
+  }
+
+  function pauseAndReset(video) {
+    if (!video) {
+      return;
+    }
+    video.pause();
+    try {
+      video.currentTime = 0;
+    } catch (_) {
+      // ignore
+    }
+  }
+
   function clearAdvanceHooks() {
     if (fallbackTimer) {
       clearTimeout(fallbackTimer);
@@ -387,37 +425,24 @@ function initHomeHeroSlider() {
     slide.classList.remove("is-fog-enter", "is-fogging-out");
   }
 
-  function playOnlyActiveVideo() {
-    slides.forEach((slide, index) => {
-      const video = slide.querySelector("video");
+  function setOnlyActiveVideo(activeIndex) {
+    slides.forEach((_, index) => {
+      const video = getSlideVideo(index);
       if (!video) {
         return;
       }
-      video.loop = false;
-      video.defaultPlaybackRate = VIDEO_RATE;
-      video.playbackRate = VIDEO_RATE;
-      if (index === currentIndex) {
-        try {
-          video.currentTime = 0;
-        } catch (_) {
-          // ignore
-        }
+      configureVideo(video);
+      if (index === activeIndex) {
         video.play().catch(() => {});
       } else {
-        video.pause();
-        try {
-          video.currentTime = 0;
-        } catch (_) {
-          // ignore
-        }
+        pauseAndReset(video);
       }
     });
   }
 
   function scheduleNextFromVideoEnd() {
     clearAdvanceHooks();
-    const activeSlide = slides[currentIndex];
-    const activeVideo = activeSlide.querySelector("video");
+    const activeVideo = getSlideVideo(currentIndex);
     const nextIndex = (currentIndex + 1) % slides.length;
     const goNext = () => goTo(nextIndex);
 
@@ -429,9 +454,9 @@ function initHomeHeroSlider() {
     activeVideo.onended = goNext;
 
     const durationMs = Number.isFinite(activeVideo.duration) && activeVideo.duration > 0
-      ? Math.floor((activeVideo.duration * 1000) / VIDEO_RATE)
+      ? Math.max(0, Math.floor(((activeVideo.duration - activeVideo.currentTime) * 1000) / VIDEO_RATE))
       : FALLBACK_MS;
-    fallbackTimer = window.setTimeout(goNext, durationMs + 200);
+    fallbackTimer = window.setTimeout(goNext, durationMs + 80);
   }
 
   function goTo(targetIndex) {
@@ -443,6 +468,7 @@ function initHomeHeroSlider() {
 
     const current = slides[currentIndex];
     const next = slides[targetIndex];
+    const nextVideo = getSlideVideo(targetIndex);
 
     slides.forEach((slide, index) => {
       if (index !== currentIndex && index !== targetIndex) {
@@ -454,6 +480,8 @@ function initHomeHeroSlider() {
     clearFogClasses(current);
     clearFogClasses(next);
     next.classList.remove("is-active");
+    // Pre-start next video under fog so the swap feels seamless.
+    playFromStart(nextVideo);
     current.classList.add("is-fogging-out");
 
     window.setTimeout(() => {
@@ -468,14 +496,15 @@ function initHomeHeroSlider() {
       window.setTimeout(() => {
         clearFogClasses(next);
         currentIndex = targetIndex;
-        playOnlyActiveVideo();
+        setOnlyActiveVideo(currentIndex);
         scheduleNextFromVideoEnd();
         animating = false;
       }, FOG_IN_MS);
     }, FOG_OUT_MS);
   }
 
-  playOnlyActiveVideo();
+  playFromStart(getSlideVideo(currentIndex));
+  setOnlyActiveVideo(currentIndex);
   scheduleNextFromVideoEnd();
 }
 

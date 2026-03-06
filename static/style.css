@@ -703,11 +703,22 @@ body.nav-open {
   animation-delay: 0.5s;
 }
 
-.coffee-reveal-logo {
+.coffee-reveal-text {
   position: relative;
-  width: min(68%, 520px);
-  height: auto;
-  filter: drop-shadow(0 12px 30px rgba(34, 24, 16, 0.42));
+  width: min(82%, 760px);
+  padding: 14px 18px;
+  border-radius: 14px;
+  text-align: center;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1rem, 2.1vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #fff8ee;
+  text-shadow: 0 3px 16px rgba(14, 10, 7, 0.65);
+  border: 1px solid rgba(245, 230, 211, 0.45);
+  background: rgba(80, 46, 26, 0.34);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 12px 30px rgba(34, 24, 16, 0.35);
 }
 
 @keyframes steamRise {

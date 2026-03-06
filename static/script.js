@@ -360,8 +360,8 @@ function initHomeHeroSlider() {
     return;
   }
 
-  const FOG_OUT_MS = 520;
-  const FOG_IN_MS = 760;
+  const FOG_OUT_MS = 820;
+  const FOG_IN_MS = 980;
   const AUTO_MS = 6000;
   let currentIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));
   if (currentIndex < 0) {
@@ -399,12 +399,11 @@ function initHomeHeroSlider() {
     window.setTimeout(() => {
       current.classList.remove("is-active", "is-fogging-out");
       next.classList.add("is-fog-enter");
+      next.classList.add("is-active");
       void next.offsetWidth;
-
-      window.setTimeout(() => {
-        next.classList.add("is-active");
+      requestAnimationFrame(() => {
         next.classList.remove("is-fog-enter");
-      }, 40);
+      });
 
       window.setTimeout(() => {
         clearFogClasses(next);

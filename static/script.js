@@ -360,7 +360,7 @@ function initHomeHeroSlider() {
     return;
   }
 
-  const FOG_OUT_MS = 1300;
+  const FOG_OUT_MS = 2400;
   const FOG_IN_MS = 2400;
   const AUTO_MS = 6000;
   let currentIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));

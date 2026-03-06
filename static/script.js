@@ -393,7 +393,7 @@ function initHomeHeroSlider() {
     window.setTimeout(finish, 760);
   }
 
-  window.setInterval(stepToNext, 3000);
+  window.setInterval(stepToNext, 6000);
 }
 
 function shuffle(array) {

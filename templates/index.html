@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260306-homevideo6" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260306-homeslider1" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -52,19 +52,31 @@
 
       <section id="secimler">
         <div class="home-welcome-row">
-          <div class="home-video-shell">
-            <video
-              class="home-welcome-video"
-              src="{{ url_for('static', filename='assets/orakeliavideo.mp4') }}?v=20260306-1"
-              autoplay
-              muted
-              playsinline
-              preload="auto"
-            ></video>
-            <div class="home-video-reveal" data-home-reveal>
-              <div class="coffee-reveal-glow"></div>
-              <img class="coffee-reveal-logo" src="{{ url_for('static', filename='assets/orakelia-logo-main.png') }}" alt="Orakelia Logo" loading="lazy" />
-            </div>
+          <div class="home-slider" data-home-slider>
+            <figure class="home-slide is-active" data-home-slide>
+              <img
+                src="{{ url_for('static', filename='assets/93-kahve.jpg') }}"
+                alt="Kahve Fali"
+                loading="lazy"
+                onerror="this.onerror=null;this.src='{{ url_for('static', filename='assets/home-coffee.svg') }}';"
+              />
+            </figure>
+            <figure class="home-slide" data-home-slide>
+              <img
+                src="{{ url_for('static', filename='assets/53-tarot.jpg') }}"
+                alt="Tarot Fali"
+                loading="lazy"
+                onerror="this.onerror=null;this.src='{{ url_for('static', filename='assets/tarot_card.png') }}';"
+              />
+            </figure>
+            <figure class="home-slide" data-home-slide>
+              <img
+                src="{{ url_for('static', filename='assets/4a-katina.jpg') }}"
+                alt="Katina Fali"
+                loading="lazy"
+                onerror="this.onerror=null;this.src='{{ url_for('static', filename='assets/katina_card.jpg') }}';"
+              />
+            </figure>
           </div>
         </div>
         <div class="choice-grid">
@@ -138,6 +150,6 @@
         </div>
       </footer>
     </main>
-    <script src="{{ url_for('static', filename='script.js') }}?v=20260306-homevideo6"></script>
+    <script src="{{ url_for('static', filename='script.js') }}?v=20260306-homeslider1"></script>
   </body>
 </html>

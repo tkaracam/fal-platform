@@ -618,109 +618,51 @@ body.nav-open {
   margin-top: 18px;
 }
 
-.home-video-shell {
+.home-slider {
   position: relative;
+  width: 100%;
+  height: clamp(220px, 32vw, 330px);
   border-radius: 14px;
   border: 1px solid #d8e7f5;
   background: linear-gradient(120deg, #fffdfb, #f6fbff);
   box-shadow: 0 8px 20px rgba(34, 62, 92, 0.08);
   overflow: hidden;
-  --fog-opacity: 0.01;
-  --video-blur: 0.1px;
 }
 
-.home-video-shell::after {
-  content: "";
+.home-slide {
   position: absolute;
   inset: 0;
+  margin: 0;
+  opacity: 0;
+  transform: translateX(-100%);
+  transition: transform 0.72s ease, opacity 0.72s ease;
   pointer-events: none;
-  z-index: 2;
-  background:
-    radial-gradient(26rem 12rem at 22% 90%, rgba(185, 128, 87, 0.75), transparent 62%),
-    radial-gradient(24rem 10rem at 76% 8%, rgba(242, 237, 229, 0.72), transparent 58%),
-    linear-gradient(to top, rgba(242, 233, 221, 0.82), rgba(255, 252, 248, 0.5));
-  opacity: var(--fog-opacity);
-  transition: opacity 0.22s linear;
+  z-index: 1;
 }
 
-.home-welcome-video {
-  display: block;
+.home-slide img {
   width: 100%;
-  max-height: 320px;
+  height: 100%;
   object-fit: cover;
-  filter: blur(var(--video-blur));
-  transition: filter 0.22s linear;
+  display: block;
 }
 
-.home-video-reveal {
-  position: absolute;
-  inset: 0;
+.home-slide.is-active {
+  opacity: 1;
+  transform: translateX(0);
   z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.1;
-  pointer-events: none;
-  transform: scale(0.94);
-  transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
-.coffee-reveal-glow {
-  position: absolute;
-  width: min(66%, 520px);
-  aspect-ratio: 1 / 1;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 50% 52%, rgba(115, 68, 40, 0.55), rgba(115, 68, 40, 0.2) 48%, transparent 74%),
-    radial-gradient(circle at 50% 38%, rgba(255, 236, 214, 0.6), transparent 62%);
-  filter: blur(2px);
-  animation: coffeePulse 2.2s ease-in-out infinite;
+.home-slide.is-entering {
+  opacity: 1;
+  transform: translateX(0);
+  z-index: 4;
 }
 
-.coffee-reveal-steam {
-  position: absolute;
-  top: 14%;
-  display: flex;
-  gap: 14px;
-}
-
-.coffee-reveal-steam span {
-  width: 7px;
-  height: 54px;
-  border-radius: 999px;
-  background: linear-gradient(to top, rgba(245, 238, 230, 0), rgba(255, 255, 255, 0.92));
-  filter: blur(0.5px);
-  animation: steamRise 1.8s ease-in-out infinite;
-}
-
-.coffee-reveal-steam span:nth-child(2) {
-  height: 60px;
-  animation-delay: 0.25s;
-}
-
-.coffee-reveal-steam span:nth-child(3) {
-  height: 50px;
-  animation-delay: 0.5s;
-}
-
-.coffee-reveal-logo {
-  position: relative;
-  width: min(68%, 520px);
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 12px 30px rgba(34, 24, 16, 0.42));
-}
-
-@keyframes steamRise {
-  0% { transform: translateY(8px) scaleY(0.9); opacity: 0.14; }
-  50% { opacity: 0.72; }
-  100% { transform: translateY(-16px) scaleY(1.08); opacity: 0.08; }
-}
-
-@keyframes coffeePulse {
-  0% { transform: scale(0.96); opacity: 0.48; }
-  50% { transform: scale(1.04); opacity: 0.76; }
-  100% { transform: scale(0.96); opacity: 0.48; }
+.home-slide.is-leaving-right {
+  opacity: 1;
+  transform: translateX(100%);
+  z-index: 5;
 }
 
 .choice-card {

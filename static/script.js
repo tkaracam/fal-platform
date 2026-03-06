@@ -348,51 +348,52 @@ function initRegisterPasswordConfirm() {
   });
 }
 
-function initHomeVideoEndReveal() {
-  const video = document.querySelector(".home-welcome-video");
-  const reveal = document.querySelector("[data-home-reveal]");
-  const shell = document.querySelector(".home-video-shell");
-  if (!video || !reveal || !shell) {
+function initHomeHeroSlider() {
+  const slider = document.querySelector("[data-home-slider]");
+  if (!slider) {
+    return;
+  }
+  const slides = Array.from(slider.querySelectorAll("[data-home-slide]"));
+  if (slides.length < 2) {
     return;
   }
 
-  function setFogByProgress() {
-    const duration = Number(video.duration || 0);
-    if (!duration) {
-      return;
-    }
-    const startDelay = 1.0;
-    if (video.currentTime < startDelay) {
-      shell.style.setProperty("--fog-opacity", "0");
-      shell.style.setProperty("--video-blur", "0px");
-      reveal.style.opacity = "0";
-      reveal.style.transform = "scale(0.94)";
-      return;
-    }
+  let currentIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));
+  if (currentIndex < 0) {
+    currentIndex = 0;
+    slides[0].classList.add("is-active");
+  }
+  let animating = false;
 
-    const activeTime = Math.max(video.currentTime - startDelay, 0);
-    const activeDuration = Math.max(duration - startDelay, 0.001);
-    const progress = Math.min(Math.max(activeTime / activeDuration, 0), 1);
-    const fog = 0.01 + (0.30 - 0.01) * progress;
-    const blur = 0.10 + 2.3 * progress;
-    const revealOpacity = 0.10 + 0.90 * progress;
-    const revealScale = 0.94 + 0.06 * progress;
-    shell.style.setProperty("--fog-opacity", fog.toFixed(3));
-    shell.style.setProperty("--video-blur", `${blur.toFixed(2)}px`);
-    reveal.style.opacity = revealOpacity.toFixed(3);
-    reveal.style.transform = `scale(${revealScale.toFixed(3)})`;
+  function stepToNext() {
+    if (animating) {
+      return;
+    }
+    animating = true;
+    const nextIndex = (currentIndex + 1) % slides.length;
+    const current = slides[currentIndex];
+    const next = slides[nextIndex];
+
+    next.classList.remove("is-entering", "is-leaving-right", "is-active");
+    current.classList.remove("is-entering", "is-leaving-right");
+
+    // Force reflow so the right-slide animation starts from the left origin.
+    void next.offsetWidth;
+    next.classList.add("is-entering");
+    current.classList.add("is-leaving-right");
+
+    const finish = () => {
+      current.classList.remove("is-active", "is-leaving-right");
+      next.classList.remove("is-entering");
+      next.classList.add("is-active");
+      currentIndex = nextIndex;
+      animating = false;
+    };
+
+    window.setTimeout(finish, 760);
   }
 
-  video.addEventListener("loadedmetadata", setFogByProgress);
-  video.addEventListener("timeupdate", setFogByProgress);
-  video.addEventListener("ended", () => {
-    shell.style.setProperty("--fog-opacity", "0.30");
-    shell.style.setProperty("--video-blur", "2.40px");
-    reveal.style.opacity = "1";
-    reveal.style.transform = "scale(1)";
-  });
-
-  setFogByProgress();
+  window.setInterval(stepToNext, 3000);
 }
 
 function shuffle(array) {
@@ -492,4 +493,4 @@ initNavbar();
 initPhotoGrid();
 initRegisterUsernameCheck();
 initRegisterPasswordConfirm();
-initHomeVideoEndReveal();
+initHomeHeroSlider();

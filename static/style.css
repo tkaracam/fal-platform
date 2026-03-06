@@ -618,19 +618,16 @@ body.nav-open {
   margin-top: 18px;
 }
 
-.home-welcome-text {
-  margin: 0;
+.home-welcome-video {
+  display: block;
+  width: 100%;
+  max-height: 320px;
   border-radius: 14px;
   border: 1px solid #d8e7f5;
   background: linear-gradient(120deg, #fffdfb, #f6fbff);
   box-shadow: 0 8px 20px rgba(34, 62, 92, 0.08);
-  padding: 10px 12px;
-  color: #2d4760;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  font-weight: 700;
-  text-align: center;
-  white-space: pre-line;
+  object-fit: cover;
+  overflow: hidden;
 }
 
 .choice-card {

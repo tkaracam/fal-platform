@@ -618,6 +618,21 @@ body.nav-open {
   margin-top: 18px;
 }
 
+.home-welcome-banner {
+  margin: 0 0 12px 0;
+  border-radius: 14px;
+  border: 1px solid #d8e7f5;
+  background: linear-gradient(120deg, #fffdfb, #f6fbff);
+  box-shadow: 0 8px 20px rgba(34, 62, 92, 0.08);
+  padding: 12px 14px;
+  color: #2d4760;
+  text-align: center;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1rem, 2.1vw, 1.28rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
 .home-slider {
   position: relative;
   width: 100%;

@@ -508,6 +508,29 @@ function initHomeHeroSlider() {
   scheduleNextFromVideoEnd();
 }
 
+function initHomeInfoRotator() {
+  const container = document.querySelector("[data-home-info-rotator]");
+  if (!container) {
+    return;
+  }
+  const items = Array.from(container.querySelectorAll("[data-home-info-item]"));
+  if (items.length < 2) {
+    return;
+  }
+  const SHOW_MS = 7000;
+  let currentIndex = items.findIndex((item) => item.classList.contains("is-active"));
+  if (currentIndex < 0) {
+    currentIndex = 0;
+    items[0].classList.add("is-active");
+  }
+
+  window.setInterval(() => {
+    items[currentIndex].classList.remove("is-active");
+    currentIndex = (currentIndex + 1) % items.length;
+    items[currentIndex].classList.add("is-active");
+  }, SHOW_MS);
+}
+
 function shuffle(array) {
   const copy = [...array];
   for (let i = copy.length - 1; i > 0; i -= 1) {
@@ -606,3 +629,4 @@ initPhotoGrid();
 initRegisterUsernameCheck();
 initRegisterPasswordConfirm();
 initHomeHeroSlider();
+initHomeInfoRotator();

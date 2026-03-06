@@ -656,6 +656,52 @@ body.nav-open {
   overflow: hidden;
 }
 
+.home-info-rotator {
+  margin: 14px 0 16px;
+  border-radius: 14px;
+  border: 1px solid #d8e7f5;
+  background: linear-gradient(120deg, #fffdfb, #f6fbff);
+  box-shadow: 0 8px 20px rgba(34, 62, 92, 0.08);
+  padding: 16px 18px;
+  min-height: 236px;
+}
+
+.home-info-item {
+  display: none;
+}
+
+.home-info-item.is-active {
+  display: block;
+  animation: homeInfoFade 0.45s ease;
+}
+
+.home-info-item h3 {
+  margin: 0 0 8px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1rem, 2vw, 1.22rem);
+  font-weight: 700;
+  color: #2a445c;
+}
+
+.home-info-item p {
+  margin: 0;
+  font-size: clamp(0.88rem, 1.45vw, 1rem);
+  line-height: 1.58;
+  color: #3f5b74;
+  white-space: pre-line;
+}
+
+@keyframes homeInfoFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .home-slide {
   position: absolute;
   inset: 0;
@@ -1313,6 +1359,9 @@ a { color: #e6655e; }
   .choice-grid { grid-template-columns: 1fr; }
   .home-slider {
     height: clamp(250px, 62vw, 390px);
+  }
+  .home-info-rotator {
+    min-height: 280px;
   }
   .hero-intro { grid-template-columns: 1fr; }
   .welcome-items { grid-template-columns: 1fr; }

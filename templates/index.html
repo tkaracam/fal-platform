@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260306-homeslider17" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260306-homeslider18" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -54,18 +54,18 @@
         <div class="home-welcome-row">
           <div class="home-slider" data-home-slider>
             <figure class="home-slide is-active" data-home-slide>
-              <video class="home-slide-media" autoplay muted loop playsinline preload="metadata" poster="{{ url_for('static', filename='assets/kahve-slide.png') }}">
+              <video class="home-slide-media" autoplay muted playsinline preload="metadata" poster="{{ url_for('static', filename='assets/kahve-slide.png') }}">
                 <source src="{{ url_for('static', filename='assets/kahve-slidev.mp4') }}?v=20260306" type="video/mp4" />
               </video>
               <a class="home-slide-coffee-cta" href="{{ url_for('coffee_page', lang=lang) }}">{{ t('home_coffee_slide_cta') }}</a>
             </figure>
             <figure class="home-slide" data-home-slide>
-              <video class="home-slide-media" autoplay muted loop playsinline preload="metadata" poster="{{ url_for('static', filename='assets/katina-slide.png') }}">
+              <video class="home-slide-media" autoplay muted playsinline preload="metadata" poster="{{ url_for('static', filename='assets/katina-slide.png') }}">
                 <source src="{{ url_for('static', filename='assets/katina-slidev.mp4') }}?v=20260306" type="video/mp4" />
               </video>
             </figure>
             <figure class="home-slide" data-home-slide>
-              <video class="home-slide-media" autoplay muted loop playsinline preload="metadata" poster="{{ url_for('static', filename='assets/tarot-slide.png') }}">
+              <video class="home-slide-media" autoplay muted playsinline preload="metadata" poster="{{ url_for('static', filename='assets/tarot-slide.png') }}">
                 <source src="{{ url_for('static', filename='assets/tarot-slidev.mp4') }}?v=20260306" type="video/mp4" />
               </video>
             </figure>
@@ -142,6 +142,6 @@
         </div>
       </footer>
     </main>
-    <script src="{{ url_for('static', filename='script.js') }}?v=20260306-homeslider17"></script>
+    <script src="{{ url_for('static', filename='script.js') }}?v=20260306-homeslider18"></script>
   </body>
 </html>

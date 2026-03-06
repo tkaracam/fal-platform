@@ -360,17 +360,75 @@ function initHomeHeroSlider() {
 
   const FOG_OUT_MS = 920;
   const FOG_IN_MS = 920;
-  const AUTO_MS = 6000;
+  const FALLBACK_MS = 9000;
   let currentIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));
   if (currentIndex < 0) {
     currentIndex = 0;
     slides[0].classList.add("is-active");
   }
   let animating = false;
-  let autoTimer = null;
+  let fallbackTimer = null;
+
+  function clearAdvanceHooks() {
+    if (fallbackTimer) {
+      clearTimeout(fallbackTimer);
+      fallbackTimer = null;
+    }
+    slides.forEach((slide) => {
+      const video = slide.querySelector("video");
+      if (video) {
+        video.onended = null;
+      }
+    });
+  }
 
   function clearFogClasses(slide) {
     slide.classList.remove("is-fog-enter", "is-fogging-out");
+  }
+
+  function playOnlyActiveVideo() {
+    slides.forEach((slide, index) => {
+      const video = slide.querySelector("video");
+      if (!video) {
+        return;
+      }
+      video.loop = false;
+      if (index === currentIndex) {
+        try {
+          video.currentTime = 0;
+        } catch (_) {
+          // ignore
+        }
+        video.play().catch(() => {});
+      } else {
+        video.pause();
+        try {
+          video.currentTime = 0;
+        } catch (_) {
+          // ignore
+        }
+      }
+    });
+  }
+
+  function scheduleNextFromVideoEnd() {
+    clearAdvanceHooks();
+    const activeSlide = slides[currentIndex];
+    const activeVideo = activeSlide.querySelector("video");
+    const nextIndex = (currentIndex + 1) % slides.length;
+    const goNext = () => goTo(nextIndex);
+
+    if (!activeVideo) {
+      fallbackTimer = window.setTimeout(goNext, FALLBACK_MS);
+      return;
+    }
+
+    activeVideo.onended = goNext;
+
+    const durationMs = Number.isFinite(activeVideo.duration) && activeVideo.duration > 0
+      ? Math.floor(activeVideo.duration * 1000)
+      : FALLBACK_MS;
+    fallbackTimer = window.setTimeout(goNext, durationMs + 200);
   }
 
   function goTo(targetIndex) {
@@ -378,6 +436,7 @@ function initHomeHeroSlider() {
       return;
     }
     animating = true;
+    clearAdvanceHooks();
 
     const current = slides[currentIndex];
     const next = slides[targetIndex];
@@ -406,24 +465,15 @@ function initHomeHeroSlider() {
       window.setTimeout(() => {
         clearFogClasses(next);
         currentIndex = targetIndex;
+        playOnlyActiveVideo();
+        scheduleNextFromVideoEnd();
         animating = false;
       }, FOG_IN_MS);
     }, FOG_OUT_MS);
   }
 
-  function stepNextAuto() {
-    const nextIndex = (currentIndex + 1) % slides.length;
-    goTo(nextIndex);
-  }
-
-  function restartAuto() {
-    if (autoTimer) {
-      clearInterval(autoTimer);
-    }
-    autoTimer = window.setInterval(stepNextAuto, AUTO_MS);
-  }
-
-  restartAuto();
+  playOnlyActiveVideo();
+  scheduleNextFromVideoEnd();
 }
 
 function shuffle(array) {

@@ -425,6 +425,50 @@ function initHomeHeroSlider() {
     slide.classList.remove("is-fog-enter", "is-fogging-out");
   }
 
+  function waitForVideoFrame(video, maxWaitMs = 1200) {
+    return new Promise((resolve) => {
+      if (!video) {
+        resolve();
+        return;
+      }
+
+      let done = false;
+      let timeoutId = null;
+
+      const cleanup = () => {
+        video.removeEventListener("playing", onFrame);
+        video.removeEventListener("timeupdate", onFrame);
+        video.removeEventListener("canplay", onFrame);
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+      };
+
+      const finish = () => {
+        if (done) {
+          return;
+        }
+        done = true;
+        cleanup();
+        resolve();
+      };
+
+      const onFrame = () => {
+        if (video.readyState >= 2 && video.currentTime >= 0.02) {
+          finish();
+        }
+      };
+
+      video.addEventListener("playing", onFrame);
+      video.addEventListener("timeupdate", onFrame);
+      video.addEventListener("canplay", onFrame);
+
+      timeoutId = window.setTimeout(finish, maxWaitMs);
+      onFrame();
+    });
+  }
+
   function setOnlyActiveVideo(activeIndex) {
     slides.forEach((_, index) => {
       const video = getSlideVideo(index);
@@ -487,7 +531,10 @@ function initHomeHeroSlider() {
     next.classList.add("is-active");
     current.classList.add("is-fogging-out");
 
-    window.setTimeout(() => {
+    Promise.all([
+      new Promise((resolve) => window.setTimeout(resolve, FOG_OUT_MS)),
+      waitForVideoFrame(nextVideo),
+    ]).then(() => {
       current.classList.remove("is-active", "is-fogging-out");
       void next.offsetWidth;
       requestAnimationFrame(() => {
@@ -501,7 +548,7 @@ function initHomeHeroSlider() {
         scheduleNextFromVideoEnd();
         animating = false;
       }, FOG_IN_MS);
-    }, FOG_OUT_MS);
+    });
   }
 
   playFromStart(getSlideVideo(currentIndex));

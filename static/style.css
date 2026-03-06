@@ -651,7 +651,7 @@ body.nav-open {
   height: clamp(280px, 36vw, 430px);
   border-radius: 14px;
   border: 1px solid #d8e7f5;
-  background: linear-gradient(120deg, #fffdfb, #f6fbff);
+  background: #0f141a;
   box-shadow: 0 8px 20px rgba(34, 62, 92, 0.08);
   overflow: hidden;
 }
@@ -730,6 +730,7 @@ body.nav-open {
   height: 100%;
   object-fit: cover;
   display: block;
+  background: #0f141a;
 }
 
 .home-slide::after {
@@ -755,7 +756,7 @@ body.nav-open {
 }
 
 .home-slide.is-fogging-out {
-  opacity: 0;
+  opacity: 1;
   filter: blur(36px) saturate(0.76) brightness(0.8);
   z-index: 5;
   pointer-events: none;

@@ -14,7 +14,7 @@
     <main class="container">
       <header class="navbar">
         <a class="brand" href="{{ url_for('home', lang=lang) }}">
-          <img class="brand-logo" src="{{ url_for('static', filename='assets/orakelia-logo-main.png') }}" alt="Orakelia" loading="lazy" />
+          <img class="brand-logo" src="{{ url_for('static', filename='assets/orakelia-logo-main.png') }}?v=20260306-logo2" alt="Orakelia" loading="lazy" />
         </a>
         <div class="nav-quick">
           {% if is_logged_in %}
@@ -66,8 +66,33 @@
       </section>
 
       <section class="card">
+        <h3>{{ t('impressum_responsible_title') }}</h3>
+        <p>{{ t('impressum_responsible_body') }}</p>
+      </section>
+
+      <section class="card">
+        <h3>{{ t('impressum_content_title') }}</h3>
+        <p>{{ t('impressum_content_body') }}</p>
+      </section>
+
+      <section class="card">
+        <h3>{{ t('impressum_links_title') }}</h3>
+        <p>{{ t('impressum_links_body') }}</p>
+      </section>
+
+      <section class="card">
+        <h3>{{ t('impressum_dispute_title') }}</h3>
+        <p>{{ t('impressum_dispute_body') }}</p>
+      </section>
+
+      <section class="card">
         <h3>{{ t('impressum_disclaimer_title') }}</h3>
         <p>{{ t('impressum_disclaimer_body') }}</p>
+      </section>
+
+      <section class="card">
+        <h3>{{ t('impressum_copyright_title') }}</h3>
+        <p>{{ t('impressum_copyright_body') }}</p>
       </section>
 
       <footer class="site-footer">

@@ -670,7 +670,7 @@ body.nav-open {
   z-index: 1;
 }
 
-.home-slide img {
+.home-slide-media {
   width: 100%;
   height: 100%;
   object-fit: cover;

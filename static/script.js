@@ -348,6 +348,48 @@ function initRegisterPasswordConfirm() {
   });
 }
 
+function initHomeVideoEndReveal() {
+  const video = document.querySelector(".home-welcome-video");
+  const reveal = document.querySelector("[data-home-reveal]");
+  const shell = document.querySelector(".home-video-shell");
+  if (!video || !reveal || !shell) {
+    return;
+  }
+
+  function setFogByProgress() {
+    const duration = Number(video.duration || 0);
+    if (!duration) {
+      return;
+    }
+    const progress = Math.min(Math.max(video.currentTime / duration, 0), 1);
+    const fog = 0.01 + (0.30 - 0.01) * progress;
+    const blur = 0.10 + 2.3 * progress;
+    shell.style.setProperty("--fog-opacity", fog.toFixed(3));
+    shell.style.setProperty("--video-blur", `${blur.toFixed(2)}px`);
+  }
+
+  function showReveal() {
+    shell.style.setProperty("--fog-opacity", "0.30");
+    shell.style.setProperty("--video-blur", "2.40px");
+    reveal.classList.add("is-visible");
+  }
+
+  function hideReveal() {
+    reveal.classList.remove("is-visible");
+  }
+
+  video.addEventListener("loadedmetadata", setFogByProgress);
+  video.addEventListener("timeupdate", setFogByProgress);
+  video.addEventListener("ended", showReveal);
+  video.addEventListener("play", hideReveal);
+
+  if (video.ended) {
+    showReveal();
+  } else {
+    setFogByProgress();
+  }
+}
+
 function shuffle(array) {
   const copy = [...array];
   for (let i = copy.length - 1; i > 0; i -= 1) {
@@ -445,3 +487,4 @@ initNavbar();
 initPhotoGrid();
 initRegisterUsernameCheck();
 initRegisterPasswordConfirm();
+initHomeVideoEndReveal();

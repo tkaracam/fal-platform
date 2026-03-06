@@ -566,10 +566,25 @@ function initHomeInfoRotator() {
     container.remove();
     return;
   }
+
+  function syncRotatorHeight() {
+    const maxHeight = Math.max(...items.map((item) => item.scrollHeight), 0);
+    if (maxHeight > 0) {
+      container.style.minHeight = `${maxHeight + 34}px`;
+    }
+  }
+
+  syncRotatorHeight();
+  window.setTimeout(syncRotatorHeight, 180);
+  window.addEventListener("resize", syncRotatorHeight);
+
   if (items.length < 2) {
+    items[0].classList.add("is-active");
     return;
   }
-  const SHOW_MS = 7000;
+  const SHOW_MS = 6400;
+  const LEAVE_MS = 720;
+  let rotating = false;
   let currentIndex = items.findIndex((item) => item.classList.contains("is-active"));
   if (currentIndex < 0) {
     currentIndex = 0;
@@ -577,9 +592,27 @@ function initHomeInfoRotator() {
   }
 
   window.setInterval(() => {
-    items[currentIndex].classList.remove("is-active");
-    currentIndex = (currentIndex + 1) % items.length;
-    items[currentIndex].classList.add("is-active");
+    if (rotating) {
+      return;
+    }
+    rotating = true;
+    const current = items[currentIndex];
+    current.classList.add("is-leaving");
+
+    window.setTimeout(() => {
+      current.classList.remove("is-active", "is-leaving");
+      currentIndex = (currentIndex + 1) % items.length;
+      const next = items[currentIndex];
+      next.classList.add("is-active", "is-entering");
+
+      requestAnimationFrame(() => {
+        next.classList.remove("is-entering");
+      });
+
+      window.setTimeout(() => {
+        rotating = false;
+      }, LEAVE_MS);
+    }, LEAVE_MS);
   }, SHOW_MS);
 }
 

@@ -663,7 +663,9 @@ body.nav-open {
   background: linear-gradient(120deg, #fffdfb, #f6fbff);
   box-shadow: 0 8px 20px rgba(34, 62, 92, 0.08);
   padding: 16px 18px;
-  min-height: 236px;
+  min-height: 270px;
+  position: relative;
+  overflow: hidden;
 }
 
 .home-welcome-banner:empty,
@@ -676,12 +678,30 @@ body.nav-open {
 }
 
 .home-info-item {
-  display: none;
+  display: block;
+  position: absolute;
+  inset: 16px 18px;
+  opacity: 0;
+  transform: translateX(26px);
+  transition: opacity 0.68s ease, transform 0.68s ease;
+  pointer-events: none;
 }
 
 .home-info-item.is-active {
-  display: block;
-  animation: homeInfoFade 0.45s ease;
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.home-info-item.is-entering {
+  opacity: 0;
+  transform: translateX(26px);
+}
+
+.home-info-item.is-leaving {
+  opacity: 0;
+  transform: translateX(-34px);
+  pointer-events: none;
 }
 
 .home-info-item h3 {
@@ -698,17 +718,6 @@ body.nav-open {
   line-height: 1.58;
   color: #3f5b74;
   white-space: pre-line;
-}
-
-@keyframes homeInfoFade {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .home-slide {
@@ -1371,7 +1380,7 @@ a { color: #e6655e; }
     height: clamp(250px, 62vw, 390px);
   }
   .home-info-rotator {
-    min-height: 280px;
+    min-height: 360px;
   }
   .hero-intro { grid-template-columns: 1fr; }
   .welcome-items { grid-template-columns: 1fr; }

@@ -694,14 +694,14 @@ body.nav-open {
 
 .home-slide.is-fog-enter {
   opacity: 1;
-  filter: blur(24px) saturate(0.76) brightness(0.8);
+  filter: blur(36px) saturate(0.76) brightness(0.8);
   z-index: 4;
   pointer-events: auto;
 }
 
 .home-slide.is-fogging-out {
   opacity: 1;
-  filter: blur(24px) saturate(0.76) brightness(0.8);
+  filter: blur(36px) saturate(0.76) brightness(0.8);
   z-index: 5;
   pointer-events: none;
 }

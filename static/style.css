@@ -663,8 +663,8 @@ body.nav-open {
   opacity: 0;
   filter: blur(0);
   transition:
-    opacity 2.4s cubic-bezier(0.22, 0.61, 0.36, 1),
-    filter 2.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+    opacity 1.92s cubic-bezier(0.4, 0, 0.2, 1),
+    filter 1.92s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: opacity, filter;
   pointer-events: none;
   z-index: 1;

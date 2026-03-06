@@ -482,12 +482,13 @@ function initHomeHeroSlider() {
     next.classList.remove("is-active");
     // Pre-start next video under fog so the swap feels seamless.
     playFromStart(nextVideo);
+    // Keep next visible underneath while current fades out to avoid white gaps.
+    next.classList.add("is-fog-enter");
+    next.classList.add("is-active");
     current.classList.add("is-fogging-out");
 
     window.setTimeout(() => {
       current.classList.remove("is-active", "is-fogging-out");
-      next.classList.add("is-fog-enter");
-      next.classList.add("is-active");
       void next.offsetWidth;
       requestAnimationFrame(() => {
         next.classList.remove("is-fog-enter");
@@ -514,6 +515,10 @@ function initHomeInfoRotator() {
     return;
   }
   const items = Array.from(container.querySelectorAll("[data-home-info-item]"));
+  if (items.length === 0) {
+    container.remove();
+    return;
+  }
   if (items.length < 2) {
     return;
   }

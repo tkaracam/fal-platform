@@ -43,7 +43,7 @@ body.nav-open {
 .container {
   width: min(1120px, 92vw);
   margin: 0 auto;
-  padding: 126px 0 60px;
+  padding: calc(env(safe-area-inset-top, 0px) + 90px) 0 60px;
   position: relative;
   z-index: 2;
 }
@@ -615,7 +615,7 @@ body.nav-open {
 }
 
 .home-welcome-row {
-  margin-top: 18px;
+  margin-top: 2px;
 }
 
 .home-welcome-banner {
@@ -664,6 +664,15 @@ body.nav-open {
   box-shadow: 0 8px 20px rgba(34, 62, 92, 0.08);
   padding: 16px 18px;
   min-height: 236px;
+}
+
+.home-welcome-banner:empty,
+.home-info-rotator:empty {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  min-height: 0 !important;
 }
 
 .home-info-item {

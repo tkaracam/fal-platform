@@ -648,7 +648,7 @@ body.nav-open {
 .home-slider {
   position: relative;
   width: 100%;
-  height: clamp(220px, 32vw, 330px);
+  height: clamp(280px, 36vw, 430px);
   border-radius: 14px;
   border: 1px solid #d8e7f5;
   background: linear-gradient(120deg, #fffdfb, #f6fbff);
@@ -1312,7 +1312,7 @@ a { color: #e6655e; }
 @media (max-width: 900px) {
   .choice-grid { grid-template-columns: 1fr; }
   .home-slider {
-    height: clamp(210px, 54vw, 320px);
+    height: clamp(250px, 62vw, 390px);
   }
   .hero-intro { grid-template-columns: 1fr; }
   .welcome-items { grid-template-columns: 1fr; }

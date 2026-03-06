@@ -361,6 +361,7 @@ function initHomeHeroSlider() {
   const FOG_OUT_MS = 920;
   const FOG_IN_MS = 920;
   const FALLBACK_MS = 9000;
+  const VIDEO_RATE = 0.7;
   let currentIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));
   if (currentIndex < 0) {
     currentIndex = 0;
@@ -393,6 +394,8 @@ function initHomeHeroSlider() {
         return;
       }
       video.loop = false;
+      video.defaultPlaybackRate = VIDEO_RATE;
+      video.playbackRate = VIDEO_RATE;
       if (index === currentIndex) {
         try {
           video.currentTime = 0;
@@ -426,7 +429,7 @@ function initHomeHeroSlider() {
     activeVideo.onended = goNext;
 
     const durationMs = Number.isFinite(activeVideo.duration) && activeVideo.duration > 0
-      ? Math.floor(activeVideo.duration * 1000)
+      ? Math.floor((activeVideo.duration * 1000) / VIDEO_RATE)
       : FALLBACK_MS;
     fallbackTimer = window.setTimeout(goNext, durationMs + 200);
   }

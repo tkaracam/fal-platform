@@ -360,7 +360,8 @@ function initHomeHeroSlider() {
     return;
   }
 
-  const ANIM_MS = 1260;
+  const FOG_OUT_MS = 520;
+  const FOG_IN_MS = 760;
   const AUTO_MS = 6000;
   let currentIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));
   if (currentIndex < 0) {
@@ -370,17 +371,11 @@ function initHomeHeroSlider() {
   let animating = false;
   let autoTimer = null;
 
-  function clearMotionClasses(slide) {
-    slide.classList.remove(
-      "is-entering",
-      "is-leaving-to-right",
-      "is-leaving-to-left",
-      "from-right",
-      "from-left",
-    );
+  function clearFogClasses(slide) {
+    slide.classList.remove("is-fog-enter", "is-fogging-out");
   }
 
-  function goTo(targetIndex, direction) {
+  function goTo(targetIndex) {
     if (animating || targetIndex === currentIndex) {
       return;
     }
@@ -388,33 +383,40 @@ function initHomeHeroSlider() {
 
     const current = slides[currentIndex];
     const next = slides[targetIndex];
-    const leaveClass = direction === "left" ? "is-leaving-to-left" : "is-leaving-to-right";
-    const fromClass = direction === "left" ? "from-right" : "from-left";
 
-    clearMotionClasses(current);
-    clearMotionClasses(next);
+    slides.forEach((slide, index) => {
+      if (index !== currentIndex && index !== targetIndex) {
+        slide.classList.remove("is-active");
+        clearFogClasses(slide);
+      }
+    });
 
+    clearFogClasses(current);
+    clearFogClasses(next);
     next.classList.remove("is-active");
-    next.classList.add(fromClass);
-
-    void next.offsetWidth;
-    next.classList.add("is-entering");
-    current.classList.add(leaveClass);
+    current.classList.add("is-fogging-out");
 
     window.setTimeout(() => {
-      current.classList.remove("is-active", leaveClass);
-      clearMotionClasses(current);
-      clearMotionClasses(next);
-      next.classList.add("is-active");
-      currentIndex = targetIndex;
-      animating = false;
-    }, ANIM_MS);
+      current.classList.remove("is-active", "is-fogging-out");
+      next.classList.add("is-fog-enter");
+      void next.offsetWidth;
+
+      window.setTimeout(() => {
+        next.classList.add("is-active");
+        next.classList.remove("is-fog-enter");
+      }, 40);
+
+      window.setTimeout(() => {
+        clearFogClasses(next);
+        currentIndex = targetIndex;
+        animating = false;
+      }, FOG_IN_MS);
+    }, FOG_OUT_MS);
   }
 
   function stepNextAuto() {
     const nextIndex = (currentIndex + 1) % slides.length;
-    // Opposite direction: slide to left (new slide enters from right).
-    goTo(nextIndex, "left");
+    goTo(nextIndex);
   }
 
   function restartAuto() {
@@ -427,7 +429,7 @@ function initHomeHeroSlider() {
   if (prevBtn) {
     prevBtn.addEventListener("click", () => {
       const prevIndex = (currentIndex - 1 + slides.length) % slides.length;
-      goTo(prevIndex, "right");
+      goTo(prevIndex);
       restartAuto();
     });
   }
@@ -435,7 +437,7 @@ function initHomeHeroSlider() {
   if (nextBtn) {
     nextBtn.addEventListener("click", () => {
       const nextIndex = (currentIndex + 1) % slides.length;
-      goTo(nextIndex, "left");
+      goTo(nextIndex);
       restartAuto();
     });
   }

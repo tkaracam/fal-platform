@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260306-homeslider8" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260306-homeslider10" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -52,7 +52,10 @@
 
       <section id="secimler">
         <div class="home-welcome-row">
-          <p class="home-welcome-banner">{{ t('home_slider_welcome') }}</p>
+          <div class="home-welcome-banner">
+            <p class="home-welcome-title">{{ t('home_slider_welcome') }}</p>
+            <p class="home-welcome-subtext">{{ t('home_slider_subtext') }}</p>
+          </div>
           <div class="home-slider" data-home-slider>
             <figure class="home-slide is-active" data-home-slide>
               <img
@@ -165,6 +168,6 @@
         </div>
       </footer>
     </main>
-    <script src="{{ url_for('static', filename='script.js') }}?v=20260306-homeslider7"></script>
+    <script src="{{ url_for('static', filename='script.js') }}?v=20260306-homeslider10"></script>
   </body>
 </html>

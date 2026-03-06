@@ -625,12 +625,24 @@ body.nav-open {
   background: linear-gradient(120deg, #fffdfb, #f6fbff);
   box-shadow: 0 8px 20px rgba(34, 62, 92, 0.08);
   padding: 12px 14px;
-  color: #2d4760;
+}
+
+.home-welcome-title {
+  margin: 0;
   text-align: center;
   font-family: "Space Grotesk", sans-serif;
-  font-size: clamp(1rem, 2.1vw, 1.28rem);
+  font-size: clamp(1.02rem, 2.2vw, 1.32rem);
   font-weight: 700;
   letter-spacing: 0.01em;
+  color: var(--accent-a);
+}
+
+.home-welcome-subtext {
+  margin: 6px 0 0;
+  text-align: center;
+  color: #4e667e;
+  font-size: clamp(0.86rem, 1.7vw, 0.98rem);
+  line-height: 1.45;
 }
 
 .home-slider {
@@ -649,13 +661,11 @@ body.nav-open {
   inset: 0;
   margin: 0;
   opacity: 0;
-  transform: translateX(14%) scale(1.045);
-  filter: blur(2.4px);
+  filter: blur(0);
   transition:
-    transform 1.26s cubic-bezier(0.22, 0.61, 0.36, 1),
-    opacity 1.18s ease,
-    filter 1.22s ease;
-  will-change: transform, opacity, filter;
+    opacity 0.56s ease,
+    filter 0.92s ease;
+  will-change: opacity, filter;
   pointer-events: none;
   z-index: 1;
 }
@@ -677,46 +687,23 @@ body.nav-open {
 
 .home-slide.is-active {
   opacity: 1;
-  transform: translateX(0) scale(1);
   filter: blur(0);
   z-index: 3;
   pointer-events: auto;
 }
 
-.home-slide.is-entering {
+.home-slide.is-fog-enter {
   opacity: 1;
-  transform: translateX(0) scale(1);
-  filter: blur(0);
+  filter: blur(11px) saturate(0.92) brightness(0.95);
   z-index: 4;
   pointer-events: auto;
 }
 
-.home-slide.from-right {
+.home-slide.is-fogging-out {
   opacity: 1;
-  transform: translateX(16%) scale(1.05);
-  filter: blur(2.4px);
-  z-index: 4;
-}
-
-.home-slide.from-left {
-  opacity: 1;
-  transform: translateX(-16%) scale(1.05);
-  filter: blur(2.4px);
-  z-index: 4;
-}
-
-.home-slide.is-leaving-to-right {
-  opacity: 0;
-  transform: translateX(16%) scale(1.025);
-  filter: blur(1.8px);
+  filter: blur(11px) saturate(0.9) brightness(0.94);
   z-index: 5;
-}
-
-.home-slide.is-leaving-to-left {
-  opacity: 0;
-  transform: translateX(-16%) scale(1.025);
-  filter: blur(1.8px);
-  z-index: 5;
+  pointer-events: none;
 }
 
 .home-slide-overlay {
@@ -734,7 +721,8 @@ body.nav-open {
 }
 
 .home-slide.is-active .home-slide-overlay,
-.home-slide.is-entering .home-slide-overlay {
+.home-slide.is-fog-enter .home-slide-overlay,
+.home-slide.is-fogging-out .home-slide-overlay {
   opacity: 1;
   transform: translateY(0);
 }

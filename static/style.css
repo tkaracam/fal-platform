@@ -664,7 +664,7 @@ body.nav-open {
   filter: blur(0);
   transition:
     opacity 0.32s ease,
-    filter 1.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+    filter 2.4s cubic-bezier(0.22, 0.61, 0.36, 1);
   will-change: opacity, filter;
   pointer-events: none;
   z-index: 1;

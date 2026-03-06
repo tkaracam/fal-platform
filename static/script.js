@@ -354,46 +354,93 @@ function initHomeHeroSlider() {
     return;
   }
   const slides = Array.from(slider.querySelectorAll("[data-home-slide]"));
+  const prevBtn = slider.querySelector("[data-home-prev]");
+  const nextBtn = slider.querySelector("[data-home-next]");
   if (slides.length < 2) {
     return;
   }
 
+  const ANIM_MS = 1080;
+  const AUTO_MS = 6000;
   let currentIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));
   if (currentIndex < 0) {
     currentIndex = 0;
     slides[0].classList.add("is-active");
   }
   let animating = false;
+  let autoTimer = null;
 
-  function stepToNext() {
-    if (animating) {
+  function clearMotionClasses(slide) {
+    slide.classList.remove(
+      "is-entering",
+      "is-leaving-to-right",
+      "is-leaving-to-left",
+      "from-right",
+      "from-left",
+    );
+  }
+
+  function goTo(targetIndex, direction) {
+    if (animating || targetIndex === currentIndex) {
       return;
     }
     animating = true;
-    const nextIndex = (currentIndex + 1) % slides.length;
+
     const current = slides[currentIndex];
-    const next = slides[nextIndex];
+    const next = slides[targetIndex];
+    const leaveClass = direction === "left" ? "is-leaving-to-left" : "is-leaving-to-right";
+    const fromClass = direction === "left" ? "from-right" : "from-left";
 
-    next.classList.remove("is-entering", "is-leaving-right", "is-active");
-    current.classList.remove("is-entering", "is-leaving-right");
+    clearMotionClasses(current);
+    clearMotionClasses(next);
 
-    // Force reflow so the right-slide animation starts from the left origin.
+    next.classList.remove("is-active");
+    next.classList.add(fromClass);
+
     void next.offsetWidth;
     next.classList.add("is-entering");
-    current.classList.add("is-leaving-right");
+    current.classList.add(leaveClass);
 
-    const finish = () => {
-      current.classList.remove("is-active", "is-leaving-right");
-      next.classList.remove("is-entering");
+    window.setTimeout(() => {
+      current.classList.remove("is-active", leaveClass);
+      clearMotionClasses(current);
+      clearMotionClasses(next);
       next.classList.add("is-active");
-      currentIndex = nextIndex;
+      currentIndex = targetIndex;
       animating = false;
-    };
-
-    window.setTimeout(finish, 760);
+    }, ANIM_MS);
   }
 
-  window.setInterval(stepToNext, 6000);
+  function stepNextAuto() {
+    const nextIndex = (currentIndex + 1) % slides.length;
+    // Opposite direction: slide to left (new slide enters from right).
+    goTo(nextIndex, "left");
+  }
+
+  function restartAuto() {
+    if (autoTimer) {
+      clearInterval(autoTimer);
+    }
+    autoTimer = window.setInterval(stepNextAuto, AUTO_MS);
+  }
+
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      const prevIndex = (currentIndex - 1 + slides.length) % slides.length;
+      goTo(prevIndex, "right");
+      restartAuto();
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      const nextIndex = (currentIndex + 1) % slides.length;
+      goTo(nextIndex, "left");
+      restartAuto();
+    });
+  }
+
+  restartAuto();
 }
 
 function shuffle(array) {

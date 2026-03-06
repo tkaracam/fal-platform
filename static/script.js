@@ -361,7 +361,18 @@ function initHomeVideoEndReveal() {
     if (!duration) {
       return;
     }
-    const progress = Math.min(Math.max(video.currentTime / duration, 0), 1);
+    const startDelay = 1.0;
+    if (video.currentTime < startDelay) {
+      shell.style.setProperty("--fog-opacity", "0");
+      shell.style.setProperty("--video-blur", "0px");
+      reveal.style.opacity = "0";
+      reveal.style.transform = "scale(0.94)";
+      return;
+    }
+
+    const activeTime = Math.max(video.currentTime - startDelay, 0);
+    const activeDuration = Math.max(duration - startDelay, 0.001);
+    const progress = Math.min(Math.max(activeTime / activeDuration, 0), 1);
     const fog = 0.01 + (0.30 - 0.01) * progress;
     const blur = 0.10 + 2.3 * progress;
     const revealOpacity = 0.10 + 0.90 * progress;

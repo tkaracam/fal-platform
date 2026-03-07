@@ -138,6 +138,20 @@ function initNavbar() {
     }
   });
 
+  document.addEventListener("click", (event) => {
+    if (!links.classList.contains("is-open")) {
+      return;
+    }
+    const target = event.target;
+    if (!(target instanceof Node)) {
+      return;
+    }
+    if (links.contains(target) || toggle.contains(target)) {
+      return;
+    }
+    setMenuState(false);
+  });
+
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && links.classList.contains("is-open")) {
       setMenuState(false);

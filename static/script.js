@@ -567,19 +567,19 @@ function initHomeInfoRotator() {
     return;
   }
 
-  function syncRotatorHeight() {
-    const maxHeight = Math.max(...items.map((item) => item.scrollHeight), 0);
-    if (maxHeight > 0) {
-      container.style.minHeight = `${maxHeight + 34}px`;
+  function setRotatorHeight(index) {
+    const activeItem = items[index] || items[0];
+    if (!activeItem) {
+      return;
     }
+    container.style.height = `${activeItem.scrollHeight + 24}px`;
   }
-
-  syncRotatorHeight();
-  window.setTimeout(syncRotatorHeight, 180);
-  window.addEventListener("resize", syncRotatorHeight);
 
   if (items.length < 2) {
     items[0].classList.add("is-active");
+    setRotatorHeight(0);
+    window.setTimeout(() => setRotatorHeight(0), 180);
+    window.addEventListener("resize", () => setRotatorHeight(0));
     return;
   }
   const SHOW_MS = 6400;
@@ -590,6 +590,9 @@ function initHomeInfoRotator() {
     currentIndex = 0;
     items[0].classList.add("is-active");
   }
+  setRotatorHeight(currentIndex);
+  window.setTimeout(() => setRotatorHeight(currentIndex), 180);
+  window.addEventListener("resize", () => setRotatorHeight(currentIndex));
 
   window.setInterval(() => {
     if (rotating) {
@@ -604,6 +607,7 @@ function initHomeInfoRotator() {
       currentIndex = (currentIndex + 1) % items.length;
       const next = items[currentIndex];
       next.classList.add("is-active", "is-entering");
+      setRotatorHeight(currentIndex);
 
       requestAnimationFrame(() => {
         next.classList.remove("is-entering");

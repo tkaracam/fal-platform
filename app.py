@@ -806,6 +806,119 @@ READER_STYLE_PROFILES = {
 }
 
 
+AI_TONE_TEMPLATES = {
+    "tr": {
+        "coffee": "Ton şablonu (Kahve): sıcak, samimi, gözlem odaklı; umut verirken gerçekçilikten kopma.",
+        "katina": "Ton şablonu (Katina): ilişki dinamiklerine odaklı, empatik ve net; tarafları dengeli ele al.",
+        "tarot": "Ton şablonu (Tarot): derinlikli, sezgisel ama ayakları yere basan; güçlü içgörü + pratik yönlendirme.",
+    },
+    "en": {
+        "coffee": "Tone template (Coffee): warm, conversational, observation-led; hopeful but grounded.",
+        "katina": "Tone template (Katina): relationship-centered, empathetic, and clear; balanced toward both sides.",
+        "tarot": "Tone template (Tarot): deep and intuitive yet grounded; strong insight plus practical direction.",
+    },
+    "de": {
+        "coffee": "Tonvorlage (Kaffee): warm, nahbar, beobachtungsbasiert; hoffnungsvoll, aber realistisch.",
+        "katina": "Tonvorlage (Katina): beziehungsfokussiert, empathisch und klar; beide Seiten ausgewogen betrachten.",
+        "tarot": "Tonvorlage (Tarot): tiefgehend, intuitiv und bodenständig; klare Einsicht mit praktischer Richtung.",
+    },
+}
+
+AI_QUALITY_CHECKLISTS = {
+    "tr": {
+        "coffee": [
+            "Yalnızca görünür telve işaretleri + müşteri sorusuna dayan.",
+            "Mekanik şablon cümleler yerine doğal, akıcı insan dili kullan.",
+            "Kısa bir genel enerji paragrafıyla başla; ardından doğal bölümlerle devam et.",
+            "Somut ve uygulanabilir tam 3 kısa öneri ver.",
+            "Yorum içinde 'yapay zeka' veya teknik sistem detayı geçmesin.",
+        ],
+        "katina": [
+            "7 pozisyonu sırayla yorumla; her pozisyonun ilişkiye etkisini açıkla.",
+            "Duygusal dengeyi koru, tek taraflı yargıdan kaçın.",
+            "Yakın dönem için fırsat ve riskleri gerçekçi dille belirt.",
+            "Tam 3 kısa öneri ver; gereksiz tekrar yapma.",
+            "Teknik kart ID'lerini asla yazma.",
+        ],
+        "tarot": [
+            "10 pozisyonun tamamını tek tek yorumla, sonra açılımın birleşik özetini ver.",
+            "Soyut sembolizmi günlük hayatta karşılığı olan net cümlelere çevir.",
+            "Kararsızlık, fırsat, risk ve olası yönleri dengeli sun.",
+            "Tam 3 kısa öneri ver; metin doğal bir danışmanlık dili taşısın.",
+            "Teknik kart ID'lerini asla yazma.",
+        ],
+    },
+    "en": {
+        "coffee": [
+            "Use only visible coffee-ground signals plus the user question.",
+            "Write in natural human language, not repetitive template phrasing.",
+            "Start with a short overall-energy paragraph, then continue with natural sections.",
+            "Give exactly 3 short actionable suggestions.",
+            "Never mention AI/system internals in the final text.",
+        ],
+        "katina": [
+            "Interpret all 7 positions in order and explain their relationship impact.",
+            "Keep emotional balance and avoid one-sided judgment.",
+            "State near-term opportunities and risks in realistic language.",
+            "Give exactly 3 concise suggestions; avoid repetition.",
+            "Never expose technical card IDs.",
+        ],
+        "tarot": [
+            "Interpret all 10 positions one by one, then provide a combined synthesis.",
+            "Translate symbolism into practical, everyday language.",
+            "Present uncertainty, opportunity, risk, and direction in balance.",
+            "Give exactly 3 concise suggestions in a natural advisory tone.",
+            "Never expose technical card IDs.",
+        ],
+    },
+    "de": {
+        "coffee": [
+            "Nutze nur sichtbare Kaffeesatz-Signale und die Frage der Kundin.",
+            "Schreibe natürlich menschlich statt schablonenhaft wiederholend.",
+            "Beginne mit einem kurzen Gesamtenergie-Absatz und fahre in natürlichen Abschnitten fort.",
+            "Gib genau 3 kurze, umsetzbare Empfehlungen.",
+            "Keine KI-/Systemhinweise im finalen Text.",
+        ],
+        "katina": [
+            "Deute alle 7 Positionen der Reihe nach und erkläre ihre Wirkung auf die Beziehung.",
+            "Halte emotionale Ausgewogenheit; vermeide einseitige Urteile.",
+            "Benenne Chancen und Risiken der nahen Zukunft realistisch.",
+            "Gib genau 3 kurze Empfehlungen ohne unnötige Wiederholung.",
+            "Technische Karten-IDs niemals ausgeben.",
+        ],
+        "tarot": [
+            "Deute alle 10 Positionen einzeln und gib danach eine Gesamtsynthese.",
+            "Übersetze Symbolik in alltagsnahe, konkrete Aussagen.",
+            "Zeige Unsicherheit, Chance, Risiko und Richtung ausgewogen auf.",
+            "Gib genau 3 kurze Empfehlungen in natürlichem Beratungsstil.",
+            "Technische Karten-IDs niemals ausgeben.",
+        ],
+    },
+}
+
+
+def prompt_lang(lang: str) -> str:
+    return lang if lang in {"tr", "en", "de"} else "tr"
+
+
+def get_ai_tone_template(reading_type: str, lang: str) -> str:
+    lang_key = prompt_lang(lang)
+    kind = reading_type if reading_type in {"coffee", "katina", "tarot"} else "tarot"
+    return AI_TONE_TEMPLATES[lang_key][kind]
+
+
+def get_ai_quality_template(reading_type: str, lang: str) -> str:
+    lang_key = prompt_lang(lang)
+    kind = reading_type if reading_type in {"coffee", "katina", "tarot"} else "tarot"
+    items = AI_QUALITY_CHECKLISTS[lang_key][kind]
+    title = {
+        "tr": "Kalite kontrol listesi:",
+        "en": "Quality checklist:",
+        "de": "Qualitäts-Checkliste:",
+    }[lang_key]
+    return title + "\n" + "\n".join(f"- {line}" for line in items)
+
+
 def reader_style_prompt(reader_name: str, lang: str) -> str:
     style = READER_STYLE_PROFILES.get(reader_name, {
         "tone": "warm and natural",
@@ -1791,56 +1904,41 @@ def call_openai_reading(input_items: list[dict[str, str]]) -> tuple[str, str, st
 
 
 def build_coffee_prompt(question: str, full_name: str, reader_name: str, lang: str, image_count: int) -> str:
-    character = reader_style_prompt(reader_name, lang)
-    if lang == "en":
+    lang_key = prompt_lang(lang)
+    character = reader_style_prompt(reader_name, lang_key)
+    tone_template = get_ai_tone_template("coffee", lang_key)
+    quality_template = get_ai_quality_template("coffee", lang_key)
+    if lang_key == "en":
         return (
-            "You are an experienced Turkish coffee reading expert. "
-            "Write in a warm, natural, human tone; avoid robotic language and avoid generic filler. "
-            "Use ONLY the uploaded grounds photos and the user's question. Do not invent symbols that are not visible.\n"
+            "You are an experienced Turkish coffee reading expert.\n"
             f"{character}\n"
+            f"{tone_template}\n"
+            "Core rule: Use only the uploaded grounds photos and the user question. Do not invent invisible symbols.\n"
             "Language rule: Write the full response in English only.\n"
-            "Style:\n"
-            "- Write as if you are speaking one-to-one with the client in a warm, human tone.\n"
-            "- Start with one short overall-energy paragraph.\n"
-            "- Then continue with flowing mini-sections (not rigid numbered lists).\n"
-            "- Use varied sentence lengths; avoid repetitive template phrases.\n"
-            "- Be clear, practical, and emotionally intelligent.\n"
-            "- End with exactly 3 short actionable suggestions.\n"
-            f"Final line must be exactly this name only: {reader_name}\n"
-            f"Client: {full_name}\nQuestion: {question}\nPhoto count: {image_count}"
+            f"{quality_template}\n"
+            f"Client: {full_name}\nQuestion: {question}\nPhoto count: {image_count}\n"
+            f"Final line must be exactly this name only: {reader_name}"
         )
-    if lang == "de":
+    if lang_key == "de":
         return (
-            "Du bist eine erfahrene Kaffeesatz-Orakelberaterin. "
-            "Schreibe warm, natürlich und menschlich; nicht mechanisch. "
-            "Nutze NUR die hochgeladenen Fotos und die Frage. Keine erfundenen Symbole.\n"
+            "Du bist eine erfahrene Kaffeesatz-Orakelberaterin.\n"
             f"{character}\n"
+            f"{tone_template}\n"
+            "Kernregel: Nutze nur die hochgeladenen Kaffeesatzfotos und die Frage. Keine erfundenen, unsichtbaren Symbole.\n"
             "Sprachregel: Schreibe die komplette Antwort nur auf Deutsch.\n"
-            "Stil:\n"
-            "- Schreibe wie in einem persönlichen Gespräch: warm, nahbar und menschlich.\n"
-            "- Starte mit einem kurzen Absatz zur Gesamtenergie.\n"
-            "- Danach klare, natürliche Abschnitte statt starrer Listen.\n"
-            "- Nutze abwechslungsreiche Satzlängen und vermeide Schablonensätze.\n"
-            "- Konkrete, alltagsnahe Sprache.\n"
-            "- Am Ende genau 3 kurze Empfehlungen.\n"
-            f"Letzte Zeile muss exakt nur dieser Name sein: {reader_name}\n"
-            f"Kundin: {full_name}\nFrage: {question}\nAnzahl Fotos: {image_count}"
+            f"{quality_template}\n"
+            f"Kundin: {full_name}\nFrage: {question}\nAnzahl Fotos: {image_count}\n"
+            f"Letzte Zeile muss exakt nur dieser Name sein: {reader_name}"
         )
     return (
-        "Deneyimli bir kahve falı yorumcususun. "
-        "Yorumu sıcak, doğal ve insan gibi yaz; mekanik ve şablon cümlelerden kaçın. "
-        "Sadece yüklenen telve fotoğraflarını ve soruyu kullan. Fotoğrafta görünmeyen sembol uydurma.\n"
+        "Deneyimli bir kahve falı yorumcususun.\n"
         f"{character}\n"
+        f"{tone_template}\n"
+        "Temel kural: Sadece yüklenen telve fotoğrafları ve müşteri sorusuna dayan. Görünmeyen sembol uydurma.\n"
         "Dil kuralı: Cevabın tamamını yalnızca Türkçe yaz.\n"
-        "Yazım tarzı:\n"
-        "- Müşteriyle birebir konuşur gibi samimi ve sıcak bir dil kullan.\n"
-        "- Kısa bir 'genel enerji' paragrafıyla başla.\n"
-        "- Sonra akıcı ara başlıklarla devam et (katı numaralı liste olmasın).\n"
-        "- Cümle uzunluklarını çeşitlendir; tekrarlayan şablon kalıplardan kaçın.\n"
-        "- Gerçekçi, net ve duygusal olarak dengeli bir dil kullan.\n"
-        "- Sonda tam 3 kısa, uygulanabilir tavsiye ver.\n"
-        f"Son satır yalnızca şu isim olsun: {reader_name}\n"
-        f"Müşteri: {full_name}\nSoru: {question}\nFotoğraf Sayısı: {image_count}"
+        f"{quality_template}\n"
+        f"Müşteri: {full_name}\nSoru: {question}\nFotoğraf Sayısı: {image_count}\n"
+        f"Son satır yalnızca şu isim olsun: {reader_name}"
     )
 
 
@@ -1863,54 +1961,60 @@ def format_cards_for_prompt(selected_cards: str) -> str:
 
 
 def build_card_prompt(reading_type: str, question: str, full_name: str, reader_name: str, selected_cards: str, lang: str) -> str:
-    is_tarot = reading_type == "tarot"
-    layout = "7 kart Katina aşk açılımı" if reading_type == "katina" else "10 kart Tarot açılımı (Kelt Haçı)"
+    lang_key = prompt_lang(lang)
+    normalized_type = reading_type if reading_type in {"katina", "tarot"} else "tarot"
+    is_tarot = normalized_type == "tarot"
+    layout_map = {
+        "tr": {
+            "katina": "7 kart Katina aşk açılımı",
+            "tarot": "10 kart Tarot açılımı (Kelt Haçı)",
+        },
+        "en": {
+            "katina": "7-card Katina love spread",
+            "tarot": "10-card Tarot spread (Celtic Cross)",
+        },
+        "de": {
+            "katina": "7-Karten-Katina-Liebeslegung",
+            "tarot": "10-Karten-Tarotlegung (Keltisches Kreuz)",
+        },
+    }
+    layout = layout_map[lang_key][normalized_type]
     cards_detail = format_cards_for_prompt(selected_cards)
-    character = reader_style_prompt(reader_name, lang)
-    if lang == "en":
+    character = reader_style_prompt(reader_name, lang_key)
+    tone_template = get_ai_tone_template(normalized_type, lang_key)
+    quality_template = get_ai_quality_template(normalized_type, lang_key)
+    if lang_key == "en":
         depth_rule = (
             "Tarot depth rule: Interpret all 10 positions one by one, then provide a combined synthesis of the full spread.\n"
             if is_tarot
             else ""
         )
         return (
-            f"You are a professional {reading_type} reader. Interpret based on the selected spread and user question.\n"
+            f"You are a professional {normalized_type} reader. Interpret based on the selected spread and user question.\n"
             f"Spread: {layout}\nClient: {full_name}\nQuestion: {question}\nSelected cards/positions:\n{cards_detail}\n"
             f"{character}\n"
+            f"{tone_template}\n"
             f"{depth_rule}"
             "Important: card values above are internal technical IDs. Never print these IDs in the final text.\n"
             "Language rule: Write the full response in English only.\n"
-            "Write naturally and warmly, not mechanically. Avoid generic template wording.\n"
-            "Write like a real human conversation with the client: clear, personal, and emotionally aware.\n"
-            "Use varied sentence lengths and transitions so it reads natural, not formulaic.\n"
-            "Flow:\n"
-            "- Short overall theme paragraph\n"
-            "- Position-based interpretation in human language\n"
-            "- Risk/opportunity notes\n"
-            "- Exactly 3 concise recommendations\n"
+            f"{quality_template}\n"
             f"Final line must be exactly this name only: {reader_name}"
         )
-    if lang == "de":
+    if lang_key == "de":
         depth_rule = (
             "Tarot-Tiefe: Deute alle 10 Positionen nacheinander und fasse danach die Gesamtenergie der Legung zusammen.\n"
             if is_tarot
             else ""
         )
         return (
-            f"Du bist eine professionelle {reading_type}-Legung Assistenz. Deute basierend auf den gezogenen Karten und der Frage.\n"
+            f"Du bist eine professionelle {normalized_type}-Legung Assistenz. Deute basierend auf den gezogenen Karten und der Frage.\n"
             f"Legung: {layout}\nKundin: {full_name}\nFrage: {question}\nGezogene Karten/Positionen:\n{cards_detail}\n"
             f"{character}\n"
+            f"{tone_template}\n"
             f"{depth_rule}"
             "Wichtig: Die Kartenwerte oben sind interne technische IDs. Diese IDs dürfen im finalen Text nicht erscheinen.\n"
             "Sprachregel: Schreibe die komplette Antwort nur auf Deutsch.\n"
-            "Schreibe natürlich, warm und nicht mechanisch.\n"
-            "Schreibe wie in einem echten Beratungsgespräch: persönlich, klar und empathisch.\n"
-            "Nutze abwechslungsreiche Satzlängen und natürliche Übergänge statt starrer Formeln.\n"
-            "Struktur:\n"
-            "- Kurzer Absatz zur Gesamtenergie\n"
-            "- Deutung nach Positionen in natürlicher Sprache\n"
-            "- Risiko/Chance\n"
-            "- Genau 3 klare Empfehlungen\n"
+            f"{quality_template}\n"
             f"Letzte Zeile muss exakt nur dieser Name sein: {reader_name}"
         )
     depth_rule = (
@@ -1919,20 +2023,14 @@ def build_card_prompt(reading_type: str, question: str, full_name: str, reader_n
         else ""
     )
     return (
-        f"Profesyonel bir {reading_type} fal yorumcususun. Seçilen açılım ve soru üzerinden yorum üret.\n"
+        f"Profesyonel bir {normalized_type} fal yorumcususun. Seçilen açılım ve soru üzerinden yorum üret.\n"
         f"Açılım: {layout}\nMüşteri: {full_name}\nSoru: {question}\nSeçilen kart/pozisyonlar:\n{cards_detail}\n"
         f"{character}\n"
+        f"{tone_template}\n"
         f"{depth_rule}"
         "Önemli: Yukarıdaki kart değerleri sistem içi teknik ID'dir. Nihai yorum metninde bu ID'leri asla yazma.\n"
         "Dil kuralı: Cevabın tamamını yalnızca Türkçe yaz.\n"
-        "Dil sıcak, doğal ve insan gibi olsun; mekanik şablon cümlelerden kaçın.\n"
-        "Müşteriyle gerçek bir sohbet ediyor gibi yaz: kişisel, anlaşılır ve empatik ol.\n"
-        "Cümle ritmini çeşitlendir, doğal geçişler kullan; kalıp metin gibi görünmesin.\n"
-        "Akış:\n"
-        "- Kısa bir genel enerji paragrafı\n"
-        "- Pozisyonlara göre yorum (doğal cümlelerle)\n"
-        "- Fırsat/risk notları\n"
-        "- Tam 3 kısa ve uygulanabilir öneri\n"
+        f"{quality_template}\n"
         f"Son satır yalnızca şu isim olsun: {reader_name}"
     )
 

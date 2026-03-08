@@ -81,6 +81,57 @@
         </details>
       </section>
 
+      <section class="card notifications-card">
+        <div class="notifications-head">
+          <div>
+            <h2 class="notifications-title">
+              {{ t('panel_notifications_title') }}
+              {% if unread_notification_count > 0 %}
+              <span class="notif-badge">{{ unread_notification_count }}</span>
+              {% endif %}
+            </h2>
+            <p class="notifications-desc">{{ t('panel_notifications_desc') }}</p>
+          </div>
+          {% if unread_notification_count > 0 %}
+          <form method="post" action="{{ url_for('dashboard_mark_notifications_read', lang=lang) }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="menu-cta">{{ t('panel_notifications_mark_all') }}</button>
+          </form>
+          {% endif %}
+        </div>
+        {% if notifications %}
+        <ul class="notifications-list">
+          {% for item in notifications %}
+          <li class="notification-item{% if item.is_unread == '1' %} is-unread{% endif %}">
+            <a href="{{ url_for('customer_reading_page', request_kind=item.request_kind, request_id=item.request_id, lang=lang) }}" class="notification-link">
+              <div class="notification-meta">
+                <strong>{{ t('panel_notification_ready_title') }}</strong>
+                {% if item.is_unread == '1' %}
+                <span class="notification-tag">{{ t('panel_notification_new') }}</span>
+                {% endif %}
+                <span>{{ item.created_at[:16].replace('T', ' ') }}</span>
+              </div>
+              <p>
+                {% if item.reading_type == 'coffee' %}
+                  {% set type_label = t('nav_coffee') %}
+                {% elif item.reading_type == 'katina' %}
+                  {% set type_label = t('nav_katina') %}
+                {% elif item.reading_type == 'tarot' %}
+                  {% set type_label = t('nav_tarot') %}
+                {% else %}
+                  {% set type_label = item.reading_type %}
+                {% endif %}
+                {{ t('panel_notification_ready_message').format(reading_type=type_label, reader_name=item.reader_name or '-') }}
+              </p>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>{{ t('panel_notifications_empty') }}</p>
+        {% endif %}
+      </section>
+
       <section class="card">
         <form class="form-grid compact" method="get" action="{{ url_for('dashboard_page') }}">
           <input type="hidden" name="lang" value="{{ lang }}" />
@@ -144,6 +195,9 @@
                 </td>
                 <td>
                   <a class="menu-cta panel-open-btn" href="{{ url_for('customer_reading_page', request_kind=row.request_kind, request_id=row.id, lang=lang) }}">
+                    {% if row.has_unread_notification == '1' %}
+                    <span class="panel-open-dot" aria-hidden="true"></span>
+                    {% endif %}
                     {{ t('panel_open_reading') }}
                   </a>
                 </td>

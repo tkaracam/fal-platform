@@ -963,7 +963,105 @@ h2 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   min-width: 130px;
+}
+
+.panel-open-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: linear-gradient(140deg, #ff8659, #ff5f7f);
+  box-shadow: 0 0 0 2px rgba(255, 99, 125, 0.18);
+}
+
+.notifications-card {
+  display: grid;
+  gap: 12px;
+}
+
+.notifications-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.notifications-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.notifications-desc {
+  margin: 6px 0 0;
+  color: #55708a;
+}
+
+.notif-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  color: #fff;
+  background: linear-gradient(140deg, #ff8659, #ff5f7f);
+}
+
+.notifications-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.notification-item {
+  border: 1px solid #d8e7f5;
+  border-radius: 12px;
+  background: #f8fcff;
+}
+
+.notification-item.is-unread {
+  border-color: #ffbfaa;
+  background: linear-gradient(160deg, #fff8f5, #f8fcff);
+}
+
+.notification-link {
+  display: block;
+  padding: 10px 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.notification-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: #5c7590;
+}
+
+.notification-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fff0e9;
+  color: #d95f57;
+  font-weight: 700;
+  font-size: 0.73rem;
+}
+
+.notification-link p {
+  margin: 6px 0 0;
+  color: #2f4a62;
 }
 
 .reading-focus-card {
@@ -1462,6 +1560,10 @@ a { color: #e6655e; }
     flex-direction: column;
     align-items: flex-start;
     padding: 26px 22px;
+  }
+  .notifications-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 

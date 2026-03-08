@@ -181,6 +181,14 @@ TRANSLATIONS = {
         "panel_detail_question": "Soru Detayı",
         "panel_detail_result": "Yorum Detayı",
         "panel_open_reading": "Fal Detayı",
+        "panel_notifications_title": "Bildirim Merkezi",
+        "panel_notifications_desc": "Yorum hazır olduğunda burada görünür.",
+        "panel_notifications_mark_all": "Tümünü Okundu Yap",
+        "panel_notifications_empty": "Şu an yeni bildirimin yok.",
+        "panel_notification_new": "Yeni",
+        "panel_notification_ready_title": "Yorum Hazır",
+        "panel_notification_ready_message": "{reading_type} falın hazır. Falcı: {reader_name}",
+        "panel_notifications_marked": "Tüm bildirimler okundu olarak işaretlendi.",
         "reading_focus_title": "Fal Detayı",
         "reading_focus_desc": "Bu sayfada yalnızca seçtiğin fal yorumu gösterilir.",
         "msg_reading_not_ready": "Bu fal henüz yayınlanmadı.",
@@ -395,6 +403,14 @@ TRANSLATIONS = {
         "panel_detail_question": "Question Details",
         "panel_detail_result": "Reading Details",
         "panel_open_reading": "Open Reading",
+        "panel_notifications_title": "Notification Center",
+        "panel_notifications_desc": "Shown here when your reading is ready.",
+        "panel_notifications_mark_all": "Mark All as Read",
+        "panel_notifications_empty": "You have no new notifications right now.",
+        "panel_notification_new": "New",
+        "panel_notification_ready_title": "Reading Ready",
+        "panel_notification_ready_message": "Your {reading_type} reading is ready. Reader: {reader_name}",
+        "panel_notifications_marked": "All notifications marked as read.",
         "reading_focus_title": "Reading Detail",
         "reading_focus_desc": "This page shows only the selected reading for easier viewing.",
         "msg_reading_not_ready": "This reading is not published yet.",
@@ -609,6 +625,14 @@ TRANSLATIONS = {
         "panel_detail_question": "Fragedetails",
         "panel_detail_result": "Deutungsdetails",
         "panel_open_reading": "Orakel Öffnen",
+        "panel_notifications_title": "Benachrichtigungen",
+        "panel_notifications_desc": "Hier erscheint eine Meldung, sobald deine Deutung bereit ist.",
+        "panel_notifications_mark_all": "Alle als gelesen markieren",
+        "panel_notifications_empty": "Aktuell hast du keine neuen Benachrichtigungen.",
+        "panel_notification_new": "Neu",
+        "panel_notification_ready_title": "Deutung bereit",
+        "panel_notification_ready_message": "Dein {reading_type}-Orakel ist bereit. Person: {reader_name}",
+        "panel_notifications_marked": "Alle Benachrichtigungen wurden als gelesen markiert.",
         "reading_focus_title": "Orakel-Detail",
         "reading_focus_desc": "Auf dieser Seite siehst du nur das ausgewählte Orakel für besseres Lesen.",
         "msg_reading_not_ready": "Dieses Orakel ist noch nicht veröffentlicht.",
@@ -1105,6 +1129,21 @@ def init_db() -> None:
         )
         conn.execute(
             """
+            CREATE TABLE IF NOT EXISTS user_notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                request_kind TEXT NOT NULL,
+                request_id INTEGER NOT NULL,
+                reading_type TEXT NOT NULL DEFAULT '',
+                reader_name TEXT NOT NULL DEFAULT '',
+                event_type TEXT NOT NULL DEFAULT 'reading_ready',
+                created_at TEXT NOT NULL,
+                read_at TEXT NOT NULL DEFAULT ''
+            )
+            """
+        )
+        conn.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_reading_audit_request
             ON reading_audit(request_kind, request_id, created_at)
             """
@@ -1119,6 +1158,18 @@ def init_db() -> None:
             """
             CREATE INDEX IF NOT EXISTS idx_reading_audit_created
             ON reading_audit(created_at)
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_user_notifications_user_read_time
+            ON user_notifications(user_id, read_at, created_at)
+            """
+        )
+        conn.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_user_notifications_unique_event
+            ON user_notifications(user_id, request_kind, request_id, event_type)
             """
         )
         try:
@@ -1423,6 +1474,103 @@ def get_current_user_id() -> int:
         return int(raw or 0)
     except (TypeError, ValueError):
         return 0
+
+
+def create_user_notification_for_published(
+    user_id: int,
+    request_kind: str,
+    request_id: int,
+    reading_type: str,
+    reader_name: str,
+) -> None:
+    if user_id <= 0 or request_kind not in {"coffee", "card"}:
+        return
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO user_notifications (
+                user_id, request_kind, request_id, reading_type, reader_name, event_type, created_at, read_at
+            )
+            VALUES (?, ?, ?, ?, ?, 'reading_ready', ?, '')
+            """,
+            (
+                int(user_id),
+                request_kind,
+                int(request_id),
+                (reading_type or "").strip(),
+                (reader_name or "").strip(),
+                datetime.utcnow().isoformat(),
+            ),
+        )
+
+
+def fetch_user_notifications(user_id: int, limit: int = 20) -> list[dict[str, str]]:
+    if user_id <= 0:
+        return []
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            """
+            SELECT id, request_kind, request_id, reading_type, reader_name, event_type, created_at, read_at
+            FROM user_notifications
+            WHERE user_id = ?
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (int(user_id), max(1, int(limit))),
+        ).fetchall()
+    notifications: list[dict[str, str]] = []
+    for row in rows:
+        notifications.append(
+            {
+                "id": str(row["id"]),
+                "request_kind": str(row["request_kind"]),
+                "request_id": str(row["request_id"]),
+                "reading_type": str(row["reading_type"]),
+                "reader_name": str(row["reader_name"]),
+                "event_type": str(row["event_type"]),
+                "created_at": str(row["created_at"]),
+                "read_at": str(row["read_at"] or ""),
+                "is_unread": "1" if not str(row["read_at"] or "").strip() else "0",
+            }
+        )
+    return notifications
+
+
+def count_unread_user_notifications(user_id: int) -> int:
+    if user_id <= 0:
+        return 0
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM user_notifications
+            WHERE user_id = ? AND (read_at IS NULL OR read_at = '')
+            """,
+            (int(user_id),),
+        ).fetchone()
+    return int((row[0] if row else 0) or 0)
+
+
+def mark_user_notifications_read(
+    user_id: int,
+    request_kind: str | None = None,
+    request_id: int | None = None,
+) -> int:
+    if user_id <= 0:
+        return 0
+    query = """
+        UPDATE user_notifications
+        SET read_at = ?
+        WHERE user_id = ? AND (read_at IS NULL OR read_at = '')
+    """
+    params: list[object] = [datetime.utcnow().isoformat(), int(user_id)]
+    if request_kind in {"coffee", "card"} and request_id is not None:
+        query += " AND request_kind = ? AND request_id = ?"
+        params.extend([request_kind, int(request_id)])
+    with sqlite3.connect(DB_PATH) as conn:
+        result = conn.execute(query, tuple(params))
+    return int(result.rowcount or 0)
 
 
 def user_logged_in() -> bool:
@@ -2648,11 +2796,20 @@ def dashboard_page():
             (user_id,),
         ).fetchall()
 
+    notifications = fetch_user_notifications(user_id, limit=30)
+    unread_notification_count = sum(1 for item in notifications if str(item.get("is_unread", "0")) == "1")
+    unread_notification_keys = {
+        (str(item.get("request_kind", "")), str(item.get("request_id", "")))
+        for item in notifications
+        if str(item.get("is_unread", "0")) == "1"
+    }
+
     merged: list[dict[str, str]] = []
     for row in coffee_rows:
+        row_id = str(row["id"])
         merged.append(
             {
-                "id": str(row["id"]),
+                "id": row_id,
                 "request_kind": "coffee",
                 "type": str(row["reading_type"]),
                 "reader_name": str(row["reader_name"]),
@@ -2660,6 +2817,7 @@ def dashboard_page():
                 "result": str(row["ai_reading"]) if (str(row["ai_status"]) == "ready" and int(row["ai_published"] or 0) == 1) else t("ai_result_review"),
                 "created_at": str(row["created_at"]),
                 "order_status": normalize_order_status(str(row["order_status"])),
+                "has_unread_notification": ("1" if ("coffee", row_id) in unread_notification_keys else "0"),
                 "timeline": build_customer_timeline(
                     str(row["order_status"]),
                     str(row["ai_status"]),
@@ -2668,9 +2826,10 @@ def dashboard_page():
             }
         )
     for row in card_rows:
+        row_id = str(row["id"])
         merged.append(
             {
-                "id": str(row["id"]),
+                "id": row_id,
                 "request_kind": "card",
                 "type": str(row["reading_type"]),
                 "reader_name": str(row["reader_name"]),
@@ -2678,6 +2837,7 @@ def dashboard_page():
                 "result": str(row["ai_reading"]) if (str(row["ai_status"]) == "ready" and int(row["ai_published"] or 0) == 1) else t("ai_result_review"),
                 "created_at": str(row["created_at"]),
                 "order_status": normalize_order_status(str(row["order_status"])),
+                "has_unread_notification": ("1" if ("card", row_id) in unread_notification_keys else "0"),
                 "timeline": build_customer_timeline(
                     str(row["order_status"]),
                     str(row["ai_status"]),
@@ -2690,7 +2850,25 @@ def dashboard_page():
     if selected_type != "all":
         merged = [row for row in merged if row["type"] == selected_type]
     merged = merged[:20]
-    return render_template("dashboard.html", rows=merged, user=user_row, selected_type=selected_type)
+    return render_template(
+        "dashboard.html",
+        rows=merged,
+        user=user_row,
+        selected_type=selected_type,
+        notifications=notifications,
+        unread_notification_count=unread_notification_count,
+    )
+
+
+@app.post("/dashboard/notifications/read-all")
+def dashboard_mark_notifications_read():
+    user_id = get_current_user_id()
+    if user_id <= 0:
+        flash(t("msg_auth_required"), "error")
+        return redirect(url_for("login_page", lang=get_lang()))
+    mark_user_notifications_read(user_id)
+    flash(t("panel_notifications_marked"), "ok")
+    return redirect(url_for("dashboard_page", lang=get_lang()))
 
 
 @app.get("/reading/<request_kind>/<int:request_id>")
@@ -2746,6 +2924,8 @@ def customer_reading_page(request_kind: str, request_id: int):
     if str(row["ai_status"]) != "ready" or int(row["ai_published"] or 0) != 1 or not str(row["ai_reading"]).strip():
         flash(t("msg_reading_not_ready"), "error")
         return redirect(url_for("dashboard_page", lang=get_lang()))
+
+    mark_user_notifications_read(user_id, request_kind=request_kind, request_id=request_id)
 
     return render_template(
         "customer_reading.html",
@@ -3476,6 +3656,13 @@ def delete_request_with_related(request_kind: str, request_id: int) -> tuple[boo
             ).rowcount
         except sqlite3.OperationalError:
             deleted_revisions = 0
+        try:
+            deleted_notifications = conn.execute(
+                "DELETE FROM user_notifications WHERE request_kind = ? AND request_id = ?",
+                (request_kind, request_id),
+            ).rowcount
+        except sqlite3.OperationalError:
+            deleted_notifications = 0
         deleted_request = conn.execute(
             f"DELETE FROM {table_name} WHERE id = ?",
             (request_id,),
@@ -3483,7 +3670,7 @@ def delete_request_with_related(request_kind: str, request_id: int) -> tuple[boo
 
     return (
         True,
-        f"{label} falı kaydı silindi. Talep: {deleted_request}, Ödeme: {deleted_payments}, Değerlendirme: {deleted_feedback}, Log: {deleted_audit}, Revizyon: {deleted_revisions}",
+        f"{label} falı kaydı silindi. Talep: {deleted_request}, Ödeme: {deleted_payments}, Değerlendirme: {deleted_feedback}, Log: {deleted_audit}, Revizyon: {deleted_revisions}, Bildirim: {deleted_notifications}",
     )
 
 
@@ -3566,7 +3753,7 @@ def publish_reading_to_customer(request_kind: str, request_id: int) -> tuple[str
         conn.row_factory = sqlite3.Row
         select_type_sql = "'coffee' AS reading_type" if request_kind == "coffee" else "reading_type"
         row = conn.execute(
-            f"SELECT ai_status, ai_reading, ai_published, full_name, reader_name, {select_type_sql} FROM {table_name} WHERE id = ?",
+            f"SELECT user_id, ai_status, ai_reading, ai_published, full_name, reader_name, {select_type_sql} FROM {table_name} WHERE id = ?",
             (request_id,),
         ).fetchone()
         if row is None:
@@ -3589,6 +3776,13 @@ def publish_reading_to_customer(request_kind: str, request_id: int) -> tuple[str
         )
 
     reading_type = "coffee" if request_kind == "coffee" else str(row["reading_type"] or "tarot")
+    create_user_notification_for_published(
+        user_id=int(row["user_id"] or 0),
+        request_kind=request_kind,
+        request_id=request_id,
+        reading_type=reading_type,
+        reader_name=str(row["reader_name"] or ""),
+    )
     log_reading_event(
         request_kind=request_kind,
         request_id=request_id,

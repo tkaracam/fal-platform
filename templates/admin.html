@@ -55,6 +55,27 @@
         color: #64748b;
         font-size: 0.88rem;
       }
+      .sla-alert-card {
+        border: 1px solid #fecaca;
+        background: linear-gradient(120deg, #fff1f2, #fff7f7);
+      }
+      .sla-row td {
+        background: rgba(254, 226, 226, 0.42);
+      }
+      .sla-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        background: #ef4444;
+        color: #fff;
+      }
+      .sla-ok {
+        margin: 0;
+        color: #166534;
+        font-weight: 700;
+      }
     </style>
   </head>
   <body>
@@ -156,6 +177,44 @@
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section class="card sla-alert-card">
+        <h2>30 Dk’yı Aşanlar (SLA Uyarı Listesi)</h2>
+        {% if overdue_rows %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tür</th>
+                <th>Talep</th>
+                <th>Ad</th>
+                <th>Falcı</th>
+                <th>Durum</th>
+                <th>Bekleme</th>
+                <th>Tarih</th>
+                <th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in overdue_rows %}
+              <tr class="sla-row">
+                <td>{{ row['reading_type'] }}</td>
+                <td>{{ row['request_kind'] }}-{{ row['request_id'] }}</td>
+                <td>{{ row['full_name'] }}</td>
+                <td>{{ row['reader_name'] }}</td>
+                <td>{{ row['order_status'] }}</td>
+                <td><span class="sla-badge">{{ row['wait_minutes'] }} dk</span></td>
+                <td>{{ row['created_at'] }}</td>
+                <td><a class="inline-link" href="/admin/edit-reading/{{ row['request_kind'] }}/{{ row['request_id'] }}">Yorumu Aç</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="sla-ok">30 dk’yı aşan açık talep yok.</p>
+        {% endif %}
       </section>
 
       <section class="card">

@@ -4027,6 +4027,23 @@ def fetch_reading_audit_rows(filters: dict[str, str]) -> list[sqlite3.Row]:
         return conn.execute(sql, tuple(params)).fetchall()
 
 
+def parse_admin_created_at(value: object) -> datetime | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw)
+    except ValueError:
+        pass
+    if len(raw) >= 19:
+        base = raw[:19]
+        try:
+            return datetime.strptime(base, "%Y-%m-%dT%H:%M:%S")
+        except ValueError:
+            return None
+    return None
+
+
 def fetch_admin_summary() -> dict[str, int]:
     today_start = datetime.utcnow().strftime("%Y-%m-%dT00:00:00")
     cutoff_30m = (datetime.utcnow() - timedelta(minutes=30)).isoformat()
@@ -4303,12 +4320,61 @@ def admin():
         for row in reading_audit_rows
     ]
 
+    now_utc = datetime.utcnow()
+    overdue_rows: list[dict[str, object]] = []
+    for row in coffee_was:
+        status = str(row["order_status"])
+        if status not in {"pending", "in_progress"}:
+            continue
+        created_dt = parse_admin_created_at(row.get("created_at"))
+        if not created_dt:
+            continue
+        wait_minutes = max(0, int((now_utc - created_dt).total_seconds() // 60))
+        if wait_minutes < 30:
+            continue
+        overdue_rows.append(
+            {
+                "request_kind": "coffee",
+                "request_id": int(row["id"]),
+                "reading_type": "kahve",
+                "full_name": str(row["full_name"] or ""),
+                "reader_name": str(row["reader_name"] or ""),
+                "order_status": status,
+                "created_at": str(row.get("created_at") or ""),
+                "wait_minutes": wait_minutes,
+            }
+        )
+    for row in card_was:
+        status = str(row["order_status"])
+        if status not in {"pending", "in_progress"}:
+            continue
+        created_dt = parse_admin_created_at(row.get("created_at"))
+        if not created_dt:
+            continue
+        wait_minutes = max(0, int((now_utc - created_dt).total_seconds() // 60))
+        if wait_minutes < 30:
+            continue
+        overdue_rows.append(
+            {
+                "request_kind": "card",
+                "request_id": int(row["id"]),
+                "reading_type": str(row["reading_type"] or "tarot"),
+                "full_name": str(row["full_name"] or ""),
+                "reader_name": str(row["reader_name"] or ""),
+                "order_status": status,
+                "created_at": str(row.get("created_at") or ""),
+                "wait_minutes": wait_minutes,
+            }
+        )
+    overdue_rows.sort(key=lambda item: int(item["wait_minutes"]), reverse=True)
+
     return render_template(
         "admin.html",
         coffee_rows=coffee_was,
         card_rows=card_was,
         payment_rows=payment_rows,
         reading_audit_rows=audit_was,
+        overdue_rows=overdue_rows,
         filters=filters,
         summary=summary,
     )

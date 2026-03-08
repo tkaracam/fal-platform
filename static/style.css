@@ -748,29 +748,8 @@ body.nav-open {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.4);
-  z-index: 1;
-}
-
-.home-slide-label {
-  position: absolute;
-  left: 18px;
-  top: 16px;
-  z-index: 7;
-  margin: 0;
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 0;
   background: transparent;
-  color: #ffffff;
-  font-family: "Space Grotesk", sans-serif;
-  font-size: clamp(0.78rem, 1.15vw, 0.92rem);
-  font-weight: 700;
-  line-height: 1.28;
-  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.6);
-  pointer-events: none;
-  max-width: min(76%, 640px);
-  white-space: pre-line;
+  z-index: 1;
 }
 
 .home-slide.is-active {
@@ -1470,13 +1449,6 @@ a { color: #e6655e; }
     right: 10px;
     bottom: 10px;
     width: clamp(41px, 12.8vw, 62px);
-  }
-  .home-slide-label {
-    left: 10px;
-    top: 10px;
-    max-width: calc(100% - 20px);
-    padding: 7px 10px;
-    font-size: 0.74rem;
   }
   .home-info-rotator {
     min-height: 110px;

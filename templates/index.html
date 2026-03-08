@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260308-slidecopy6" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260308-slidecopy7" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -57,19 +57,16 @@
               <video class="home-slide-media" autoplay muted playsinline preload="auto">
                 <source src="{{ url_for('static', filename='assets/kahve-slidev.mp4') }}?v=20260306" type="video/mp4" />
               </video>
-              <figcaption class="home-slide-label">{{ t('home_slide_text_1') }}</figcaption>
             </figure>
             <figure class="home-slide" data-home-slide>
               <video class="home-slide-media" autoplay muted playsinline preload="auto">
                 <source src="{{ url_for('static', filename='assets/katina-slidev.mp4') }}?v=20260306" type="video/mp4" />
               </video>
-              <figcaption class="home-slide-label">{{ t('home_slide_text_2') }}</figcaption>
             </figure>
             <figure class="home-slide" data-home-slide>
               <video class="home-slide-media" autoplay muted playsinline preload="auto">
                 <source src="{{ url_for('static', filename='assets/tarot-slidev.mp4') }}?v=20260306" type="video/mp4" />
               </video>
-              <figcaption class="home-slide-label">{{ t('home_slide_text_3') }}</figcaption>
             </figure>
             <img
               class="home-slider-brand"

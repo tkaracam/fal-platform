@@ -71,6 +71,7 @@
               <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
               <label>{{ t('full_name') }}<input name="full_name" type="text" value="{{ user.full_name }}" required /></label>
               <label>{{ t('username') }}<input type="text" value="{{ user.username }}" readonly /></label>
+              <label class="full">Referans Kodun<input type="text" value="{{ user.referral_code or '-' }}" readonly /></label>
               <label class="full">{{ t('email') }}<input name="email" type="email" value="{{ user.email }}" required /></label>
               <label class="full">{{ t('phone') }}<input name="phone" type="text" value="{{ user.phone }}" required /></label>
               <label>{{ t('profile_new_password') }}<input name="new_password" type="password" minlength="4" /></label>

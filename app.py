@@ -74,6 +74,8 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 OPENAI_USE_BATCH = os.getenv("OPENAI_USE_BATCH", "0").strip() == "1"
 AI_INPUT_COST_PER_1M = float(os.getenv("AI_INPUT_COST_PER_1M", "0"))
 AI_OUTPUT_COST_PER_1M = float(os.getenv("AI_OUTPUT_COST_PER_1M", "0"))
+FIRST_READING_DISCOUNT_PERCENT = max(0, min(80, int(os.getenv("FIRST_READING_DISCOUNT_PERCENT", "15"))))
+REFERRAL_DISCOUNT_PERCENT = max(0, min(80, int(os.getenv("REFERRAL_DISCOUNT_PERCENT", "10"))))
 EXPECTED_CARD_COUNT = {"katina": 7, "tarot": 10}
 LANGUAGES = {"tr", "en", "de", "fr"}
 DEFAULT_LANG = "tr"
@@ -1052,6 +1054,7 @@ def init_db() -> None:
                 full_name TEXT NOT NULL DEFAULT '',
                 email TEXT NOT NULL DEFAULT '',
                 phone TEXT NOT NULL DEFAULT '',
+                referral_code TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL
             )
             """
@@ -1150,6 +1153,23 @@ def init_db() -> None:
                 event_type TEXT NOT NULL DEFAULT 'reading_ready',
                 created_at TEXT NOT NULL,
                 read_at TEXT NOT NULL DEFAULT ''
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS coupons (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT NOT NULL UNIQUE,
+                label TEXT NOT NULL DEFAULT '',
+                discount_kind TEXT NOT NULL DEFAULT 'percent',
+                discount_value INTEGER NOT NULL DEFAULT 0,
+                max_uses INTEGER NOT NULL DEFAULT 0,
+                used_count INTEGER NOT NULL DEFAULT 0,
+                first_only INTEGER NOT NULL DEFAULT 0,
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL DEFAULT ''
             )
             """
         )
@@ -1280,6 +1300,34 @@ def init_db() -> None:
         except sqlite3.OperationalError:
             pass
         try:
+            conn.execute("ALTER TABLE users ADD COLUMN referral_code TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE payment_requests ADD COLUMN base_amount INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE payment_requests ADD COLUMN discount_amount INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE payment_requests ADD COLUMN discount_code TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE payment_requests ADD COLUMN discount_label TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE payment_requests ADD COLUMN discount_source TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE payment_requests ADD COLUMN discount_consumed INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
+        try:
             conn.execute("ALTER TABLE reading_audit ADD COLUMN model_name TEXT NOT NULL DEFAULT ''")
         except sqlite3.OperationalError:
             pass
@@ -1303,6 +1351,29 @@ def init_db() -> None:
             conn.execute("ALTER TABLE reading_audit ADD COLUMN quality_flags TEXT NOT NULL DEFAULT ''")
         except sqlite3.OperationalError:
             pass
+        conn.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code_ci
+            ON users(lower(referral_code))
+            WHERE TRIM(referral_code) <> ''
+            """
+        )
+        conn.execute(
+            """
+            UPDATE payment_requests
+            SET base_amount = amount
+            WHERE COALESCE(base_amount, 0) <= 0
+            """
+        )
+        rows = conn.execute(
+            """
+            SELECT id FROM users
+            WHERE referral_code IS NULL OR TRIM(referral_code) = ''
+            """
+        ).fetchall()
+        for row in rows:
+            code = generate_unique_referral_code(conn)
+            conn.execute("UPDATE users SET referral_code = ? WHERE id = ?", (code, int(row[0])))
 
 
 def allowed_file(filename: str) -> bool:
@@ -1755,15 +1826,43 @@ def build_whatsapp_link(phone: str, message: str) -> str:
 
 def create_payment_record(
     request_kind: str, request_id: int, full_name: str, phone: str, amount: int, currency: str, user_id: int = 0
-) -> None:
+) -> int:
     with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
+        cursor = conn.execute(
             """
-            INSERT INTO payment_requests (user_id, request_kind, request_id, full_name, phone, amount, currency, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO payment_requests (
+                user_id, request_kind, request_id, full_name, phone, amount, base_amount, discount_amount, discount_code, discount_label, discount_source, discount_consumed, currency, status, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, 0, '', '', '', 0, ?, ?, ?)
             """,
-            (user_id, request_kind, request_id, full_name, phone, amount, currency, "pending", datetime.utcnow().isoformat()),
+            (
+                int(user_id),
+                request_kind,
+                int(request_id),
+                full_name,
+                phone,
+                int(amount),
+                int(amount),
+                currency,
+                "pending",
+                datetime.utcnow().isoformat(),
+            ),
         )
+        payment_id = int(cursor.lastrowid or 0)
+        if payment_id > 0 and int(user_id) > 0 and FIRST_READING_DISCOUNT_PERCENT > 0:
+            if is_first_reading_request(conn, int(user_id), payment_id):
+                first_discount = calculate_discount_amount(int(amount), "percent", FIRST_READING_DISCOUNT_PERCENT)
+                if first_discount > 0:
+                    set_payment_discount(
+                        conn=conn,
+                        payment_id=payment_id,
+                        base_amount=int(amount),
+                        discount_amount=first_discount,
+                        discount_code="FIRST",
+                        discount_label=f"İlk fal indirimi (%{FIRST_READING_DISCOUNT_PERCENT})",
+                        discount_source="first",
+                    )
+    return payment_id
 
 
 ALLOWED_ORDER_STATUSES = {"pending", "paid", "in_progress", "completed"}
@@ -1828,6 +1927,8 @@ def set_order_status(request_kind: str, request_id: int, new_status: str) -> Non
             f"UPDATE {table_name} SET paid = ? WHERE id = ?",
             (paid_flag, request_id),
         )
+    if normalized in {"paid", "in_progress", "completed"}:
+        consume_discount_usage_if_needed(request_kind, request_id)
 
 
 def get_current_order_status(request_kind: str, request_id: int) -> str:
@@ -1845,6 +1946,120 @@ def get_current_order_status(request_kind: str, request_id: int) -> str:
     if row is None:
         return "pending"
     return normalize_order_status(str(row["status"]))
+
+
+def apply_discount_code_to_payment(request_kind: str, request_id: int, raw_code: str, user_id: int) -> tuple[bool, str]:
+    if request_kind not in {"coffee", "card"}:
+        return False, "Geçersiz talep türü."
+    code = normalize_discount_code(raw_code)
+    if not code:
+        return False, "Geçerli bir kampanya veya referans kodu girin."
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            """
+            SELECT id, user_id, amount, base_amount, status, currency
+            FROM payment_requests
+            WHERE request_kind = ? AND request_id = ?
+            ORDER BY id DESC LIMIT 1
+            """,
+            (request_kind, int(request_id)),
+        ).fetchone()
+        if row is None:
+            return False, "Ödeme kaydı bulunamadı."
+        if int(row["user_id"] or 0) != int(user_id):
+            return False, "Bu ödeme kaydı için yetkiniz yok."
+        if str(row["status"] or "") != "pending":
+            return False, "Kupon yalnızca bekleyen ödemelerde uygulanabilir."
+
+        payment_id = int(row["id"])
+        base_amount = int(row["base_amount"] or 0)
+        if base_amount <= 0:
+            base_amount = int(row["amount"] or 0)
+        if base_amount <= 0:
+            return False, "Geçersiz ödeme tutarı."
+
+        coupon = conn.execute(
+            """
+            SELECT id, code, label, discount_kind, discount_value, max_uses, used_count, first_only, active
+            FROM coupons
+            WHERE lower(code) = lower(?)
+            LIMIT 1
+            """,
+            (code,),
+        ).fetchone()
+        if coupon:
+            if int(coupon["active"] or 0) != 1:
+                return False, "Bu kampanya kodu aktif değil."
+            max_uses = int(coupon["max_uses"] or 0)
+            used_count = int(coupon["used_count"] or 0)
+            if max_uses > 0 and used_count >= max_uses:
+                return False, "Bu kampanya kodunun kullanım hakkı doldu."
+            if int(coupon["first_only"] or 0) == 1 and not is_first_reading_request(conn, int(user_id), payment_id):
+                return False, "Bu kampanya sadece ilk fal için geçerli."
+
+            discount_amount = calculate_discount_amount(
+                base_amount,
+                str(coupon["discount_kind"] or "percent"),
+                int(coupon["discount_value"] or 0),
+            )
+            if discount_amount <= 0:
+                return False, "Bu kampanya kodu mevcut tutarda indirime uygun değil."
+            label = str(coupon["label"] or "").strip() or str(coupon["code"])
+            set_payment_discount(
+                conn=conn,
+                payment_id=payment_id,
+                base_amount=base_amount,
+                discount_amount=discount_amount,
+                discount_code=str(coupon["code"]),
+                discount_label=f"Kampanya: {label}",
+                discount_source="coupon",
+            )
+            return True, f"Kampanya kodu uygulandı. İndirim: {discount_amount} {row['currency']}"
+
+        owner = conn.execute(
+            """
+            SELECT id, username, referral_code
+            FROM users
+            WHERE lower(referral_code) = lower(?)
+            LIMIT 1
+            """,
+            (code,),
+        ).fetchone()
+        if owner is None:
+            return False, "Kampanya/Referans kodu bulunamadı."
+        if int(owner["id"] or 0) == int(user_id):
+            return False, "Kendi referans kodunu kullanamazsın."
+        used_referral = conn.execute(
+            """
+            SELECT 1
+            FROM payment_requests
+            WHERE user_id = ?
+              AND discount_source = 'referral'
+              AND status IN ('paid', 'in_progress', 'completed')
+            LIMIT 1
+            """,
+            (int(user_id),),
+        ).fetchone()
+        if used_referral:
+            return False, "Referans indirimi daha önce kullanılmış."
+        if REFERRAL_DISCOUNT_PERCENT <= 0:
+            return False, "Referans indirimi şu anda aktif değil."
+        discount_amount = calculate_discount_amount(base_amount, "percent", REFERRAL_DISCOUNT_PERCENT)
+        if discount_amount <= 0:
+            return False, "Referans kodu mevcut tutarda indirime uygun değil."
+        owner_name = str(owner["username"] or "arkadaş")
+        set_payment_discount(
+            conn=conn,
+            payment_id=payment_id,
+            base_amount=base_amount,
+            discount_amount=discount_amount,
+            discount_code=str(owner["referral_code"]),
+            discount_label=f"Referans indirimi ({owner_name})",
+            discount_source="referral",
+        )
+        return True, f"Referans indirimi uygulandı. İndirim: {discount_amount} {row['currency']}"
 
 
 def send_email_message(to_email: str, subject: str, body: str) -> tuple[bool, str]:
@@ -2439,6 +2654,104 @@ def get_pricing() -> tuple[int, str]:
     return 20, "EUR"
 
 
+def normalize_discount_code(raw: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9_-]", "", str(raw or "").strip().upper())
+    return cleaned[:32]
+
+
+def generate_unique_referral_code(conn: sqlite3.Connection) -> str:
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    for _ in range(40):
+        token = "".join(secrets.choice(alphabet) for _ in range(8))
+        code = f"ORA{token}"
+        exists = conn.execute(
+            "SELECT 1 FROM users WHERE lower(referral_code) = lower(?) LIMIT 1",
+            (code,),
+        ).fetchone()
+        if not exists:
+            return code
+    return f"ORA{uuid.uuid4().hex[:8].upper()}"
+
+
+def calculate_discount_amount(base_amount: int, discount_kind: str, discount_value: int) -> int:
+    if base_amount <= 1:
+        return 0
+    if discount_kind == "fixed":
+        discount = int(discount_value)
+    else:
+        discount = int(round(base_amount * (max(0, int(discount_value)) / 100.0)))
+    return max(0, min(base_amount - 1, discount))
+
+
+def is_first_reading_request(conn: sqlite3.Connection, user_id: int, payment_id: int) -> bool:
+    if user_id <= 0:
+        return False
+    row = conn.execute(
+        "SELECT COUNT(*) FROM payment_requests WHERE user_id = ? AND id <> ?",
+        (int(user_id), int(payment_id)),
+    ).fetchone()
+    return int((row[0] if row else 0) or 0) == 0
+
+
+def set_payment_discount(
+    conn: sqlite3.Connection,
+    payment_id: int,
+    base_amount: int,
+    discount_amount: int,
+    discount_code: str,
+    discount_label: str,
+    discount_source: str,
+) -> None:
+    final_amount = max(1, int(base_amount) - int(discount_amount))
+    conn.execute(
+        """
+        UPDATE payment_requests
+        SET amount = ?, base_amount = ?, discount_amount = ?, discount_code = ?, discount_label = ?, discount_source = ?, discount_consumed = 0
+        WHERE id = ?
+        """,
+        (
+            final_amount,
+            int(base_amount),
+            int(discount_amount),
+            str(discount_code or ""),
+            str(discount_label or ""),
+            str(discount_source or ""),
+            int(payment_id),
+        ),
+    )
+
+
+def consume_discount_usage_if_needed(request_kind: str, request_id: int) -> None:
+    if request_kind not in {"coffee", "card"}:
+        return
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            """
+            SELECT id, status, discount_source, discount_code, discount_consumed
+            FROM payment_requests
+            WHERE request_kind = ? AND request_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (request_kind, int(request_id)),
+        ).fetchone()
+        if row is None:
+            return
+        if str(row["status"] or "") not in {"paid", "in_progress", "completed"}:
+            return
+        if int(row["discount_consumed"] or 0) == 1:
+            return
+        if str(row["discount_source"] or "") == "coupon":
+            code = str(row["discount_code"] or "").strip()
+            if code:
+                conn.execute(
+                    "UPDATE coupons SET used_count = used_count + 1, updated_at = ? WHERE lower(code) = lower(?)",
+                    (datetime.utcnow().isoformat(), code),
+                )
+        conn.execute("UPDATE payment_requests SET discount_consumed = 1 WHERE id = ?", (int(row["id"]),))
+
+
 def detect_lang_by_country() -> str:
     country = get_country_code()
     if country == "TR":
@@ -2799,13 +3112,14 @@ def register_submit():
         if existing is not None:
             flash(t("msg_register_exists"), "error")
             return redirect(url_for("register_page", lang=get_lang()))
+        referral_code = generate_unique_referral_code(conn)
         try:
             conn.execute(
                 """
-                INSERT INTO users (username, password_hash, full_name, email, phone, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO users (username, password_hash, full_name, email, phone, referral_code, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
-                (username, generate_password_hash(password), full_name, email, phone, datetime.utcnow().isoformat()),
+                (username, generate_password_hash(password), full_name, email, phone, referral_code, datetime.utcnow().isoformat()),
             )
         except sqlite3.IntegrityError:
             flash(t("msg_register_exists"), "error")
@@ -2835,7 +3149,7 @@ def dashboard_page():
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         user_row = conn.execute(
-            "SELECT username, full_name, email, phone FROM users WHERE id = ?",
+            "SELECT username, full_name, email, phone, referral_code FROM users WHERE id = ?",
             (user_id,),
         ).fetchone()
         if user_row is None:
@@ -3327,16 +3641,24 @@ def payment_page(request_kind: str, request_id: int):
     if request_kind not in {"coffee", "card"}:
         flash(t("msg_bad_payment"), "error")
         return redirect(url_for("home", lang=get_lang()))
+    user_id = get_current_user_id()
+    if user_id <= 0:
+        flash(t("msg_auth_required"), "error")
+        return redirect(url_for("login_page", lang=get_lang()))
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         row = conn.execute(
             """
             SELECT * FROM payment_requests
-            WHERE request_kind = ? AND request_id = ?
+            WHERE request_kind = ? AND request_id = ? AND user_id = ?
             ORDER BY id DESC LIMIT 1
             """,
-            (request_kind, request_id),
+            (request_kind, request_id, user_id),
+        ).fetchone()
+        user_row = conn.execute(
+            "SELECT referral_code FROM users WHERE id = ? LIMIT 1",
+            (user_id,),
         ).fetchone()
 
         feedback_row = conn.execute(
@@ -3393,6 +3715,7 @@ def payment_page(request_kind: str, request_id: int):
     return render_template(
         "payment.html",
         row=row,
+        current_user_referral_code=(str(user_row["referral_code"]) if user_row else ""),
         payment_link=PAYMENT_LINK,
         payment_provider=PAYMENT_PROVIDER,
         stripe_enabled=stripe_enabled,
@@ -3408,11 +3731,31 @@ def payment_page(request_kind: str, request_id: int):
     )
 
 
+@app.post("/payment/apply-discount/<request_kind>/<int:request_id>")
+def payment_apply_discount(request_kind: str, request_id: int):
+    if request_kind not in {"coffee", "card"}:
+        flash(t("msg_bad_payment"), "error")
+        return redirect(url_for("home", lang=get_lang()))
+    user_id = get_current_user_id()
+    if user_id <= 0:
+        flash(t("msg_auth_required"), "error")
+        return redirect(url_for("login_page", lang=get_lang()))
+
+    code = request.form.get("discount_code", "").strip()
+    ok, message = apply_discount_code_to_payment(request_kind, request_id, code, user_id)
+    flash(message, "ok" if ok else "error")
+    return redirect(url_for("payment_page", request_kind=request_kind, request_id=request_id, lang=get_lang()))
+
+
 @app.post("/payment/checkout/<request_kind>/<int:request_id>")
 def start_checkout(request_kind: str, request_id: int):
     if request_kind not in {"coffee", "card"}:
         flash(t("msg_bad_payment"), "error")
         return redirect(url_for("home", lang=get_lang()))
+    user_id = get_current_user_id()
+    if user_id <= 0:
+        flash(t("msg_auth_required"), "error")
+        return redirect(url_for("login_page", lang=get_lang()))
     if PAYMENT_PROVIDER != "stripe" or not STRIPE_SECRET_KEY:
         flash("Ödeme sağlayıcısı yapılandırılmamış.", "error")
         return redirect(url_for("payment_page", request_kind=request_kind, request_id=request_id, lang=get_lang()))
@@ -3426,10 +3769,10 @@ def start_checkout(request_kind: str, request_id: int):
             """
             SELECT id, amount, currency, status
             FROM payment_requests
-            WHERE request_kind = ? AND request_id = ?
+            WHERE request_kind = ? AND request_id = ? AND user_id = ?
             ORDER BY id DESC LIMIT 1
             """,
-            (request_kind, request_id),
+            (request_kind, request_id, user_id),
         ).fetchone()
     if row is None:
         flash(t("msg_no_payment"), "error")
@@ -3518,6 +3861,7 @@ def stripe_webhook():
                         f"UPDATE {table_name} SET paid = 1 WHERE id = ?",
                         (request_id,),
                     )
+                consume_discount_usage_if_needed(request_kind, request_id)
     return {"ok": True}
 
 
@@ -4637,6 +4981,104 @@ def fetch_admin_summary() -> dict[str, int]:
     }
 
 
+def fetch_admin_coupons() -> list[sqlite3.Row]:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            """
+            SELECT id, code, label, discount_kind, discount_value, max_uses, used_count, first_only, active, created_at, updated_at
+            FROM coupons
+            ORDER BY id DESC
+            LIMIT 200
+            """
+        ).fetchall()
+    return rows
+
+
+@app.post("/admin/coupons/create")
+def admin_create_coupon():
+    if not admin_required():
+        flash("Bu alan için admin girişi gerekli.", "error")
+        return redirect(url_for("admin"))
+
+    code = normalize_discount_code(request.form.get("code", ""))
+    label = request.form.get("label", "").strip()
+    discount_kind = request.form.get("discount_kind", "percent").strip().lower()
+    try:
+        discount_value = int(request.form.get("discount_value", "0"))
+    except ValueError:
+        discount_value = 0
+    try:
+        max_uses = int(request.form.get("max_uses", "0"))
+    except ValueError:
+        max_uses = 0
+    first_only = 1 if request.form.get("first_only") else 0
+    active = 1 if request.form.get("active", "1").strip() == "1" else 0
+
+    if not code or len(code) < 3:
+        flash("Kupon kodu en az 3 karakter olmalı.", "error")
+        return redirect(url_for("admin"))
+    if discount_kind not in {"percent", "fixed"}:
+        flash("İndirim türü geçersiz.", "error")
+        return redirect(url_for("admin"))
+    if discount_value <= 0:
+        flash("İndirim değeri 0'dan büyük olmalı.", "error")
+        return redirect(url_for("admin"))
+    if discount_kind == "percent" and discount_value > 90:
+        flash("Yüzde indirim en fazla %90 olabilir.", "error")
+        return redirect(url_for("admin"))
+    if max_uses < 0:
+        flash("Maksimum kullanım negatif olamaz.", "error")
+        return redirect(url_for("admin"))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        exists = conn.execute(
+            "SELECT 1 FROM coupons WHERE lower(code) = lower(?) LIMIT 1",
+            (code,),
+        ).fetchone()
+        if exists:
+            flash("Bu kupon kodu zaten var.", "error")
+            return redirect(url_for("admin"))
+        conn.execute(
+            """
+            INSERT INTO coupons (code, label, discount_kind, discount_value, max_uses, used_count, first_only, active, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
+            """,
+            (
+                code,
+                label,
+                discount_kind,
+                int(discount_value),
+                int(max_uses),
+                int(first_only),
+                int(active),
+                datetime.utcnow().isoformat(),
+                datetime.utcnow().isoformat(),
+            ),
+        )
+    flash("Kupon oluşturuldu.", "ok")
+    return redirect(url_for("admin"))
+
+
+@app.post("/admin/coupons/toggle/<int:coupon_id>")
+def admin_toggle_coupon(coupon_id: int):
+    if not admin_required():
+        flash("Bu alan için admin girişi gerekli.", "error")
+        return redirect(url_for("admin"))
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute("SELECT active FROM coupons WHERE id = ? LIMIT 1", (int(coupon_id),)).fetchone()
+        if row is None:
+            flash("Kupon bulunamadı.", "error")
+            return redirect(url_for("admin"))
+        next_active = 0 if int(row[0] or 0) == 1 else 1
+        conn.execute(
+            "UPDATE coupons SET active = ?, updated_at = ? WHERE id = ?",
+            (next_active, datetime.utcnow().isoformat(), int(coupon_id)),
+        )
+    flash("Kupon durumu güncellendi.", "ok")
+    return redirect(url_for("admin"))
+
+
 @app.get("/admin/export.csv")
 def admin_export_csv():
     if not admin_required():
@@ -4736,6 +5178,7 @@ def admin():
     coffee_rows, card_rows, payment_rows = fetch_filtered_admin_data(filters)
     reading_audit_rows = fetch_reading_audit_rows(filters)
     summary = fetch_admin_summary()
+    coupons = fetch_admin_coupons()
 
     coffee_was = [
         {
@@ -4876,6 +5319,7 @@ def admin():
         overdue_rows=overdue_rows,
         filters=filters,
         summary=summary,
+        coupons=coupons,
     )
 
 

@@ -163,6 +163,68 @@
       </section>
 
       <section class="card">
+        <h2>Kupon Sistemi</h2>
+        <form action="/admin/coupons/create" method="post" class="form-grid compact">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+          <label>Kod<input type="text" name="code" maxlength="32" placeholder="BAHAR25" required /></label>
+          <label>Açıklama<input type="text" name="label" maxlength="80" placeholder="İlkbahar Kampanyası" /></label>
+          <label>
+            Tür
+            <select name="discount_kind">
+              <option value="percent">Yüzde (%)</option>
+              <option value="fixed">Sabit (para)</option>
+            </select>
+          </label>
+          <label>Değer<input type="number" name="discount_value" min="1" max="9999" value="10" required /></label>
+          <label>Maks Kullanım (0=sınırsız)<input type="number" name="max_uses" min="0" value="0" /></label>
+          <label><input type="checkbox" name="first_only" value="1" /> Sadece ilk fal</label>
+          <label><input type="checkbox" name="active" value="1" checked /> Aktif</label>
+          <button type="submit">Kupon Ekle</button>
+        </form>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Kod</th>
+                <th>Açıklama</th>
+                <th>Tür</th>
+                <th>Değer</th>
+                <th>Kullanım</th>
+                <th>İlk Fal</th>
+                <th>Durum</th>
+                <th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for cp in coupons %}
+              <tr>
+                <td>{{ cp['id'] }}</td>
+                <td><strong>{{ cp['code'] }}</strong></td>
+                <td>{{ cp['label'] }}</td>
+                <td>{{ cp['discount_kind'] }}</td>
+                <td>{{ cp['discount_value'] }}</td>
+                <td>{{ cp['used_count'] }} / {% if cp['max_uses'] > 0 %}{{ cp['max_uses'] }}{% else %}∞{% endif %}</td>
+                <td>{% if cp['first_only'] == 1 %}Evet{% else %}Hayır{% endif %}</td>
+                <td>{% if cp['active'] == 1 %}Aktif{% else %}Pasif{% endif %}</td>
+                <td>
+                  <form action="/admin/coupons/toggle/{{ cp['id'] }}" method="post">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit">{% if cp['active'] == 1 %}Pasif Yap{% else %}Aktif Yap{% endif %}</button>
+                  </form>
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="9">Henüz kupon yok.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
         <h2>Operasyon Paneli</h2>
         <div class="table-wrap">
           <table>

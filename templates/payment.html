@@ -37,8 +37,23 @@
         <h2>Ödeme Bilgisi</h2>
         <p>Ad Soyad: {{ row['full_name'] }}</p>
         <p>Telefon: {{ row['phone'] }}</p>
-        <p>Tutar: {{ row['amount'] }} {{ row['currency'] }}</p>
+        <p>Normal Tutar: {{ row['base_amount'] if row['base_amount'] else row['amount'] }} {{ row['currency'] }}</p>
+        {% if row['discount_amount'] and row['discount_amount'] > 0 %}
+        <p>İndirim: -{{ row['discount_amount'] }} {{ row['currency'] }}{% if row['discount_label'] %} ({{ row['discount_label'] }}){% endif %}</p>
+        {% endif %}
+        <p><strong>Ödenecek Tutar: {{ row['amount'] }} {{ row['currency'] }}</strong></p>
         <p>Falcı: {{ reader_name }}</p>
+        <form action="{{ url_for('payment_apply_discount', request_kind=row['request_kind'], request_id=row['request_id'], lang=lang) }}" method="post" class="form-grid compact" style="margin-top:10px;">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+          <label class="full">
+            Kampanya / Referans Kodu
+            <input type="text" name="discount_code" maxlength="32" placeholder="Örn: BAHAR25 veya arkadaş kodu" />
+          </label>
+          <button type="submit">Kodu Uygula</button>
+        </form>
+        {% if current_user_referral_code %}
+        <p class="selection">Senin referans kodun: <strong>{{ current_user_referral_code }}</strong></p>
+        {% endif %}
         {% if row['status'] == 'paid' %}
         <p class="selection"><strong>Ödeme Durumu:</strong> Ödendi</p>
         {% elif stripe_enabled %}

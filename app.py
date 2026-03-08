@@ -13,6 +13,7 @@ import io
 import uuid
 import secrets
 import smtplib
+import difflib
 from datetime import datetime, timedelta
 from email.message import EmailMessage
 from pathlib import Path
@@ -1088,8 +1089,30 @@ def init_db() -> None:
         )
         conn.execute(
             """
+            CREATE TABLE IF NOT EXISTS reading_revisions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                request_kind TEXT NOT NULL,
+                request_id INTEGER NOT NULL,
+                reading_type TEXT NOT NULL DEFAULT '',
+                editor TEXT NOT NULL DEFAULT '',
+                edited_at TEXT NOT NULL,
+                old_text TEXT NOT NULL DEFAULT '',
+                new_text TEXT NOT NULL DEFAULT '',
+                change_summary TEXT NOT NULL DEFAULT '',
+                change_patch TEXT NOT NULL DEFAULT ''
+            )
+            """
+        )
+        conn.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_reading_audit_request
             ON reading_audit(request_kind, request_id, created_at)
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_reading_revisions_request_time
+            ON reading_revisions(request_kind, request_id, edited_at)
             """
         )
         conn.execute(
@@ -1327,6 +1350,69 @@ def log_reading_event(
                 float(cost_estimate or 0.0),
                 quality_flags or "",
                 datetime.utcnow().isoformat(),
+            ),
+        )
+
+
+def build_revision_change_summary(old_text: str, new_text: str) -> str:
+    old_clean = old_text or ""
+    new_clean = new_text or ""
+    old_lines = old_clean.splitlines()
+    new_lines = new_clean.splitlines()
+    line_diff = list(difflib.ndiff(old_lines, new_lines))
+    added_lines = sum(1 for ln in line_diff if ln.startswith("+ "))
+    removed_lines = sum(1 for ln in line_diff if ln.startswith("- "))
+    char_delta = len(new_clean) - len(old_clean)
+    return (
+        f"Satır +{added_lines} / -{removed_lines}, "
+        f"karakter {len(old_clean)} -> {len(new_clean)} ({char_delta:+d})"
+    )
+
+
+def build_revision_patch(old_text: str, new_text: str) -> str:
+    old_lines = (old_text or "").splitlines()
+    new_lines = (new_text or "").splitlines()
+    patch_lines = difflib.unified_diff(
+        old_lines,
+        new_lines,
+        fromfile="onceki_surum",
+        tofile="yeni_surum",
+        lineterm="",
+        n=2,
+    )
+    patch = "\n".join(patch_lines).strip()
+    return patch[:60000]
+
+
+def log_reading_revision(
+    request_kind: str,
+    request_id: int,
+    reading_type: str,
+    editor: str,
+    old_text: str,
+    new_text: str,
+) -> None:
+    summary = build_revision_change_summary(old_text, new_text)
+    patch = build_revision_patch(old_text, new_text)
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            """
+            INSERT INTO reading_revisions (
+                request_kind, request_id, reading_type, editor, edited_at,
+                old_text, new_text, change_summary, change_patch
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                request_kind,
+                int(request_id),
+                (reading_type or "").strip(),
+                (editor or "").strip(),
+                datetime.utcnow().isoformat(),
+                old_text or "",
+                new_text or "",
+                summary,
+                patch,
             ),
         )
 
@@ -3383,6 +3469,13 @@ def delete_request_with_related(request_kind: str, request_id: int) -> tuple[boo
             ).rowcount
         except sqlite3.OperationalError:
             deleted_audit = 0
+        try:
+            deleted_revisions = conn.execute(
+                "DELETE FROM reading_revisions WHERE request_kind = ? AND request_id = ?",
+                (request_kind, request_id),
+            ).rowcount
+        except sqlite3.OperationalError:
+            deleted_revisions = 0
         deleted_request = conn.execute(
             f"DELETE FROM {table_name} WHERE id = ?",
             (request_id,),
@@ -3390,7 +3483,7 @@ def delete_request_with_related(request_kind: str, request_id: int) -> tuple[boo
 
     return (
         True,
-        f"{label} falı kaydı silindi. Talep: {deleted_request}, Ödeme: {deleted_payments}, Değerlendirme: {deleted_feedback}, Log: {deleted_audit}",
+        f"{label} falı kaydı silindi. Talep: {deleted_request}, Ödeme: {deleted_payments}, Değerlendirme: {deleted_feedback}, Log: {deleted_audit}, Revizyon: {deleted_revisions}",
     )
 
 
@@ -3847,10 +3940,11 @@ def admin_save_reading(request_kind: str, request_id: int):
     customer_name = ""
     reader_name = ""
     reading_type = "coffee" if request_kind == "coffee" else "tarot"
+    old_reading = ""
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         row = conn.execute(
-            f"SELECT id, full_name, reader_name, question, {'\"\" AS selected_cards' if request_kind == 'coffee' else 'selected_cards'}, {'\"coffee\" AS reading_type' if request_kind == 'coffee' else 'reading_type'} FROM {table_name} WHERE id = ?",
+            f"SELECT id, full_name, reader_name, question, ai_reading, {'\"\" AS selected_cards' if request_kind == 'coffee' else 'selected_cards'}, {'\"coffee\" AS reading_type' if request_kind == 'coffee' else 'reading_type'} FROM {table_name} WHERE id = ?",
             (request_id,),
         ).fetchone()
         if row is None:
@@ -3859,6 +3953,7 @@ def admin_save_reading(request_kind: str, request_id: int):
         customer_name = str(row["full_name"] or "")
         reader_name = str(row["reader_name"] or "")
         reading_type = str(row["reading_type"] or reading_type)
+        old_reading = str(row["ai_reading"] or "")
         conn.execute(
             f"""
             UPDATE {table_name}
@@ -3870,6 +3965,15 @@ def admin_save_reading(request_kind: str, request_id: int):
             WHERE id = ?
             """,
             (edited, request_id),
+        )
+    if edited != old_reading:
+        log_reading_revision(
+            request_kind=request_kind,
+            request_id=request_id,
+            reading_type=reading_type,
+            editor=get_admin_actor(),
+            old_text=old_reading,
+            new_text=edited,
         )
     token_input, token_output, token_total, _, quality_flags = estimate_ai_observability(
         reading_type=reading_type,
@@ -3911,6 +4015,7 @@ def admin_edit_reading(request_kind: str, request_id: int):
         return redirect(url_for("admin"))
 
     table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"
+    revisions: list[sqlite3.Row] = []
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         if request_kind == "coffee":
@@ -3922,6 +4027,19 @@ def admin_edit_reading(request_kind: str, request_id: int):
                 """,
                 (request_id,),
             ).fetchone()
+        try:
+            revisions = conn.execute(
+                """
+                SELECT id, editor, edited_at, change_summary, old_text, new_text, change_patch
+                FROM reading_revisions
+                WHERE request_kind = ? AND request_id = ?
+                ORDER BY id DESC
+                LIMIT 50
+                """,
+                (request_kind, request_id),
+            ).fetchall()
+        except sqlite3.OperationalError:
+            revisions = []
         else:
             row = conn.execute(
                 f"""
@@ -3936,7 +4054,7 @@ def admin_edit_reading(request_kind: str, request_id: int):
         flash("Talep bulunamadı.", "error")
         return redirect(url_for("admin"))
 
-    return render_template("admin_edit_reading.html", request_kind=request_kind, row=row)
+    return render_template("admin_edit_reading.html", request_kind=request_kind, row=row, revisions=revisions)
 
 
 def parse_admin_filters() -> dict[str, str]:

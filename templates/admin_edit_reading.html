@@ -56,6 +56,56 @@
       </section>
 
       <section class="card">
+        <h2>Yorum Revizyon Geçmişi</h2>
+        {% if revisions and revisions|length > 0 %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Düzenleyen</th>
+                <th>Tarih/Saat</th>
+                <th>Ne Değişti</th>
+                <th>Detay</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for rev in revisions %}
+              <tr>
+                <td>{{ rev['id'] }}</td>
+                <td>{{ rev['editor'] }}</td>
+                <td>{{ rev['edited_at'] }}</td>
+                <td>{{ rev['change_summary'] }}</td>
+                <td>
+                  <details>
+                    <summary>Farkı Gör</summary>
+                    <div style="display:grid; gap:10px; margin-top:8px;">
+                      <div>
+                        <strong>Önceki Sürüm</strong>
+                        <pre style="white-space:pre-wrap;">{{ rev['old_text'] }}</pre>
+                      </div>
+                      <div>
+                        <strong>Yeni Sürüm</strong>
+                        <pre style="white-space:pre-wrap;">{{ rev['new_text'] }}</pre>
+                      </div>
+                      <div>
+                        <strong>Satır Farkı (diff)</strong>
+                        <pre style="white-space:pre-wrap;">{{ rev['change_patch'] }}</pre>
+                      </div>
+                    </div>
+                  </details>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p>Henüz revizyon kaydı yok.</p>
+        {% endif %}
+      </section>
+
+      <section class="card">
         <h2>İşlemler</h2>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <form action="/admin/regenerate-reading/{{ request_kind }}/{{ row['id'] }}" method="post">

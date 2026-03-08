@@ -63,7 +63,6 @@
       <section class="card">
         <h2>{{ t('katina_reader_slogan') }}</h2>
         <p class="reading-subtitle">{{ t('choose_reader_title') }}</p>
-        <p>{{ t('choose_reader_desc') }}</p>
         <div class="reader-grid">
           {% for reader in readers %}
           <a class="reader-card" href="{{ url_for('katina_reader_page', lang=lang, reader_id=reader['id']) }}" target="_blank" rel="noopener">

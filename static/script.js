@@ -375,7 +375,7 @@ function initHomeHeroSlider() {
   const FOG_OUT_MS = 920;
   const FOG_IN_MS = 920;
   const FALLBACK_MS = 9000;
-  const VIDEO_RATE = 0.7;
+  const VIDEO_RATE = 0.85;
   let currentIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));
   if (currentIndex < 0) {
     currentIndex = 0;

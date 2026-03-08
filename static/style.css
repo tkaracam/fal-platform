@@ -751,6 +751,28 @@ body.nav-open {
   z-index: 1;
 }
 
+.home-slide-label {
+  position: absolute;
+  left: 18px;
+  top: 16px;
+  z-index: 7;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  background: rgba(255, 255, 255, 0.36);
+  color: #20384d;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(0.86rem, 1.35vw, 1rem);
+  font-weight: 700;
+  line-height: 1.28;
+  box-shadow: 0 8px 20px rgba(20, 35, 52, 0.14);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  pointer-events: none;
+  max-width: min(72%, 520px);
+}
+
 .home-slide.is-active {
   opacity: 1;
   filter: blur(0) saturate(1) brightness(1);
@@ -1448,6 +1470,13 @@ a { color: #e6655e; }
     right: 10px;
     bottom: 10px;
     width: clamp(41px, 12.8vw, 62px);
+  }
+  .home-slide-label {
+    left: 10px;
+    top: 10px;
+    max-width: calc(100% - 20px);
+    padding: 7px 10px;
+    font-size: 0.82rem;
   }
   .home-info-rotator {
     min-height: 110px;

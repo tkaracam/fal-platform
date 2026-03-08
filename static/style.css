@@ -650,9 +650,9 @@ body.nav-open {
   width: 100%;
   height: clamp(280px, 36vw, 430px);
   border-radius: 14px;
-  border: 1px solid #d8e7f5;
-  background: #0f141a;
-  box-shadow: 0 8px 20px rgba(34, 62, 92, 0.08);
+  border: 1px solid rgba(216, 231, 245, 0.42);
+  background: transparent;
+  box-shadow: none;
   overflow: hidden;
 }
 
@@ -740,14 +740,14 @@ body.nav-open {
   height: 100%;
   object-fit: cover;
   display: block;
-  background: #0f141a;
+  background: transparent;
 }
 
 .home-slide::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(8, 12, 16, 0.66), rgba(8, 12, 16, 0.2) 52%, rgba(8, 12, 16, 0.08));
+  background: transparent;
   z-index: 1;
 }
 
@@ -759,16 +759,14 @@ body.nav-open {
   margin: 0;
   padding: 8px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.52);
-  background: rgba(255, 255, 255, 0.36);
-  color: #20384d;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
   font-family: "Space Grotesk", sans-serif;
   font-size: clamp(0.78rem, 1.15vw, 0.92rem);
   font-weight: 700;
   line-height: 1.28;
-  box-shadow: 0 8px 20px rgba(20, 35, 52, 0.14);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.6);
   pointer-events: none;
   max-width: min(76%, 640px);
   white-space: pre-line;

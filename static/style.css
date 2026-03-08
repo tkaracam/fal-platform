@@ -763,14 +763,15 @@ body.nav-open {
   background: rgba(255, 255, 255, 0.36);
   color: #20384d;
   font-family: "Space Grotesk", sans-serif;
-  font-size: clamp(0.86rem, 1.35vw, 1rem);
+  font-size: clamp(0.78rem, 1.15vw, 0.92rem);
   font-weight: 700;
   line-height: 1.28;
   box-shadow: 0 8px 20px rgba(20, 35, 52, 0.14);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   pointer-events: none;
-  max-width: min(72%, 520px);
+  max-width: min(76%, 640px);
+  white-space: pre-line;
 }
 
 .home-slide.is-active {
@@ -1476,7 +1477,7 @@ a { color: #e6655e; }
     top: 10px;
     max-width: calc(100% - 20px);
     padding: 7px 10px;
-    font-size: 0.82rem;
+    font-size: 0.74rem;
   }
   .home-info-rotator {
     min-height: 110px;

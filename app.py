@@ -46,6 +46,11 @@ app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = os.getenv("SESSION_COOKIE_SECURE", "1").strip() == "1"
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(seconds=int(os.getenv("SESSION_TTL_SECONDS", "86400")))
+SESSION_IDLE_TIMEOUT_SECONDS = max(60, int(os.getenv("SESSION_IDLE_TIMEOUT_SECONDS", "1800")))
+USER_LOGIN_WINDOW_SECONDS = max(60, int(os.getenv("USER_LOGIN_WINDOW_SECONDS", "900")))
+USER_LOGIN_IP_MAX_ATTEMPTS = max(1, int(os.getenv("USER_LOGIN_IP_MAX_ATTEMPTS", "8")))
+USER_LOGIN_USER_MAX_ATTEMPTS = max(1, int(os.getenv("USER_LOGIN_USER_MAX_ATTEMPTS", "10")))
+USER_LOGIN_COMBO_MAX_ATTEMPTS = max(1, int(os.getenv("USER_LOGIN_COMBO_MAX_ATTEMPTS", "6")))
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Admin@2026")
@@ -222,6 +227,7 @@ TRANSLATIONS = {
         "msg_profile_bad_password": "Şifre en az 4 karakter olmalı ve tekrar alanı ile aynı olmalı.",
         "msg_csrf_invalid": "Güvenlik doğrulaması başarısız. Lütfen sayfayı yenileyip tekrar deneyin.",
         "msg_too_many_attempts": "Çok fazla hatalı deneme yapıldı. Lütfen {minutes} dakika sonra tekrar deneyin.",
+        "msg_session_expired": "Oturum süresi doldu. Lütfen tekrar giriş yapın.",
         "agb_title": "AGB ve Yasal Bilgilendirme",
         "agb_desc": "Bu sayfa kullanım koşulları ve görsel lisans bilgilerini içerir.",
         "agb_photo_license": "Falcı fotoğrafları Pexels ücretsiz lisansı ile kullanılmaktadır.",
@@ -444,6 +450,7 @@ TRANSLATIONS = {
         "msg_profile_bad_password": "Password must be at least 4 characters and match the repeat field.",
         "msg_csrf_invalid": "Security verification failed. Please refresh the page and try again.",
         "msg_too_many_attempts": "Too many failed attempts. Please try again in {minutes} minutes.",
+        "msg_session_expired": "Your session has timed out. Please sign in again.",
         "agb_title": "AGB and Legal Information",
         "agb_desc": "This page contains terms of use and image license information.",
         "agb_photo_license": "Reader photos are used under the free Pexels license.",
@@ -666,6 +673,7 @@ TRANSLATIONS = {
         "msg_profile_bad_password": "Passwort muss mindestens 4 Zeichen haben und mit der Wiederholung übereinstimmen.",
         "msg_csrf_invalid": "Sicherheitsprüfung fehlgeschlagen. Bitte Seite neu laden und erneut versuchen.",
         "msg_too_many_attempts": "Zu viele fehlgeschlagene Versuche. Bitte in {minutes} Minuten erneut versuchen.",
+        "msg_session_expired": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
         "agb_title": "AGB und Rechtliche Hinweise",
         "agb_desc": "Diese Seite enthält Nutzungsbedingungen und Bildlizenz-Informationen.",
         "agb_photo_license": "Die Fotos werden unter der kostenlosen Pexels-Lizenz genutzt.",
@@ -2505,10 +2513,27 @@ def csrf_token() -> str:
 
 
 @app.before_request
-def enforce_csrf_on_post():
+def enforce_request_security():
+    endpoint = (request.endpoint or "").strip()
+    if endpoint != "static" and SESSION_IDLE_TIMEOUT_SECONDS > 0 and (user_logged_in() or admin_required()):
+        now_ts = int(datetime.utcnow().timestamp())
+        try:
+            last_activity = int(session.get("last_activity_at") or 0)
+        except (TypeError, ValueError):
+            last_activity = 0
+        if last_activity and (now_ts - last_activity) > SESSION_IDLE_TIMEOUT_SECONDS:
+            was_admin = admin_required()
+            session.clear()
+            flash(t("msg_session_expired"), "error")
+            if was_admin:
+                return redirect(url_for("admin"))
+            return redirect(url_for("login_page", lang=get_lang()))
+        session["last_activity_at"] = now_ts
+        session.permanent = True
+
     if request.method != "POST":
         return None
-    if request.endpoint in {"stripe_webhook"}:
+    if endpoint in {"stripe_webhook"}:
         return None
     token_form = request.form.get("_csrf_token", "")
     token_session = str(session.get("_csrf_token", ""))
@@ -2517,7 +2542,7 @@ def enforce_csrf_on_post():
 
     flash(t("msg_csrf_invalid"), "error")
     fallback = request.referrer or url_for("home", lang=get_lang())
-    if request.endpoint in {"admin_login", "admin_logout", "mark_paid"}:
+    if endpoint in {"admin_login", "admin_logout", "mark_paid"}:
         fallback = url_for("admin")
     return redirect(fallback)
 
@@ -2646,11 +2671,18 @@ def login_page():
 @app.post("/login")
 def login_submit():
     ip = get_client_ip()
-    if is_auth_rate_limited("user_login", ip, max_attempts=8, window_seconds=15 * 60):
-        flash(t("msg_too_many_attempts", minutes=15), "error")
+    username = request.form.get("username", "").strip().lower()
+    lock_minutes = max(1, (USER_LOGIN_WINDOW_SECONDS + 59) // 60)
+    if is_auth_rate_limited("user_login", ip, max_attempts=USER_LOGIN_IP_MAX_ATTEMPTS, window_seconds=USER_LOGIN_WINDOW_SECONDS):
+        flash(t("msg_too_many_attempts", minutes=lock_minutes), "error")
+        return redirect(url_for("login_page", lang=get_lang()))
+    if is_auth_rate_limited("user_login_user", username or "-", max_attempts=USER_LOGIN_USER_MAX_ATTEMPTS, window_seconds=USER_LOGIN_WINDOW_SECONDS):
+        flash(t("msg_too_many_attempts", minutes=lock_minutes), "error")
+        return redirect(url_for("login_page", lang=get_lang()))
+    if is_auth_rate_limited("user_login_combo", f"{ip}|{username}", max_attempts=USER_LOGIN_COMBO_MAX_ATTEMPTS, window_seconds=USER_LOGIN_WINDOW_SECONDS):
+        flash(t("msg_too_many_attempts", minutes=lock_minutes), "error")
         return redirect(url_for("login_page", lang=get_lang()))
 
-    username = request.form.get("username", "").strip().lower()
     password = request.form.get("password", "")
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
@@ -2660,11 +2692,17 @@ def login_submit():
         ).fetchone()
     if row is None or not check_password_hash(str(row["password_hash"]), password):
         record_auth_failure("user_login", ip)
+        record_auth_failure("user_login_user", username or "-")
+        record_auth_failure("user_login_combo", f"{ip}|{username}")
         flash(t("msg_login_bad"), "error")
         return redirect(url_for("login_page", lang=get_lang()))
     clear_auth_failures("user_login", ip)
+    clear_auth_failures("user_login_user", username or "-")
+    clear_auth_failures("user_login_combo", f"{ip}|{username}")
     session["user_id"] = int(row["id"])
     session["username"] = username
+    session["last_activity_at"] = int(datetime.utcnow().timestamp())
+    session.permanent = True
     flash(t("msg_login_ok"), "ok")
     return redirect(url_for("dashboard_page", lang=get_lang()))
 
@@ -3584,6 +3622,8 @@ def admin_login():
         clear_auth_failures("admin_login_combo", f"{ip}|{username}")
         session["is_admin"] = True
         session["admin_username"] = username
+        session["last_activity_at"] = int(datetime.utcnow().timestamp())
+        session.permanent = True
         return redirect(url_for("admin"))
     record_auth_failure("admin_login", ip)
     record_auth_failure("admin_login_user", username or "-")

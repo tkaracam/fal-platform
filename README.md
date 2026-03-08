@@ -34,3 +34,19 @@ python3 app.py
 
 Not: `PAYMENT_LINK` bos birakilirsa odeme sayfasinda uyari gorunur.
 deploy test Di. 24 Feb. 2026 21:56:08 CET
+
+## Veritabani Yedekleme
+
+Manuel yedek:
+
+```bash
+python3 scripts/db_backup.py --retain-days 14 --keep-min 14
+```
+
+Geri yukleme (son yedek):
+
+```bash
+python3 scripts/db_restore.py --yes
+```
+
+Detayli operasyon adimlari icin: `RUNBOOK.md` -> "11) Veritabani Yedekleme ve Geri Yukleme".

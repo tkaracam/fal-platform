@@ -93,3 +93,71 @@ Bu dokuman canli sistemde acil durumlarda hizli hareket etmek icin hazirlandi.
 6. Canli kartla dusuk tutarli 1 test odeme yapildi mi?
 7. Admin panelde odeme kaydi `paid` oldu mu?
 8. Basarisiz odeme denemesinde sistem guvenli sekilde geri donuyor mu?
+
+## 11) Veritabani Yedekleme ve Geri Yukleme (Kalici Plan)
+
+Bu proje icin yedekleme scriptleri:
+
+- `scripts/db_backup.py` -> sikistirilmis `.sqlite3.gz` yedek alir
+- `scripts/db_restore.py` -> yedekten geri yukleme yapar
+
+### 11.1 Manuel yedek alma
+
+```bash
+cd /Users/Tolga/Documents/GitHub/fal-platform
+python3 scripts/db_backup.py --retain-days 14 --keep-min 14
+```
+
+Varsayilanlar:
+
+- DB: `DATABASE_PATH` yoksa `/var/data/data.db` (varsa), degilse local `data.db`
+- Yedek klasoru: `/var/data/backups` (render), localde `./backups`
+
+### 11.2 Otomatik gunluk yedek (Render Cron Job)
+
+Render Dashboard -> `New` -> `Cron Job`
+
+- Command:
+  - `python3 scripts/db_backup.py --retain-days 14 --keep-min 14`
+- Schedule:
+  - gunde 1 kez (onerilen: gece saatleri)
+- Environment:
+  - `DATABASE_PATH=/var/data/data.db`
+  - (opsiyonel) `BACKUP_DIR=/var/data/backups`
+
+Bu sekilde her gun yedek alinir, 14 gunden eski yedekler otomatik temizlenir
+(en az son 14 yedek korunur).
+
+### 11.3 Yedekten geri yukleme
+
+Son yedege don:
+
+```bash
+cd /Users/Tolga/Documents/GitHub/fal-platform
+python3 scripts/db_restore.py --yes
+```
+
+Belirli bir yedekten don:
+
+```bash
+cd /Users/Tolga/Documents/GitHub/fal-platform
+python3 scripts/db_restore.py --backup-file /var/data/backups/data-YYYYMMDD-HHMMSS.sqlite3.gz --yes
+```
+
+Notlar:
+
+- Geri yuklemeden once mevcut DB'nin bir kopyasi otomatik alinir:
+  - `/var/data/backups/pre-restore-YYYYMMDD-HHMMSS.sqlite3`
+- Geri yuklenen DB icin `PRAGMA integrity_check` yapilir; bozuk yedek kabul edilmez.
+
+### 11.4 Hizli dogrulama
+
+```bash
+ls -lah /var/data/backups | tail -n 20
+```
+
+Yedek dosyalari icin beklenen uzantilar:
+
+- `.sqlite3.gz`
+- `.sqlite3.gz.sha256`
+- `.sqlite3.gz.json`

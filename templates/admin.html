@@ -44,6 +44,17 @@
       .score-badge.good { background: #dbeafe; color: #1d4ed8; }
       .score-badge.fair { background: #fef3c7; color: #92400e; }
       .score-badge.weak { background: #fee2e2; color: #991b1b; }
+      .bulk-panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: end;
+      }
+      .bulk-help {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.88rem;
+      }
     </style>
   </head>
   <body>
@@ -183,6 +194,7 @@
               <option value="all" {% if filters.audit_action == 'all' %}selected{% endif %}>Tümü</option>
               <option value="generated" {% if filters.audit_action == 'generated' %}selected{% endif %}>generated</option>
               <option value="regenerated" {% if filters.audit_action == 'regenerated' %}selected{% endif %}>regenerated</option>
+              <option value="approved" {% if filters.audit_action == 'approved' %}selected{% endif %}>approved</option>
               <option value="edited" {% if filters.audit_action == 'edited' %}selected{% endif %}>edited</option>
               <option value="published" {% if filters.audit_action == 'published' %}selected{% endif %}>published</option>
               <option value="mail_sent" {% if filters.audit_action == 'mail_sent' %}selected{% endif %}>mail_sent</option>
@@ -209,10 +221,25 @@
 
       <section class="card">
         <h2>Kahve Falı Talepleri</h2>
+        <form id="bulk-action-form" class="bulk-panel" action="/admin/bulk-action" method="post" onsubmit="return prepareBulkActionSubmit(event);">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+          <label>
+            Toplu İşlem
+            <select name="bulk_action" id="bulk-action-select" required>
+              <option value="regenerate">Yorumla</option>
+              <option value="approve">Onayla</option>
+              <option value="publish">Gönder</option>
+              <option value="delete">Sil</option>
+            </select>
+          </label>
+          <button type="submit">Seçililere Uygula</button>
+          <p class="bulk-help">Kahve + Kart tablolarından birden fazla satır seçip toplu işlem uygulayabilirsin.</p>
+        </form>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
+                <th><input type="checkbox" data-bulk-master="coffee" title="Tüm kahve kayıtlarını seç" /></th>
                 <th>ID</th>
                 <th>Ad</th>
                 <th>Telefon</th>
@@ -232,6 +259,7 @@
             <tbody>
               {% for row in coffee_rows %}
               <tr>
+                <td><input type="checkbox" class="bulk-item" data-kind="coffee" value="coffee:{{ row['id'] }}" /></td>
                 <td>{{ row['id'] }}</td>
                 <td>{{ row['full_name'] }}</td>
                 <td>{{ row['phone'] }}</td>
@@ -320,6 +348,7 @@
           <table>
             <thead>
               <tr>
+                <th><input type="checkbox" data-bulk-master="card" title="Tüm kart kayıtlarını seç" /></th>
                 <th>ID</th>
                 <th>Tür</th>
                 <th>Ad</th>
@@ -339,6 +368,7 @@
             <tbody>
               {% for row in card_rows %}
               <tr>
+                <td><input type="checkbox" class="bulk-item" data-kind="card" value="card:{{ row['id'] }}" /></td>
                 <td>{{ row['id'] }}</td>
                 <td>{{ row['reading_type'] }}</td>
                 <td>{{ row['full_name'] }}</td>
@@ -557,7 +587,65 @@
         });
       }
 
+      function syncMasterCheckbox(kind) {
+        const master = document.querySelector(`[data-bulk-master="${kind}"]`);
+        const items = Array.from(document.querySelectorAll(`.bulk-item[data-kind="${kind}"]`));
+        if (!master || items.length === 0) return;
+        const checkedCount = items.filter((item) => item.checked).length;
+        master.checked = checkedCount > 0 && checkedCount === items.length;
+        master.indeterminate = checkedCount > 0 && checkedCount < items.length;
+      }
+
+      function initBulkSelectors() {
+        document.querySelectorAll("[data-bulk-master]").forEach((master) => {
+          master.addEventListener("change", () => {
+            const kind = master.dataset.bulkMaster;
+            document.querySelectorAll(`.bulk-item[data-kind="${kind}"]`).forEach((item) => {
+              item.checked = master.checked;
+            });
+            syncMasterCheckbox(kind);
+          });
+        });
+
+        document.querySelectorAll(".bulk-item").forEach((item) => {
+          item.addEventListener("change", () => {
+            syncMasterCheckbox(item.dataset.kind);
+          });
+        });
+
+        syncMasterCheckbox("coffee");
+        syncMasterCheckbox("card");
+      }
+
+      function prepareBulkActionSubmit(event) {
+        const form = event.target;
+        const selected = Array.from(document.querySelectorAll(".bulk-item:checked")).map((item) => item.value);
+        if (!selected.length) {
+          alert("Lütfen en az bir fal kaydı seçin.");
+          return false;
+        }
+
+        form.querySelectorAll('input[name="selected"]').forEach((input) => input.remove());
+        selected.forEach((value) => {
+          const hidden = document.createElement("input");
+          hidden.type = "hidden";
+          hidden.name = "selected";
+          hidden.value = value;
+          form.appendChild(hidden);
+        });
+
+        const action = (document.getElementById("bulk-action-select")?.value || "").toLowerCase();
+        if (action === "delete") {
+          return confirm("Seçili fal kayıtlarını ve ilişkili ödeme/yorum/log verilerini silmek istediğine emin misin?");
+        }
+        if (action === "publish") {
+          return confirm("Seçili yorumlar müşterilere gönderilecek. Devam etmek istiyor musun?");
+        }
+        return true;
+      }
+
       initArrivalCells();
+      initBulkSelectors();
       tickTimers();
       window.setInterval(tickTimers, 1000);
     </script>

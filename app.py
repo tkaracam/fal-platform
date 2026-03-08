@@ -3237,48 +3237,224 @@ def admin_resend_completed_email(request_kind: str, request_id: int):
     return redirect(url_for("admin"))
 
 
+def parse_bulk_selected_items(raw_items: list[str]) -> list[tuple[str, int]]:
+    selected: list[tuple[str, int]] = []
+    seen: set[tuple[str, int]] = set()
+    for raw in raw_items:
+        item = str(raw or "").strip().lower()
+        if ":" not in item:
+            continue
+        request_kind, raw_id = item.split(":", 1)
+        if request_kind not in {"coffee", "card"}:
+            continue
+        try:
+            request_id = int(raw_id)
+        except ValueError:
+            continue
+        key = (request_kind, request_id)
+        if key in seen:
+            continue
+        seen.add(key)
+        selected.append(key)
+    return selected
+
+
+def delete_request_with_related(request_kind: str, request_id: int) -> tuple[bool, str]:
+    if request_kind not in {"coffee", "card"}:
+        return False, "Geçersiz talep türü."
+    table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"
+    label = "Kahve" if request_kind == "coffee" else "Kart"
+
+    with sqlite3.connect(DB_PATH) as conn:
+        exists = conn.execute(f"SELECT id FROM {table_name} WHERE id = ?", (request_id,)).fetchone()
+        if not exists:
+            return False, f"{label} falı kaydı bulunamadı."
+
+        deleted_payments = conn.execute(
+            "DELETE FROM payment_requests WHERE request_kind = ? AND request_id = ?",
+            (request_kind, request_id),
+        ).rowcount
+        deleted_feedback = conn.execute(
+            "DELETE FROM reader_feedback WHERE request_kind = ? AND request_id = ?",
+            (request_kind, request_id),
+        ).rowcount
+        try:
+            deleted_audit = conn.execute(
+                "DELETE FROM reading_audit WHERE request_kind = ? AND request_id = ?",
+                (request_kind, request_id),
+            ).rowcount
+        except sqlite3.OperationalError:
+            deleted_audit = 0
+        deleted_request = conn.execute(
+            f"DELETE FROM {table_name} WHERE id = ?",
+            (request_id,),
+        ).rowcount
+
+    return (
+        True,
+        f"{label} falı kaydı silindi. Talep: {deleted_request}, Ödeme: {deleted_payments}, Değerlendirme: {deleted_feedback}, Log: {deleted_audit}",
+    )
+
+
+def approve_reading_request(request_kind: str, request_id: int) -> tuple[bool, str]:
+    if request_kind not in {"coffee", "card"}:
+        return False, "Geçersiz talep türü."
+    table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        if request_kind == "coffee":
+            row = conn.execute(
+                """
+                SELECT id, full_name, reader_name, question, ai_status, ai_reading
+                FROM coffee_requests
+                WHERE id = ?
+                """,
+                (request_id,),
+            ).fetchone()
+            reading_type = "coffee"
+            selected_cards = ""
+        else:
+            row = conn.execute(
+                """
+                SELECT id, full_name, reader_name, question, reading_type, selected_cards, ai_status, ai_reading
+                FROM card_requests
+                WHERE id = ?
+                """,
+                (request_id,),
+            ).fetchone()
+            reading_type = str((row["reading_type"] if row else "tarot") or "tarot")
+            selected_cards = str((row["selected_cards"] if row else "") or "")
+
+    if row is None:
+        return False, "Talep bulunamadı."
+
+    reading_text = str(row["ai_reading"] or "").strip()
+    if str(row["ai_status"] or "") != "ready" or not reading_text:
+        return False, "Yorum hazır değil. Önce yorum üretilmeli."
+
+    quality_issues = validate_reading_quality(reading_text)
+    if quality_issues:
+        return False, "Yorum kalite kontrolünden geçmedi: " + " | ".join(quality_issues)
+
+    current_status = get_current_order_status(request_kind, request_id)
+    if current_status in {"pending", "paid"}:
+        set_order_status(request_kind, request_id, "in_progress")
+
+    token_input, token_output, token_total, _, quality_flags = estimate_ai_observability(
+        reading_type=reading_type,
+        question=str(row["question"] or ""),
+        ai_reading=reading_text,
+        selected_cards_raw=selected_cards,
+        model_name=OPENAI_MODEL,
+    )
+    log_reading_event(
+        request_kind=request_kind,
+        request_id=request_id,
+        reading_type=reading_type,
+        customer_name=str(row["full_name"] or ""),
+        reader_name=str(row["reader_name"] or ""),
+        actor=get_admin_actor(),
+        action="approved",
+        ai_status="ready",
+        ai_reading="Toplu onay verildi.",
+        model_name=OPENAI_MODEL,
+        token_input=token_input,
+        token_output=token_output,
+        token_total=token_total,
+        cost_estimate=0.0,
+        quality_flags=quality_flags,
+    )
+    return True, "Yorum onaylandı."
+
+
+def publish_reading_to_customer(request_kind: str, request_id: int) -> tuple[str, str]:
+    if request_kind not in {"coffee", "card"}:
+        return "error", "Geçersiz işlem."
+    table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        select_type_sql = "'coffee' AS reading_type" if request_kind == "coffee" else "reading_type"
+        row = conn.execute(
+            f"SELECT ai_status, ai_reading, ai_published, full_name, reader_name, {select_type_sql} FROM {table_name} WHERE id = ?",
+            (request_id,),
+        ).fetchone()
+        if row is None:
+            return "error", "Talep bulunamadı."
+        if int(row["ai_published"] or 0) == 1:
+            return "skipped", "Bu yorum zaten müşteriye gönderilmiş."
+
+        reading_text = str(row["ai_reading"] or "").strip()
+        if str(row["ai_status"]) != "ready" or not reading_text:
+            return "error", "Yorum hazır değil. Önce yorum üretilmeli."
+        quality_issues = validate_reading_quality(reading_text)
+        if quality_issues:
+            return "error", "Yorum kalite kontrolünden geçmedi: " + " | ".join(quality_issues)
+
+        published_at = datetime.utcnow().isoformat()
+        published_by = get_admin_actor()
+        conn.execute(
+            f"UPDATE {table_name} SET ai_published = 1, ai_published_at = ?, ai_published_by = ? WHERE id = ?",
+            (published_at, published_by, request_id),
+        )
+
+    reading_type = "coffee" if request_kind == "coffee" else str(row["reading_type"] or "tarot")
+    log_reading_event(
+        request_kind=request_kind,
+        request_id=request_id,
+        reading_type=reading_type,
+        customer_name=str(row["full_name"] or ""),
+        reader_name=str(row["reader_name"] or ""),
+        actor=published_by,
+        action="published",
+        ai_status="ready",
+        ai_reading=reading_text,
+        model_name=OPENAI_MODEL,
+        token_input=estimate_tokens_from_text(reading_text),
+        token_output=estimate_tokens_from_text(reading_text),
+        token_total=estimate_tokens_from_text(reading_text) * 2,
+        cost_estimate=0.0,
+        quality_flags=("quality_risk" if validate_reading_quality(reading_text) else ""),
+    )
+    mail_ok, mail_reason = notify_reading_completed(request_kind, request_id)
+    log_reading_event(
+        request_kind=request_kind,
+        request_id=request_id,
+        reading_type=reading_type,
+        customer_name=str(row["full_name"] or ""),
+        reader_name=str(row["reader_name"] or ""),
+        actor=published_by,
+        action=("mail_sent" if mail_ok else "mail_failed"),
+        ai_status=("sent" if mail_ok else "failed"),
+        ai_reading=("Yayın sonrası bildirim e-postası gönderildi." if mail_ok else f"Mail gönderilemedi: {mail_reason}"),
+        model_name=OPENAI_MODEL,
+        token_input=0,
+        token_output=0,
+        token_total=0,
+        cost_estimate=0.0,
+        quality_flags="",
+    )
+    if mail_ok:
+        return "success", "Yorum müşteriye yayınlandı ve bilgilendirme e-postası gönderildi."
+    return "warning", f"Yorum müşteriye yayınlandı. E-posta gönderilemedi: {mail_reason}"
+
+
 @app.post("/admin/delete-request/coffee/<int:request_id>")
 def admin_delete_coffee_request(request_id: int):
     if not admin_required():
         flash("Bu alan için admin girişi gerekli.", "error")
         return redirect(url_for("admin"))
+    ok, message = delete_request_with_related("coffee", request_id)
+    flash(message, "ok" if ok else "error")
+    return redirect(request.referrer or url_for("admin"))
 
-    deleted_request = 0
-    deleted_payments = 0
-    deleted_feedback = 0
-    deleted_audit = 0
 
-    with sqlite3.connect(DB_PATH) as conn:
-        exists = conn.execute("SELECT id FROM coffee_requests WHERE id = ?", (request_id,)).fetchone()
-        if not exists:
-            flash("Kahve falı kaydı bulunamadı.", "error")
-            return redirect(request.referrer or url_for("admin"))
-
-        deleted_payments = conn.execute(
-            "DELETE FROM payment_requests WHERE request_kind = 'coffee' AND request_id = ?",
-            (request_id,),
-        ).rowcount
-        deleted_feedback = conn.execute(
-            "DELETE FROM reader_feedback WHERE request_kind = 'coffee' AND request_id = ?",
-            (request_id,),
-        ).rowcount
-        try:
-            deleted_audit = conn.execute(
-                "DELETE FROM reading_audit WHERE request_kind = 'coffee' AND request_id = ?",
-                (request_id,),
-            ).rowcount
-        except sqlite3.OperationalError:
-            deleted_audit = 0
-
-        deleted_request = conn.execute(
-            "DELETE FROM coffee_requests WHERE id = ?",
-            (request_id,),
-        ).rowcount
-
-    flash(
-        f"Kahve falı kaydı silindi. Talep: {deleted_request}, Ödeme: {deleted_payments}, Değerlendirme: {deleted_feedback}, Log: {deleted_audit}",
-        "ok",
-    )
+@app.post("/admin/delete-request/card/<int:request_id>")
+def admin_delete_card_request(request_id: int):
+    if not admin_required():
+        flash("Bu alan için admin girişi gerekli.", "error")
+        return redirect(url_for("admin"))
+    ok, message = delete_request_with_related("card", request_id)
+    flash(message, "ok" if ok else "error")
     return redirect(request.referrer or url_for("admin"))
 
 
@@ -3480,74 +3656,66 @@ def admin_publish_reading(request_kind: str, request_id: int):
         flash("Müşteriye gönderim iptal edildi.", "error")
         return redirect(url_for("admin_edit_reading", request_kind=request_kind, request_id=request_id))
 
-    table_name = "coffee_requests" if request_kind == "coffee" else "card_requests"
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.row_factory = sqlite3.Row
-        select_type_sql = "'coffee' AS reading_type" if request_kind == "coffee" else "reading_type"
-        row = conn.execute(
-            f"SELECT ai_status, ai_reading, ai_published, full_name, reader_name, {select_type_sql} FROM {table_name} WHERE id = ?",
-            (request_id,),
-        ).fetchone()
-        if row is None:
-            flash("Talep bulunamadı.", "error")
-            return redirect(url_for("admin"))
-        if int(row["ai_published"] or 0) == 1:
-            flash("Bu yorum zaten müşteriye gönderilmiş.", "ok")
-            return redirect(url_for("admin_edit_reading", request_kind=request_kind, request_id=request_id))
-        reading_text = str(row["ai_reading"] or "").strip()
-        if str(row["ai_status"]) != "ready" or not reading_text:
-            flash("Yorum hazır değil. Önce yorum üretilmeli.", "error")
-            return redirect(url_for("admin"))
-        quality_issues = validate_reading_quality(reading_text)
-        if quality_issues:
-            flash("Yorum kalite kontrolünden geçmedi: " + " | ".join(quality_issues), "error")
-            return redirect(url_for("admin_edit_reading", request_kind=request_kind, request_id=request_id))
-        published_at = datetime.utcnow().isoformat()
-        published_by = get_admin_actor()
-        conn.execute(
-            f"UPDATE {table_name} SET ai_published = 1, ai_published_at = ?, ai_published_by = ? WHERE id = ?",
-            (published_at, published_by, request_id),
-        )
-    log_reading_event(
-        request_kind=request_kind,
-        request_id=request_id,
-        reading_type=("coffee" if request_kind == "coffee" else str(row["reading_type"] or "tarot")),
-        customer_name=str(row["full_name"] or ""),
-        reader_name=str(row["reader_name"] or ""),
-        actor=published_by,
-        action="published",
-        ai_status="ready",
-        ai_reading=reading_text,
-        model_name=OPENAI_MODEL,
-        token_input=estimate_tokens_from_text(reading_text),
-        token_output=estimate_tokens_from_text(reading_text),
-        token_total=estimate_tokens_from_text(reading_text) * 2,
-        cost_estimate=0.0,
-        quality_flags=("quality_risk" if validate_reading_quality(reading_text) else ""),
-    )
-    mail_ok, mail_reason = notify_reading_completed(request_kind, request_id)
-    log_reading_event(
-        request_kind=request_kind,
-        request_id=request_id,
-        reading_type=("coffee" if request_kind == "coffee" else str(row["reading_type"] or "tarot")),
-        customer_name=str(row["full_name"] or ""),
-        reader_name=str(row["reader_name"] or ""),
-        actor=published_by,
-        action=("mail_sent" if mail_ok else "mail_failed"),
-        ai_status=("sent" if mail_ok else "failed"),
-        ai_reading=("Yayın sonrası bildirim e-postası gönderildi." if mail_ok else f"Mail gönderilemedi: {mail_reason}"),
-        model_name=OPENAI_MODEL,
-        token_input=0,
-        token_output=0,
-        token_total=0,
-        cost_estimate=0.0,
-        quality_flags="",
-    )
-    if mail_ok:
-        flash("Yorum müşteriye yayınlandı ve bilgilendirme e-postası gönderildi.", "ok")
-    else:
-        flash(f"Yorum müşteriye yayınlandı. E-posta gönderilemedi: {mail_reason}", "error")
+    status, message = publish_reading_to_customer(request_kind, request_id)
+    flash(message, "ok" if status in {"success", "skipped"} else "error")
     return redirect(url_for("admin"))
+
+
+@app.post("/admin/bulk-action")
+def admin_bulk_action():
+    if not admin_required():
+        flash("Bu alan için admin girişi gerekli.", "error")
+        return redirect(url_for("admin"))
+
+    action = request.form.get("bulk_action", "").strip().lower()
+    if action not in {"regenerate", "approve", "publish", "delete"}:
+        flash("Geçersiz toplu işlem.", "error")
+        return redirect(request.referrer or url_for("admin"))
+
+    selected = parse_bulk_selected_items(request.form.getlist("selected"))
+    if not selected:
+        flash("Toplu işlem için en az bir fal seçmelisiniz.", "error")
+        return redirect(request.referrer or url_for("admin"))
+    if len(selected) > 200:
+        flash("Aynı anda en fazla 200 kayıt işlenebilir.", "error")
+        return redirect(request.referrer or url_for("admin"))
+
+    stats = {"success": 0, "warning": 0, "skipped": 0, "error": 0}
+    errors: list[str] = []
+    lang = get_lang()
+
+    for request_kind, request_id in selected:
+        status = "error"
+        message = "Bilinmeyen hata"
+        if action == "regenerate":
+            ok, message = regenerate_ai_for_request(request_kind, request_id, lang)
+            status = "success" if ok else "error"
+        elif action == "approve":
+            ok, message = approve_reading_request(request_kind, request_id)
+            status = "success" if ok else "error"
+        elif action == "publish":
+            status, message = publish_reading_to_customer(request_kind, request_id)
+        elif action == "delete":
+            ok, message = delete_request_with_related(request_kind, request_id)
+            status = "success" if ok else "error"
+
+        stats[status] = stats.get(status, 0) + 1
+        if status == "error":
+            errors.append(f"{request_kind}-{request_id}: {message}")
+
+    action_label = {
+        "regenerate": "yorumla",
+        "approve": "onayla",
+        "publish": "gönder",
+        "delete": "sil",
+    }[action]
+    flash(
+        f"Toplu işlem ({action_label}) tamamlandı. Başarılı: {stats['success']}, Uyarı: {stats['warning']}, Atlandı: {stats['skipped']}, Hata: {stats['error']}.",
+        "ok" if stats["error"] == 0 else "error",
+    )
+    if errors:
+        flash("Hata detayları: " + " | ".join(errors[:5]), "error")
+    return redirect(request.referrer or url_for("admin"))
 
 
 @app.post("/admin/regenerate-reading/<request_kind>/<int:request_id>")
@@ -3688,7 +3856,7 @@ def parse_admin_filters() -> dict[str, str]:
         "date_from": date_from,
         "date_to": date_to,
         "q": q,
-        "audit_action": audit_action if audit_action in {"all", "generated", "regenerated", "edited", "published", "mail_sent", "mail_failed"} else "all",
+        "audit_action": audit_action if audit_action in {"all", "generated", "regenerated", "approved", "edited", "published", "mail_sent", "mail_failed"} else "all",
         "audit_actor": audit_actor,
         "audit_request": audit_request,
     }
@@ -3815,7 +3983,7 @@ def fetch_reading_audit_rows(filters: dict[str, str]) -> list[sqlite3.Row]:
     if type_filter in {"coffee", "katina", "tarot"}:
         sql += " AND reading_type = ?"
         params.append(type_filter)
-    if audit_action in {"generated", "regenerated", "edited", "published", "mail_sent", "mail_failed"}:
+    if audit_action in {"generated", "regenerated", "approved", "edited", "published", "mail_sent", "mail_failed"}:
         sql += " AND action = ?"
         params.append(audit_action)
     if audit_actor:

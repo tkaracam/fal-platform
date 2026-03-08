@@ -76,6 +76,17 @@
         color: #166534;
         font-weight: 700;
       }
+      .card-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .card-actions-grid form {
+        margin: 0 !important;
+      }
+      .card-actions-grid form button {
+        width: 100%;
+      }
     </style>
   </head>
   <body>
@@ -467,6 +478,7 @@
                   {% endif %}
                 </td>
                 <td>
+                  <div class="card-actions-grid">
                   {% if row['next_status'] != row['order_status'] %}
                     <form action="/admin/set-status/card/{{ row['id'] }}/{{ row['next_status'] }}" method="post">
                       <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
@@ -479,22 +491,22 @@
                       {% endif %}
                     </form>
                   {% endif %}
-                  <form action="/admin/resend-completed-email/card/{{ row['id'] }}" method="post" style="margin-top:6px;">
+                  <form action="/admin/resend-completed-email/card/{{ row['id'] }}" method="post">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
                     <button type="submit">Mail Tekrar Gönder</button>
                   </form>
-                  <form action="/admin/edit-reading/card/{{ row['id'] }}" method="get" style="margin-top:6px;">
+                  <form action="/admin/edit-reading/card/{{ row['id'] }}" method="get">
                     <button type="submit">Yorumu Aç</button>
                   </form>
                   <form
                     action="/admin/delete-request/card/{{ row['id'] }}"
                     method="post"
-                    style="margin-top:6px;"
                     onsubmit="return confirm('Bu kart falı kaydını ve ilişkili ödeme/yorum/log verilerini silmek istediğine emin misin?');"
                   >
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
                     <button type="submit">Sil</button>
                   </form>
+                  </div>
                 </td>
               </tr>
               {% endfor %}

@@ -280,7 +280,7 @@
 
       <section class="card">
         <h2>Kahve Falı Talepleri</h2>
-        <form id="bulk-action-form" class="bulk-panel" action="/admin/bulk-action" method="post" onsubmit="return prepareBulkActionSubmit(event);">
+        <form id="bulk-action-form" class="bulk-panel" action="/admin/bulk-action" method="post" onsubmit="return prepareBulkActionSubmit(this);">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
           <label>
             Toplu İşlem
@@ -292,6 +292,7 @@
             </select>
           </label>
           <button type="submit">Seçililere Uygula</button>
+          <span id="bulk-selected-count" class="bulk-help">0 kayıt seçili</span>
           <p class="bulk-help">Kahve + Kart tablolarından birden fazla satır seçip toplu işlem uygulayabilirsin.</p>
         </form>
         <div class="table-wrap">
@@ -485,6 +486,15 @@
                   <form action="/admin/edit-reading/card/{{ row['id'] }}" method="get" style="margin-top:6px;">
                     <button type="submit">Yorumu Aç</button>
                   </form>
+                  <form
+                    action="/admin/delete-request/card/{{ row['id'] }}"
+                    method="post"
+                    style="margin-top:6px;"
+                    onsubmit="return confirm('Bu kart falı kaydını ve ilişkili ödeme/yorum/log verilerini silmek istediğine emin misin?');"
+                  >
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit">Sil</button>
+                  </form>
                 </td>
               </tr>
               {% endfor %}
@@ -649,10 +659,22 @@
       function syncMasterCheckbox(kind) {
         const master = document.querySelector(`[data-bulk-master="${kind}"]`);
         const items = Array.from(document.querySelectorAll(`.bulk-item[data-kind="${kind}"]`));
-        if (!master || items.length === 0) return;
+        if (!master) return;
+        if (items.length === 0) {
+          master.checked = false;
+          master.indeterminate = false;
+          return;
+        }
         const checkedCount = items.filter((item) => item.checked).length;
         master.checked = checkedCount > 0 && checkedCount === items.length;
         master.indeterminate = checkedCount > 0 && checkedCount < items.length;
+      }
+
+      function updateBulkSelectedCount() {
+        const countEl = document.getElementById("bulk-selected-count");
+        if (!countEl) return;
+        const selectedCount = document.querySelectorAll(".bulk-item:checked").length;
+        countEl.textContent = `${selectedCount} kayıt seçili`;
       }
 
       function initBulkSelectors() {
@@ -663,21 +685,27 @@
               item.checked = master.checked;
             });
             syncMasterCheckbox(kind);
+            updateBulkSelectedCount();
           });
         });
 
         document.querySelectorAll(".bulk-item").forEach((item) => {
           item.addEventListener("change", () => {
             syncMasterCheckbox(item.dataset.kind);
+            updateBulkSelectedCount();
           });
         });
 
         syncMasterCheckbox("coffee");
         syncMasterCheckbox("card");
+        updateBulkSelectedCount();
       }
 
-      function prepareBulkActionSubmit(event) {
-        const form = event.target;
+      function prepareBulkActionSubmit(formEl) {
+        const form = formEl && formEl.tagName === "FORM" ? formEl : document.getElementById("bulk-action-form");
+        if (!form) {
+          return false;
+        }
         const selected = Array.from(document.querySelectorAll(".bulk-item:checked")).map((item) => item.value);
         if (!selected.length) {
           alert("Lütfen en az bir fal kaydı seçin.");

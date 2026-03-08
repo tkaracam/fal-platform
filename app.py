@@ -25,9 +25,10 @@ from flask import Flask, Response, flash, jsonify, redirect, render_template, re
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
 try:
-    from PIL import Image
+    from PIL import Image, ImageOps
 except Exception:
     Image = None
+    ImageOps = None
 from werkzeug.utils import secure_filename
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -35,6 +36,8 @@ DEFAULT_DB_PATH = Path("/var/data/data.db") if Path("/var/data").exists() else (
 DB_PATH = Path(os.getenv("DATABASE_PATH", str(DEFAULT_DB_PATH))).expanduser()
 UPLOAD_DIR = BASE_DIR / "static" / "uploads"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
+UPLOAD_IMAGE_MAX_SIDE = int(os.getenv("UPLOAD_IMAGE_MAX_SIDE", "768"))
+UPLOAD_WEBP_QUALITY = int(os.getenv("UPLOAD_WEBP_QUALITY", "80"))
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "fal-platform-secret")
@@ -1296,6 +1299,45 @@ def init_db() -> None:
 
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def save_optimized_upload(photo) -> tuple[str, Path]:
+    safe_name = secure_filename(photo.filename or "upload")
+    stem = Path(safe_name).stem or "upload"
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
+    out_name = f"{timestamp}_{stem}.webp"
+    out_path = UPLOAD_DIR / out_name
+
+    if Image is None:
+        raise ValueError("Pillow is required for image optimization.")
+
+    try:
+        photo.stream.seek(0)
+        with Image.open(photo.stream) as img:
+            if ImageOps is not None:
+                img = ImageOps.exif_transpose(img)
+
+            if img.mode in {"RGBA", "LA", "P"}:
+                img = img.convert("RGBA")
+            else:
+                img = img.convert("RGB")
+
+            try:
+                resample = Image.Resampling.LANCZOS  # Pillow>=9
+            except AttributeError:
+                resample = Image.LANCZOS
+            img.thumbnail((UPLOAD_IMAGE_MAX_SIDE, UPLOAD_IMAGE_MAX_SIDE), resample=resample)
+
+            img.save(
+                out_path,
+                format="WEBP",
+                quality=max(30, min(95, int(UPLOAD_WEBP_QUALITY))),
+                method=6,
+            )
+    except Exception as exc:
+        raise ValueError(f"Invalid or unsupported image: {exc}") from exc
+
+    return f"uploads/{out_name}", out_path
 
 
 def admin_required() -> bool:
@@ -3043,16 +3085,23 @@ def submit_coffee():
         return redirect(url_for("coffee_reader_page", lang=get_lang(), reader_id=reader_id))
 
     saved_paths: list[str] = []
+    saved_files: list[Path] = []
     for photo in photos:
         if not allowed_file(photo.filename):
             flash(t("msg_bad_file"), "error")
             return redirect(url_for("coffee_reader_page", lang=get_lang(), reader_id=reader_id))
-        safe_name = secure_filename(photo.filename)
-        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
-        filename = f"{timestamp}_{safe_name}"
-        save_path = UPLOAD_DIR / filename
-        photo.save(save_path)
-        saved_paths.append(f"uploads/{filename}")
+        try:
+            rel_path, abs_path = save_optimized_upload(photo)
+        except ValueError:
+            for existing in saved_files:
+                try:
+                    existing.unlink()
+                except OSError:
+                    pass
+            flash(t("msg_bad_file"), "error")
+            return redirect(url_for("coffee_reader_page", lang=get_lang(), reader_id=reader_id))
+        saved_paths.append(rel_path)
+        saved_files.append(abs_path)
 
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.execute(

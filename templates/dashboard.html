@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-menuclean" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260308-timeline1" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -133,6 +133,14 @@
                   {% else %}
                     {{ t('status_completed') }}
                   {% endif %}
+                  <ol class="order-timeline order-timeline-compact">
+                    {% for step in row.timeline %}
+                    <li class="order-timeline-step{% if step.done %} is-done{% endif %}{% if step.current %} is-current{% endif %}">
+                      <span class="order-timeline-dot" aria-hidden="true"></span>
+                      <span class="order-timeline-label">{{ t(step.label_key) }}</span>
+                    </li>
+                    {% endfor %}
+                  </ol>
                 </td>
                 <td>
                   <a class="menu-cta panel-open-btn" href="{{ url_for('customer_reading_page', request_kind=row.request_kind, request_id=row.id, lang=lang) }}">

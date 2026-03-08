@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260301-menuclean" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260308-timeline1" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -63,6 +63,14 @@
       </section>
 
       <section class="card reading-focus-card">
+        <ol class="order-timeline">
+          {% for step in timeline %}
+          <li class="order-timeline-step{% if step.done %} is-done{% endif %}{% if step.current %} is-current{% endif %}">
+            <span class="order-timeline-dot" aria-hidden="true"></span>
+            <span class="order-timeline-label">{{ t(step.label_key) }}</span>
+          </li>
+          {% endfor %}
+        </ol>
         <p class="reading-meta">
           <strong>{{ t('panel_date') }}:</strong> {{ row.created_at[:16].replace('T', ' ') }}
         </p>

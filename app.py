@@ -167,6 +167,10 @@ TRANSLATIONS = {
         "status_paid": "Ödendi",
         "status_in_progress": "Yorumlanıyor",
         "status_completed": "Tamamlandı",
+        "timeline_waiting": "Beklemede",
+        "timeline_processing": "Yorumlanıyor",
+        "timeline_approved": "Onaylandı",
+        "timeline_sent": "Gönderildi",
         "panel_filter_label": "Tür Filtresi",
         "panel_filter_all": "Tümü",
         "panel_detail_toggle": "Detay",
@@ -374,6 +378,10 @@ TRANSLATIONS = {
         "status_paid": "Paid",
         "status_in_progress": "In Progress",
         "status_completed": "Completed",
+        "timeline_waiting": "Waiting",
+        "timeline_processing": "In Progress",
+        "timeline_approved": "Approved",
+        "timeline_sent": "Sent",
         "panel_filter_label": "Type Filter",
         "panel_filter_all": "All",
         "panel_detail_toggle": "Details",
@@ -581,6 +589,10 @@ TRANSLATIONS = {
         "status_paid": "Bezahlt",
         "status_in_progress": "In Bearbeitung",
         "status_completed": "Abgeschlossen",
+        "timeline_waiting": "Wartet",
+        "timeline_processing": "In Bearbeitung",
+        "timeline_approved": "Freigegeben",
+        "timeline_sent": "Gesendet",
         "panel_filter_label": "Art-Filter",
         "panel_filter_all": "Alle",
         "panel_detail_toggle": "Details",
@@ -1362,6 +1374,35 @@ def normalize_order_status(raw: str) -> str:
     if status in ALLOWED_ORDER_STATUSES:
         return status
     return "pending"
+
+
+def build_customer_timeline(order_status: str, ai_status: str, ai_published: int) -> list[dict[str, object]]:
+    normalized_status = normalize_order_status(order_status)
+    reading_ready = str(ai_status).strip().lower() == "ready"
+    published = int(ai_published or 0) == 1
+
+    done_map = {
+        "waiting": normalized_status in {"paid", "in_progress", "completed"},
+        "processing": normalized_status in {"in_progress", "completed"} or reading_ready,
+        "approved": published,
+        "sent": normalized_status == "completed" and published,
+    }
+    order = ["waiting", "processing", "approved", "sent"]
+    current = "sent"
+    for key in order:
+        if not done_map[key]:
+            current = key
+            break
+
+    return [
+        {
+            "key": key,
+            "label_key": f"timeline_{key}",
+            "done": bool(done_map[key]),
+            "current": bool(current == key),
+        }
+        for key in order
+    ]
 
 
 def set_order_status(request_kind: str, request_id: int, new_status: str) -> None:
@@ -2426,6 +2467,11 @@ def dashboard_page():
                 "result": str(row["ai_reading"]) if (str(row["ai_status"]) == "ready" and int(row["ai_published"] or 0) == 1) else t("ai_result_review"),
                 "created_at": str(row["created_at"]),
                 "order_status": normalize_order_status(str(row["order_status"])),
+                "timeline": build_customer_timeline(
+                    str(row["order_status"]),
+                    str(row["ai_status"]),
+                    int(row["ai_published"] or 0),
+                ),
             }
         )
     for row in card_rows:
@@ -2439,6 +2485,11 @@ def dashboard_page():
                 "result": str(row["ai_reading"]) if (str(row["ai_status"]) == "ready" and int(row["ai_published"] or 0) == 1) else t("ai_result_review"),
                 "created_at": str(row["created_at"]),
                 "order_status": normalize_order_status(str(row["order_status"])),
+                "timeline": build_customer_timeline(
+                    str(row["order_status"]),
+                    str(row["ai_status"]),
+                    int(row["ai_published"] or 0),
+                ),
             }
         )
 
@@ -2465,7 +2516,13 @@ def customer_reading_page(request_kind: str, request_id: int):
         if request_kind == "coffee":
             row = conn.execute(
                 """
-                SELECT id, 'coffee' AS reading_type, reader_name, question, ai_status, ai_reading, ai_published, created_at
+                SELECT id, 'coffee' AS reading_type, reader_name, question, ai_status, ai_reading, ai_published, created_at,
+                       COALESCE(
+                         (SELECT status FROM payment_requests p
+                          WHERE p.request_kind = 'coffee' AND p.request_id = coffee_requests.id
+                          ORDER BY p.id DESC LIMIT 1),
+                         'pending'
+                       ) AS order_status
                 FROM coffee_requests
                 WHERE id = ? AND user_id = ?
                 LIMIT 1
@@ -2475,7 +2532,13 @@ def customer_reading_page(request_kind: str, request_id: int):
         else:
             row = conn.execute(
                 """
-                SELECT id, reading_type, reader_name, question, ai_status, ai_reading, ai_published, created_at
+                SELECT id, reading_type, reader_name, question, ai_status, ai_reading, ai_published, created_at,
+                       COALESCE(
+                         (SELECT status FROM payment_requests p
+                          WHERE p.request_kind = 'card' AND p.request_id = card_requests.id
+                          ORDER BY p.id DESC LIMIT 1),
+                         'pending'
+                       ) AS order_status
                 FROM card_requests
                 WHERE id = ? AND user_id = ?
                 LIMIT 1
@@ -2495,6 +2558,11 @@ def customer_reading_page(request_kind: str, request_id: int):
         "customer_reading.html",
         row=row,
         request_kind=request_kind,
+        timeline=build_customer_timeline(
+            str(row["order_status"]),
+            str(row["ai_status"]),
+            int(row["ai_published"] or 0),
+        ),
     )
 
 

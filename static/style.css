@@ -971,6 +971,57 @@ h2 {
   margin-inline: auto;
 }
 
+.order-timeline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.order-timeline-step {
+  display: grid;
+  gap: 5px;
+  align-items: center;
+}
+
+.order-timeline-dot {
+  width: 100%;
+  height: 7px;
+  border-radius: 999px;
+  background: #d7e5f3;
+}
+
+.order-timeline-label {
+  font-size: 0.72rem;
+  line-height: 1.25;
+  color: #6a849f;
+  font-weight: 600;
+}
+
+.order-timeline-step.is-done .order-timeline-dot {
+  background: linear-gradient(90deg, #29b676, #7adf9e);
+}
+
+.order-timeline-step.is-current .order-timeline-dot {
+  background: linear-gradient(90deg, #ff8659, #ff5f7f);
+  box-shadow: 0 0 0 2px rgba(255, 120, 90, 0.18);
+}
+
+.order-timeline-step.is-done .order-timeline-label,
+.order-timeline-step.is-current .order-timeline-label {
+  color: #35506a;
+}
+
+.order-timeline-compact {
+  margin: 8px 0 0;
+}
+
+.order-timeline-compact .order-timeline-label {
+  font-size: 0.66rem;
+}
+
 .reading-meta {
   margin: 0 0 10px;
   color: #3f5a74;
@@ -1417,6 +1468,9 @@ a { color: #e6655e; }
 @media (max-width: 720px) {
   .form-grid { grid-template-columns: 1fr; }
   .photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .order-timeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .site-footer {

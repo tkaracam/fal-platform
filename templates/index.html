@@ -90,6 +90,24 @@
             <p>{{ t('home_info_3_body') }}</p>
           </article>
         </div>
+        <section class="card seo-link-block">
+          <h3 class="seo-link-block-title">{{ seo_links.title }}</h3>
+          <p class="seo-link-block-desc">{{ seo_links.desc }}</p>
+          <div class="seo-link-grid">
+            <a class="seo-link-card" href="{{ url_for('seo_coffee_landing', lang=lang) }}">
+              <strong>{{ seo_links.coffee.title }}</strong>
+              <span>{{ seo_links.coffee.desc }}</span>
+            </a>
+            <a class="seo-link-card" href="{{ url_for('seo_katina_landing', lang=lang) }}">
+              <strong>{{ seo_links.katina.title }}</strong>
+              <span>{{ seo_links.katina.desc }}</span>
+            </a>
+            <a class="seo-link-card" href="{{ url_for('seo_tarot_landing', lang=lang) }}">
+              <strong>{{ seo_links.tarot.title }}</strong>
+              <span>{{ seo_links.tarot.desc }}</span>
+            </a>
+          </div>
+        </section>
         <div class="choice-grid">
           <a class="choice-card card-coffee" href="{{ url_for('coffee_page', lang=lang) }}">
             <iframe

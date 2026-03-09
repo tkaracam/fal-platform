@@ -721,6 +721,59 @@ body.nav-open {
   white-space: pre-line;
 }
 
+.seo-link-block {
+  margin-top: 12px;
+}
+
+.seo-link-block-title {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1.04rem, 1.9vw, 1.28rem);
+  color: #27435d;
+}
+
+.seo-link-block-desc {
+  margin: 6px 0 0;
+  color: #49657e;
+  font-size: 0.93rem;
+}
+
+.seo-link-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.seo-link-card {
+  display: grid;
+  gap: 6px;
+  text-decoration: none;
+  border: 1px solid #d4e4f2;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 12px;
+  box-shadow: 0 6px 16px rgba(34, 62, 92, 0.08);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.seo-link-card strong {
+  color: #2b4761;
+  font-size: 0.96rem;
+}
+
+.seo-link-card span {
+  color: #5a7590;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.seo-link-card:hover {
+  border-color: #b8d7ed;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px rgba(34, 62, 92, 0.12);
+}
+
 .home-slide {
   position: absolute;
   inset: 0;
@@ -933,6 +986,105 @@ body.nav-open {
   background-image: url("/static/assets/home-tarot.svg");
   background-size: cover;
   background-position: center;
+}
+
+.seo-landing-hero {
+  margin-top: 14px;
+}
+
+.seo-landing-kicker {
+  margin: 0;
+  display: inline-flex;
+  border: 1px solid #d1e3f2;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #3d5c78;
+  background: #f8fcff;
+}
+
+.seo-landing-title {
+  margin: 10px 0 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1.34rem, 2.7vw, 2rem);
+  color: #23425d;
+}
+
+.seo-landing-intro {
+  margin: 8px 0 0;
+  color: #455f78;
+  line-height: 1.6;
+}
+
+.seo-landing-cta {
+  margin-top: 12px;
+}
+
+.seo-section h2,
+.seo-faq h2 {
+  margin: 0 0 10px;
+  font-size: clamp(1.1rem, 2vw, 1.38rem);
+  color: #27435d;
+}
+
+.seo-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  color: #47637d;
+  line-height: 1.6;
+}
+
+.seo-faq-list {
+  display: grid;
+  gap: 10px;
+}
+
+.seo-faq-item {
+  border: 1px solid #d4e4f2;
+  border-radius: 10px;
+  background: #fbfdff;
+  padding: 10px 12px;
+}
+
+.seo-faq-item summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #2e4b66;
+}
+
+.seo-faq-item p {
+  margin: 8px 0 0;
+  color: #49657f;
+  line-height: 1.55;
+}
+
+.seo-guides-mini {
+  margin-top: 16px;
+}
+
+.seo-guides-mini h3 {
+  margin: 0;
+  color: #2e4b66;
+}
+
+.seo-guides-mini-links {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.seo-guides-mini-links a {
+  text-decoration: none;
+  border: 1px solid #d0e2f1;
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: #35506a;
+  background: #ffffff;
+  font-size: 0.86rem;
 }
 
 .card {
@@ -1539,6 +1691,7 @@ a { color: #e6655e; }
 
 @media (max-width: 900px) {
   .choice-grid { grid-template-columns: 1fr; }
+  .seo-link-grid { grid-template-columns: 1fr; }
   .home-slider {
     height: clamp(250px, 62vw, 390px);
   }

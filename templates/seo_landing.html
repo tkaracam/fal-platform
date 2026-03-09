@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="{{ lang }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ seo.meta_title }}</title>
+    <meta name="description" content="{{ seo.meta_desc }}" />
+    <link rel="canonical" href="{{ canonical_url }}" />
+    <meta property="og:title" content="{{ seo.meta_title }}" />
+    <meta property="og:description" content="{{ seo.meta_desc }}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="{{ canonical_url }}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260309-seo1" />
+    <script type="application/ld+json">{{ faq_schema_json|safe }}</script>
+  </head>
+  <body data-ui-lang="{{ lang }}">
+    <div class="scene-glow"></div>
+    <main class="container">
+      <header class="navbar">
+        <a class="brand" href="{{ url_for('home', lang=lang) }}">
+          <img class="brand-logo" src="{{ url_for('static', filename='assets/orakelia-logo-main.png') }}?v=20260306-logo2" alt="Orakelia" loading="lazy" />
+        </a>
+        <div class="nav-quick">
+          {% if is_logged_in %}
+          <a class="quick-btn quick-btn-primary" href="{{ url_for('dashboard_page', lang=lang) }}">{{ t("nav_panel") }}</a>
+          {% else %}
+          <a class="quick-btn" href="{{ url_for('login_page', lang=lang) }}">{{ t("nav_login") }}</a>
+          <a class="quick-btn quick-btn-primary" href="{{ url_for('register_page', lang=lang) }}">{{ t("nav_register") }}</a>
+          {% endif %}
+        </div>
+        <button class="nav-toggle" type="button" aria-label="Menu" data-nav-toggle>Menu</button>
+        <nav class="nav-links" data-nav-links>
+          <a href="{{ url_for('coffee_page', lang=lang) }}">{{ t('nav_coffee') }}</a>
+          <a href="{{ url_for('katina_page', lang=lang) }}">{{ t('nav_katina') }}</a>
+          <a href="{{ url_for('tarot_page', lang=lang) }}">{{ t('nav_tarot') }}</a>
+          {% if not is_logged_in %}
+          <a href="{{ url_for('login_page', lang=lang) }}">{{ t('nav_login') }}</a>
+          <a class="menu-cta" href="{{ url_for('register_page', lang=lang) }}">{{ t('nav_register') }}</a>
+          {% endif %}
+          {% if is_logged_in %}
+          <form method="post" action="{{ url_for('logout_submit', lang=lang) }}" class="nav-logout-form">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="menu-cta nav-logout">{{ t('logout_submit') }}</button>
+          </form>
+          {% endif %}
+          <div class="lang-switch lang-switch-group" data-lang-group>
+            <button type="button" class="lang-toggle-btn" data-lang-toggle aria-expanded="false">🌐 {{ t('menu_languages') }}</button>
+            <div class="lang-switch-list" data-lang-list hidden>
+              <a href="{{ lang_url('tr') }}">🇹🇷 {{ t('lang_tr') }}</a>
+              <a href="{{ lang_url('en') }}">🇬🇧 {{ t('lang_en') }}</a>
+              <a href="{{ lang_url('de') }}">🇩🇪 {{ t('lang_de') }}</a>
+            </div>
+          </div>
+        </nav>
+      </header>
+
+      <section class="card seo-landing-hero">
+        <p class="seo-landing-kicker">{{ kind_label }}</p>
+        <h1 class="seo-landing-title">{{ seo.title }}</h1>
+        <p class="seo-landing-intro">{{ seo.intro }}</p>
+        <a class="cta-btn seo-landing-cta" href="{{ cta_url }}">{{ seo.cta_label }}</a>
+      </section>
+
+      {% for sec in seo.sections %}
+      <section class="card seo-section">
+        <h2>{{ sec.title }}</h2>
+        <ul class="seo-list">
+          {% for paragraph in sec.body %}
+          <li>{{ paragraph }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endfor %}
+
+      <section class="card seo-faq">
+        <h2>FAQ</h2>
+        <div class="seo-faq-list">
+          {% for item in seo.faq %}
+          <details class="seo-faq-item">
+            <summary>{{ item.q }}</summary>
+            <p>{{ item.a }}</p>
+          </details>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="card seo-guides-mini">
+        <h3>Orakelia SEO</h3>
+        <div class="seo-guides-mini-links">
+          <a href="{{ url_for('seo_coffee_landing', lang=lang) }}">{{ t('choice_coffee') }}</a>
+          <a href="{{ url_for('seo_katina_landing', lang=lang) }}">{{ t('choice_katina') }}</a>
+          <a href="{{ url_for('seo_tarot_landing', lang=lang) }}">{{ t('choice_tarot') }}</a>
+        </div>
+      </section>
+
+      <footer class="site-footer">
+        <div class="footer-grid">
+          <div>
+            <p class="footer-brand">{{ t('brand') }}</p>
+            <p class="footer-copy">© 2026 • {{ t('brand') }}</p>
+          </div>
+          <div class="footer-links">
+            <a href="{{ url_for('coffee_page', lang=lang) }}">{{ t('nav_coffee') }}</a>
+            <a href="{{ url_for('katina_page', lang=lang) }}">{{ t('nav_katina') }}</a>
+            <a href="{{ url_for('tarot_page', lang=lang) }}">{{ t('nav_tarot') }}</a>
+            <a href="{{ url_for('agb_page', lang=lang) }}">{{ t('nav_agb') }}</a>
+            <a href="{{ url_for('impressum_page', lang=lang) }}">{{ t('nav_impressum') }}</a>
+            <a href="{{ url_for('datenschutz_page', lang=lang) }}">{{ t('nav_datenschutz') }}</a>
+          </div>
+          <div class="footer-social">
+            <a href="{{ instagram_url }}" target="_blank" rel="noopener" class="social-link"><span>Instagram</span></a>
+            <a href="{{ x_url }}" target="_blank" rel="noopener" class="social-link"><span>X</span></a>
+            <a href="{{ telegram_url }}" target="_blank" rel="noopener" class="social-link"><span>Telegram</span></a>
+            <a class="live-support social-link" href="{{ live_support_url }}" target="_blank" rel="noopener"><span>{{ t('live_support') }}</span></a>
+          </div>
+        </div>
+      </footer>
+    </main>
+    <script src="{{ url_for('static', filename='script.js') }}?v=20260309-seo1"></script>
+  </body>
+</html>

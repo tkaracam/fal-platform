@@ -2778,6 +2778,394 @@ def get_lang() -> str:
     return detected
 
 
+def get_seo_landing_content(kind: str, lang: str) -> dict[str, object]:
+    normalized_lang = lang if lang in {"tr", "en", "de"} else "en"
+    if kind not in {"coffee", "katina", "tarot"}:
+        kind = "coffee"
+
+    content: dict[str, dict[str, dict[str, object]]] = {
+        "tr": {
+            "coffee": {
+                "meta_title": "Kahve Falı | Online Yorum ve Danışmanlık - Orakelia",
+                "meta_desc": "Kahve falı nasıl bakılır, neler sorulur, yorum süreci nasıl işler? Orakelia'da online kahve falı adımlarını ve örnek yorum yaklaşımını keşfedin.",
+                "title": "Kahve Falı: Telvede Gizli İşaretleri Okumak",
+                "intro": "Kahve falı, fincanda oluşan telve izlerini sezgiyle yorumlayan köklü bir gelenektir. Orakelia'da gönderdiğin fotoğraflar ve soruna göre kişisel bir yorum hazırlanır.",
+                "sections": [
+                    {
+                        "title": "Kahve Falı Neleri Anlatır?",
+                        "body": [
+                            "Aşk, iş, karar süreçleri ve yakın dönem enerjisi gibi konularda işaretler aranır.",
+                            "Yorum sürecinde yalnızca görünen telve şekilleri ve senin sorduğun soru temel alınır.",
+                        ],
+                    },
+                    {
+                        "title": "Online Kahve Falı Süreci",
+                        "body": [
+                            "1. Fincanın içini net gösteren fotoğrafları yükle.",
+                            "2. Seni en çok düşündüren soruyu açık bir şekilde yaz.",
+                            "3. Falcın yorumu hazırlar, admin onayı sonrası panelinde görüntülenir.",
+                        ],
+                    },
+                    {
+                        "title": "Daha Net Sonuç İçin İpucu",
+                        "body": [
+                            "Fotoğrafları iyi ışıkta, bulanıklık olmadan çek.",
+                            "Sorunu tek bir başlığa odaklayarak sor: örn. ilişki, kariyer, taşınma.",
+                        ],
+                    },
+                ],
+                "faq": [
+                    {"q": "Kahve falı için kaç fotoğraf gerekli?", "a": "Sistem 1-6 fotoğrafı kabul eder. En iyi sonuç için fincan içini farklı açılardan net çekilmiş görseller önerilir."},
+                    {"q": "Yorum ne kadar sürede gelir?", "a": "Ödeme sonrası yorum hazırlanır. Genelde 20-30 dakika içinde panelinde görünür."},
+                    {"q": "Aynı fincan için tekrar yorum alınabilir mi?", "a": "Evet, istersen farklı bir soruyla tekrar talep açabilirsin."},
+                ],
+                "cta_label": "Kahve Falına Başla",
+            },
+            "katina": {
+                "meta_title": "Katina Aşk Falı | Online Katina Açılımı - Orakelia",
+                "meta_desc": "Katina aşk falı nedir, kartlar nasıl seçilir, yorum nasıl hazırlanır? Orakelia'da online Katina açılımı adımlarını keşfedin.",
+                "title": "Katina Aşk Falı: İlişkiler İçin Derin Bakış",
+                "intro": "Katina falı, ilişki dinamiklerini ve duygusal akışı anlamak için kullanılan özel bir kart açılımıdır. Kart seçimi senden, yorumlama falcıdan gelir.",
+                "sections": [
+                    {
+                        "title": "Katina Falı Hangi Konulara Uygun?",
+                        "body": [
+                            "İlişkinin yönü, karşı tarafın yaklaşımı ve iletişimdeki tıkanıklıklar.",
+                            "Yeni bir başlangıç olasılığı veya mevcut bağın güçlenme ihtimali.",
+                        ],
+                    },
+                    {
+                        "title": "Nasıl Uygulanır?",
+                        "body": [
+                            "1. Kartlarını sezgisel olarak seçersin (kapalı biçimde).",
+                            "2. Aşk/ilişki sorunu net yazarsın.",
+                            "3. Açılımın bütününe göre kişisel yorum hazırlanır.",
+                        ],
+                    },
+                    {
+                        "title": "Yorum Kalitesi İçin",
+                        "body": [
+                            "Sorunda kişi ve durumu kısa ama açık şekilde belirt.",
+                            "Tek soruda çok fazla konu açmak yerine bir ana başlık seç.",
+                        ],
+                    },
+                ],
+                "faq": [
+                    {"q": "Katina ile Tarot farkı nedir?", "a": "Katina daha çok aşk ve ilişki dinamiklerine odaklanır; Tarot daha geniş yaşam alanlarını kapsar."},
+                    {"q": "Kartları görmek zorunda mıyım?", "a": "Hayır. Sistem kapalı kartlarla seçim yapmana izin verir; yorum için seçim bilgisi yeterlidir."},
+                    {"q": "Yorum panelde kalıyor mu?", "a": "Evet. Yayınlanan yorumunu panelinden daha sonra da okuyabilirsin."},
+                ],
+                "cta_label": "Katina Açılımını Başlat",
+            },
+            "tarot": {
+                "meta_title": "Tarot Falı | 10 Kart Detaylı Açılım - Orakelia",
+                "meta_desc": "Tarot falı nasıl yorumlanır? 10 kartlık detaylı açılım ile aşk, kariyer ve gelecek sorularına yönelik online tarot yorumunu keşfedin.",
+                "title": "Tarot Falı: 10 Kartlık Detaylı Açılım",
+                "intro": "Tarot, semboller üzerinden içgörü üreten güçlü bir yorum sistemidir. Orakelia'da 10 kartlık detaylı açılım ile daha kapsamlı bir analiz sunulur.",
+                "sections": [
+                    {
+                        "title": "Tarot Açılımı Neden 10 Kart?",
+                        "body": [
+                            "Daha geniş bir perspektif sağlar: geçmiş, şimdi, olasılıklar, fırsat ve riskler.",
+                            "Tek kart yorumuna göre daha tutarlı ve bağlamlı sonuç üretir.",
+                        ],
+                    },
+                    {
+                        "title": "Tarot Yorum Süreci",
+                        "body": [
+                            "1. Kart seçimini tamamla.",
+                            "2. Sorunu açık şekilde belirt.",
+                            "3. Kartların ortak hikayesi üzerinden bütüncül bir yorum al.",
+                        ],
+                    },
+                    {
+                        "title": "Daha Güçlü Soru Nasıl Sorulur?",
+                        "body": [
+                            "Zaman çerçevesi ekle (örn. önümüzdeki 3 ay).",
+                            "Belirsiz soru yerine karar odaklı soru sor (örn. 'X adımı benim için doğru mu?').",
+                        ],
+                    },
+                ],
+                "faq": [
+                    {"q": "Tarot kartlarını seçtikten sonra değiştirebilir miyim?", "a": "Evet, seçim ekranında kartı geri çevirerek değişiklik yapabilirsin."},
+                    {"q": "Tarot yorumu ne kadar sürer?", "a": "Yoğunluğa göre değişir; genellikle ödeme sonrası 20-30 dakika içinde hazır olur."},
+                    {"q": "Yorum otomatik mi, insan kontrolü var mı?", "a": "Yorum önce hazırlanır, ardından admin onayıyla müşteri paneline yayınlanır."},
+                ],
+                "cta_label": "Tarot Açılımına Geç",
+            },
+        },
+        "de": {
+            "coffee": {
+                "meta_title": "Kaffeesatz-Orakel | Online Deutung - Orakelia",
+                "meta_desc": "Wie funktioniert Kaffeesatzlesen online? Entdecke Ablauf, Fragen und Deutungsansatz für dein persönliches Orakel bei Orakelia.",
+                "title": "Kaffeesatz-Orakel: Zeichen im Satz erkennen",
+                "intro": "Das Kaffeesatz-Orakel ist eine traditionelle Deutungsmethode. Bei Orakelia wird deine Frage zusammen mit den hochgeladenen Tassenfotos persönlich interpretiert.",
+                "sections": [
+                    {
+                        "title": "Wofür eignet sich Kaffeesatzlesen?",
+                        "body": [
+                            "Für Fragen zu Liebe, Entscheidungen, Beruf und nächster Entwicklung.",
+                            "Die Deutung basiert auf sichtbaren Satzmustern und deinem konkreten Anliegen.",
+                        ],
+                    },
+                    {
+                        "title": "So läuft die Online-Deutung ab",
+                        "body": [
+                            "1. Lade klare Fotos der Tasse hoch.",
+                            "2. Formuliere deine Frage präzise.",
+                            "3. Deine Deutung wird erstellt und nach Freigabe im Panel angezeigt.",
+                        ],
+                    },
+                    {
+                        "title": "Tipps für bessere Ergebnisse",
+                        "body": [
+                            "Nutze gute Beleuchtung und scharfe Bilder.",
+                            "Stelle eine fokussierte Frage statt vieler Themen gleichzeitig.",
+                        ],
+                    },
+                ],
+                "faq": [
+                    {"q": "Wie viele Fotos soll ich hochladen?", "a": "1-6 Bilder sind möglich. Mehrere klare Perspektiven liefern meist bessere Ergebnisse."},
+                    {"q": "Wie schnell ist die Deutung da?", "a": "Nach der Zahlung in der Regel innerhalb von 20-30 Minuten."},
+                    {"q": "Kann ich erneut eine Deutung anfordern?", "a": "Ja, du kannst jederzeit mit einer neuen Frage erneut starten."},
+                ],
+                "cta_label": "Kaffee-Orakel Starten",
+            },
+            "katina": {
+                "meta_title": "Katina Liebesorakel | Online Kartenlegung - Orakelia",
+                "meta_desc": "Katina Liebesorakel online: Karten wählen, Frage stellen und persönliche Deutung erhalten. Ideal für Beziehungsfragen und emotionale Klarheit.",
+                "title": "Katina Liebesorakel: Fokus auf Beziehung & Herz",
+                "intro": "Das Katina-Orakel richtet sich besonders an Liebes- und Beziehungsthemen. Du wählst die Karten, die Deutung erfolgt anschließend individuell.",
+                "sections": [
+                    {
+                        "title": "Typische Katina-Fragen",
+                        "body": [
+                            "Wie entwickelt sich meine Beziehung?",
+                            "Wie steht die andere Person zu mir und was blockiert uns aktuell?",
+                        ],
+                    },
+                    {
+                        "title": "Ablauf",
+                        "body": [
+                            "1. Wähle deine Karten intuitiv.",
+                            "2. Beschreibe dein Anliegen kurz und klar.",
+                            "3. Erhalte eine strukturierte Liebesdeutung.",
+                        ],
+                    },
+                    {
+                        "title": "Praxis-Tipp",
+                        "body": [
+                            "Nenne eine Situation konkret (z. B. Kontaktabbruch, Distanz, Unsicherheit).",
+                            "Das erhöht die Genauigkeit der Deutung.",
+                        ],
+                    },
+                ],
+                "faq": [
+                    {"q": "Ist Katina nur für Liebe gedacht?", "a": "Der Schwerpunkt liegt klar auf Liebe und Beziehungen."},
+                    {"q": "Muss ich die Karten offen sehen?", "a": "Nein, die Auswahl kann mit verdeckten Karten erfolgen."},
+                    {"q": "Bleibt die Deutung gespeichert?", "a": "Ja, veröffentlichte Deutungen sind im Kundenpanel abrufbar."},
+                ],
+                "cta_label": "Katina-Orakel Öffnen",
+            },
+            "tarot": {
+                "meta_title": "Tarot-Orakel | 10-Karten Legung Online - Orakelia",
+                "meta_desc": "Tarot online mit 10-Karten-Detaillegung: klare Impulse zu Liebe, Zukunft und Entscheidungen. Persönliche Deutung bei Orakelia.",
+                "title": "Tarot-Orakel: 10 Karten für tiefere Klarheit",
+                "intro": "Tarot arbeitet mit Symbolen, Mustern und Entwicklungslinien. Die 10-Karten-Legung bietet mehr Tiefe und Zusammenhang als kurze Mini-Legungen.",
+                "sections": [
+                    {
+                        "title": "Warum 10 Karten?",
+                        "body": [
+                            "Mehr Kontext zu Vergangenheit, Gegenwart und Tendenzen.",
+                            "Chancen, Risiken und Handlungsspielraum werden klarer.",
+                        ],
+                    },
+                    {
+                        "title": "Schritt für Schritt",
+                        "body": [
+                            "1. Wähle deine Karten.",
+                            "2. Stelle deine Frage konkret.",
+                            "3. Erhalte eine zusammenhängende Gesamtdeutung.",
+                        ],
+                    },
+                    {
+                        "title": "Bessere Fragen = bessere Deutung",
+                        "body": [
+                            "Definiere einen Zeitraum (z. B. nächste 3 Monate).",
+                            "Nutze entscheidungsorientierte Fragen statt zu allgemeiner Formulierungen.",
+                        ],
+                    },
+                ],
+                "faq": [
+                    {"q": "Kann ich Karten vor dem Absenden ändern?", "a": "Ja, in der Auswahl kannst du Karten wieder zurückdrehen."},
+                    {"q": "Wie lange dauert es bis zum Ergebnis?", "a": "Meist 20-30 Minuten nach der Zahlung."},
+                    {"q": "Wird die Deutung geprüft?", "a": "Ja, vor der Veröffentlichung erfolgt eine Freigabe im Admin-Prozess."},
+                ],
+                "cta_label": "Tarot-legung Starten",
+            },
+        },
+        "en": {
+            "coffee": {
+                "meta_title": "Coffee Reading Online | Personalized Insight - Orakelia",
+                "meta_desc": "How does online coffee reading work? Learn the process, best question style, and interpretation flow for clearer results at Orakelia.",
+                "title": "Coffee Reading: Interpreting Symbols in the Grounds",
+                "intro": "Coffee reading is a traditional intuitive method. At Orakelia, your cup photos and question are interpreted together for a personal reading.",
+                "sections": [
+                    {
+                        "title": "What Coffee Reading Can Help With",
+                        "body": [
+                            "Love, choices, career direction, and near-term emotional energy.",
+                            "Interpretation is based on visible patterns and your actual question.",
+                        ],
+                    },
+                    {
+                        "title": "Online Flow",
+                        "body": [
+                            "1. Upload clear photos of your cup.",
+                            "2. Write a focused question.",
+                            "3. Receive your interpretation in your panel after approval.",
+                        ],
+                    },
+                    {
+                        "title": "Tips for Better Accuracy",
+                        "body": [
+                            "Use good lighting and avoid blurry images.",
+                            "Ask one focused question instead of multiple topics.",
+                        ],
+                    },
+                ],
+                "faq": [
+                    {"q": "How many photos should I upload?", "a": "You can upload 1-6 photos. Multiple clear angles usually improve quality."},
+                    {"q": "How long does it take?", "a": "Usually around 20-30 minutes after payment."},
+                    {"q": "Can I request another reading later?", "a": "Yes, you can open a new request anytime with a new question."},
+                ],
+                "cta_label": "Start Coffee Reading",
+            },
+            "katina": {
+                "meta_title": "Katina Love Reading Online | Relationship Insight - Orakelia",
+                "meta_desc": "Katina love reading online: choose your cards, ask your question, and receive a structured relationship-focused interpretation.",
+                "title": "Katina Love Reading: Clarity for Relationships",
+                "intro": "Katina is especially focused on love and relationship dynamics. You choose the cards, then receive a personalized interpretation.",
+                "sections": [
+                    {
+                        "title": "Best Use Cases",
+                        "body": [
+                            "Relationship direction, emotional distance, communication blocks.",
+                            "Understanding intentions and possible next steps.",
+                        ],
+                    },
+                    {
+                        "title": "How It Works",
+                        "body": [
+                            "1. Choose your cards intuitively.",
+                            "2. Describe your relationship question clearly.",
+                            "3. Get a personal love-focused interpretation.",
+                        ],
+                    },
+                    {
+                        "title": "Practical Tip",
+                        "body": [
+                            "Be specific about context (pause, confusion, mixed signals).",
+                            "Specific context leads to clearer guidance.",
+                        ],
+                    },
+                ],
+                "faq": [
+                    {"q": "Is Katina only for love?", "a": "Primarily yes, it is optimized for relationship and emotional questions."},
+                    {"q": "Do I need to see open cards?", "a": "No, you can select from closed cards and still receive a full interpretation."},
+                    {"q": "Will my reading remain in my account?", "a": "Yes, published readings stay visible in your panel."},
+                ],
+                "cta_label": "Open Katina Reading",
+            },
+            "tarot": {
+                "meta_title": "Tarot Reading Online | 10-Card Detailed Spread - Orakelia",
+                "meta_desc": "Get a 10-card detailed tarot reading online for love, decisions, and direction. Structured interpretation with clear action points.",
+                "title": "Tarot Reading: 10-Card Detailed Spread",
+                "intro": "Tarot uses symbols to reveal patterns and direction. A 10-card spread provides deeper context than quick mini-readings.",
+                "sections": [
+                    {
+                        "title": "Why 10 Cards?",
+                        "body": [
+                            "It captures context across past, present, and likely development.",
+                            "It helps balance opportunities, risks, and practical choices.",
+                        ],
+                    },
+                    {
+                        "title": "Process",
+                        "body": [
+                            "1. Select your cards.",
+                            "2. Ask a clear question.",
+                            "3. Receive a connected, practical interpretation.",
+                        ],
+                    },
+                    {
+                        "title": "Ask Better, Get Better",
+                        "body": [
+                            "Add a time frame (e.g., next 3 months).",
+                            "Use decision-focused wording, not overly broad questions.",
+                        ],
+                    },
+                ],
+                "faq": [
+                    {"q": "Can I change selected cards before submit?", "a": "Yes, card selection can be adjusted before final submission."},
+                    {"q": "How long does it take?", "a": "Usually about 20-30 minutes after payment."},
+                    {"q": "Is there quality control before delivery?", "a": "Yes, readings are reviewed before publishing to the customer panel."},
+                ],
+                "cta_label": "Start Tarot Spread",
+            },
+        },
+    }
+    return content.get(normalized_lang, content["en"]).get(kind, content["en"]["coffee"])
+
+
+def get_seo_home_link_copy(lang: str) -> dict[str, object]:
+    normalized_lang = lang if lang in {"tr", "en", "de"} else "en"
+    content: dict[str, dict[str, object]] = {
+        "tr": {
+            "title": "Fal Rehberleri",
+            "desc": "Kahve, Katina ve Tarot hakkında içerik odaklı rehber sayfalarımızı inceleyin.",
+            "coffee": {"title": "Kahve Falı Rehberi", "desc": "Fotoğraf, soru ve yorum sürecini öğrenin."},
+            "katina": {"title": "Katina Aşk Falı Rehberi", "desc": "İlişki odaklı kart açılımını keşfedin."},
+            "tarot": {"title": "Tarot Falı Rehberi", "desc": "10 kart detaylı tarot açılımı hakkında bilgi alın."},
+        },
+        "de": {
+            "title": "Orakel-Ratgeber",
+            "desc": "Entdecke unsere inhaltsfokussierten Seiten zu Kaffee, Katina und Tarot.",
+            "coffee": {"title": "Kaffee-Orakel Ratgeber", "desc": "Ablauf, Fotos und Deutungslogik im Überblick."},
+            "katina": {"title": "Katina Liebesorakel Ratgeber", "desc": "Beziehungsfokus und Kartenlegung verständlich erklärt."},
+            "tarot": {"title": "Tarot Ratgeber", "desc": "Alles zur detaillierten 10-Karten-Legung."},
+        },
+        "en": {
+            "title": "Reading Guides",
+            "desc": "Explore content-focused landing pages for Coffee, Katina, and Tarot readings.",
+            "coffee": {"title": "Coffee Reading Guide", "desc": "Learn photos, question style, and interpretation flow."},
+            "katina": {"title": "Katina Love Guide", "desc": "Understand relationship-focused card reading."},
+            "tarot": {"title": "Tarot Guide", "desc": "See how the detailed 10-card spread works."},
+        },
+    }
+    return content.get(normalized_lang, content["en"])
+
+
+def build_faq_schema(faq_items: list[dict[str, str]]) -> str:
+    schema = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": str(item.get("q", "")),
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": str(item.get("a", "")),
+                },
+            }
+            for item in faq_items
+            if str(item.get("q", "")).strip() and str(item.get("a", "")).strip()
+        ],
+    }
+    return json.dumps(schema, ensure_ascii=False)
+
+
 def t(key: str, **kwargs: object) -> str:
     lang = get_lang()
     raw = (
@@ -2880,9 +3268,56 @@ def inject_i18n():
 
 @app.get("/")
 def home():
+    lang = get_lang()
     return render_template(
         "index.html",
+        seo_links=get_seo_home_link_copy(lang),
         whatsapp_number=WHATSAPP_NUMBER,
+    )
+
+
+@app.get("/kahve-fali")
+def seo_coffee_landing():
+    lang = get_lang()
+    seo = get_seo_landing_content("coffee", lang)
+    return render_template(
+        "seo_landing.html",
+        seo=seo,
+        kind="coffee",
+        kind_label=t("choice_coffee"),
+        cta_url=url_for("coffee_page", lang=lang),
+        canonical_url=url_for("seo_coffee_landing", lang=lang, _external=True),
+        faq_schema_json=build_faq_schema(list(seo.get("faq", []))),
+    )
+
+
+@app.get("/katina-ask-fali")
+def seo_katina_landing():
+    lang = get_lang()
+    seo = get_seo_landing_content("katina", lang)
+    return render_template(
+        "seo_landing.html",
+        seo=seo,
+        kind="katina",
+        kind_label=t("choice_katina"),
+        cta_url=url_for("katina_page", lang=lang),
+        canonical_url=url_for("seo_katina_landing", lang=lang, _external=True),
+        faq_schema_json=build_faq_schema(list(seo.get("faq", []))),
+    )
+
+
+@app.get("/tarot-fali")
+def seo_tarot_landing():
+    lang = get_lang()
+    seo = get_seo_landing_content("tarot", lang)
+    return render_template(
+        "seo_landing.html",
+        seo=seo,
+        kind="tarot",
+        kind_label=t("choice_tarot"),
+        cta_url=url_for("tarot_page", lang=lang),
+        canonical_url=url_for("seo_tarot_landing", lang=lang, _external=True),
+        faq_schema_json=build_faq_schema(list(seo.get("faq", []))),
     )
 
 

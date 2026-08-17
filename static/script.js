@@ -1,5 +1,13 @@
 const uiLang = document.body?.dataset?.uiLang || "tr";
 
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
+      // Installation is an enhancement; the web experience remains usable if registration fails.
+    });
+  });
+}
+
 const uiText = {
   tr: {
     closed: "Kapalı Kart",

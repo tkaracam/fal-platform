@@ -1,0 +1,14 @@
+<div class="selected-reader-profile">
+  <img src="{{ reader_image_url(selected_reader['image']) }}" alt="{{ selected_reader['name'] }}" />
+  <div class="selected-reader-copy">
+    <span class="selected-reader-kicker">{{ t('selected_reader') }}</span>
+    <h3>{{ selected_reader['name'] }}</h3>
+    <p><strong>{{ t('reader_specialty_label') }}:</strong> {{ selected_reader['specialty'] }}</p>
+    <p class="selected-reader-style">{{ t('reader_profile_intro') }}</p>
+  </div>
+  <div class="selected-reader-actions">
+    <strong>{{ reading_price }} {{ currency }}</strong>
+    <a href="{{ url_for(reader_list_endpoint, lang=lang) }}">{{ t('change_reader') }}</a>
+  </div>
+</div>
+<p class="reading-safety-note">{{ t('reading_entertainment_notice') }}</p>

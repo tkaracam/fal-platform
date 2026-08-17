@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260303-cardscale1" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260817-personas1" />
   </head>
   <body data-ui-lang="{{ lang }}">
     <div class="scene-glow"></div>
@@ -62,7 +62,8 @@
 
       <section class="card">
         <h2>{{ t('katina_title') }}</h2>
-        <p>{{ t('selected_reader') }}: <strong>{{ selected_reader['name'] }}</strong> · {{ t('price_label') }}: {{ reading_price }} {{ currency }}</p>
+        {% set reader_list_endpoint = 'katina_page' %}
+        {% include '_selected_reader.html' %}
         <p>{{ t('katina_desc') }}</p>
         <div class="deck" data-reading="katina"></div>
         <p class="selection" data-selection="katina"></p>

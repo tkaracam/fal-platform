@@ -2,7 +2,8 @@
 <html lang="{{ lang }}">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    {% include '_pwa_head.html' %}
     <title>{{ t('brand') }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -49,6 +50,12 @@
           </div>
         </nav>
       </header>
+
+      <a class="install-strip" href="{{ url_for('install_page', lang=lang) }}">
+        <img src="{{ url_for('static', filename='icons/orakelia-192.png') }}" alt="" />
+        <span><strong>{{ t('nav_install') }}</strong><small>{{ t('install_desc') }}</small></span>
+        <b aria-hidden="true">›</b>
+      </a>
 
       <section id="secimler">
         <div class="home-welcome-row">

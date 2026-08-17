@@ -193,6 +193,9 @@
                     </li>
                     {% endfor %}
                   </ol>
+                  {% if row.order_status in ['paid', 'in_progress'] %}
+                  <small class="delivery-estimate">{{ t('reader_delivery_estimate') }}</small>
+                  {% endif %}
                 </td>
                 <td>
                   <a class="menu-cta panel-open-btn" href="{{ url_for('customer_reading_page', request_kind=row.request_kind, request_id=row.id, lang=lang) }}">

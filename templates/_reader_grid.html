@@ -1,0 +1,32 @@
+<div class="reader-grid" role="list">
+  {% for reader in readers %}
+  <a
+    class="reader-card"
+    href="{{ url_for(reader_endpoint, lang=lang, reader_id=reader['id']) }}"
+    aria-label="{{ reader['name'] }} · {{ reader['specialty'] }}"
+    role="listitem"
+  >
+    <img src="{{ reader_image_url(reader['image']) }}" alt="{{ reader['name'] }}" loading="lazy" />
+    <div class="reader-card-copy">
+      <div class="reader-name-row">
+        <span class="reader-name">{{ reader['name'] }}</span>
+      </div>
+      <p class="reader-specialty"><small>{{ t('reader_specialty_label') }}</small>{{ reader['specialty'] }}</p>
+    </div>
+    <div class="reader-meta">
+      <p class="reader-live">● {{ t('reader_delivery_estimate') }}</p>
+      <div class="reader-rating-wrap">
+        {% if reader['review_count'] > 0 %}
+        <div class="rating-stars" style="--rating: {{ reader['rating_value'] }};" aria-hidden="true">
+          <span class="rating-stars-bg">★★★★★</span>
+          <span class="rating-stars-fill">★★★★★</span>
+        </div>
+        <small>{{ t('reader_rating_label', rating=reader['rating_value'], count=reader['review_count']) }}</small>
+        {% else %}
+        <small class="reader-new-profile">{{ t('reader_new_profile') }}</small>
+        {% endif %}
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
